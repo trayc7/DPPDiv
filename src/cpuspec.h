@@ -5,7 +5,7 @@
 #include <xmmintrin.h>
 #include <emmintrin.h>
 #include <pmmintrin.h>
-#include <immintrin.h>
+//#include <immintrin.h>
 
 #ifdef __AVX__
 #define BYTE_ALIGNMENT 32
