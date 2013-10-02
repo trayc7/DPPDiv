@@ -49,9 +49,6 @@
 #include <fstream>
 
 
-#include <xmmintrin.h> // Needed for XCode
-#include <emmintrin.h>
-#include <pmmintrin.h>
 
 #include <omp.h>
 
