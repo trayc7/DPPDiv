@@ -1,0 +1,30 @@
+Running the command 'make all' will compile the source code
+and create the executable versions of all implementations:
+
+dppdiv-seq      - The original unoptimized, single-thread
+dppdiv-seq-avx  - AVX optimized, single-thread
+dppdiv-seq-sse  - SSE optimized, single-thread
+dppdiv-par      - Unoptimized, multi-thread
+dppdiv-par-sse  - SSE optimized, multi-thread
+dppdiv-par-avx  - AVX optimized, multi-thread
+
+One can compile only a specific implementation by running the command:
+
+make implementation
+
+substituting 'implementation' with the corresponding name. For example, to
+compile the SSE optimized, multithreaded implementation, you may run:
+
+make dppdiv-sse-par
+
+To specify the number of threads in the multi-thread version, set the
+OMP_NUM_THREADS variable in your shell environment. For example, in bash:
+
+export OMP_NUM_THREADS=16
+
+will set the program to run with 16 threads.
+You may also pin each thread to a specific processor by setting up the
+GOMP_CPU_AFFINITY variable. For more info on this variable, check:
+
+http://gcc.gnu.org/onlinedocs/libgomp/GOMP_005fCPU_005fAFFINITY.html
+
