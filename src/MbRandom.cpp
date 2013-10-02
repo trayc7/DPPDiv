@@ -505,7 +505,7 @@ double MbRandom::normalQuantile(double mu, double sigma, double p) {
 double MbRandom::uniformRv(void) {
 
 	// Returns a pseudo-random number between 0 and 1.
-	double u = 0.0; // TAH: if I1 == 395220642 && I2 == 1045444223, this returns 0, so I put this check in...
+	double u = 0.0; 
 	while(u == 0.0){
 		I1 = 36969 * (I1 & 0177777) + (I1 >> 16);
 		I2 = 18000 * (I2 & 0177777) + (I2 >> 16);
