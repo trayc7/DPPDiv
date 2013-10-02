@@ -1,13 +1,15 @@
 /* 
- * DPPDiv version 1.0b source code (git: 9c0ac3d2258f89827cfe9ba2b5038f0f656b82c1)
- * Copyright 2009-2011
- * Tracy Heath(1,2,3) (NSF postdoctoral fellowship in biological informatics DBI-0805631)
+ * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
+ * Copyright 2009-2013
+ * Tracy Heath(1,2,3) 
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
  * (1) Department of Ecology and Evolutionary Biology, University of Kansas, Lawrence, KS 66045
  * (2) Integrative Biology, University of California, Berkeley, CA 94720-3140
  * (3) email: tracyh@berkeley.edu
+ *
+ * Also: T Stadler, D Darriba, AJ Aberer, T Flouri, F Izquierdo-Carrasco, and A Stamatakis
  *
  * DPPDiv is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +23,8 @@
  * distribution or http://www.gnu.org/licenses/gpl.txt for more
  * details.
  *
- * Some of this code is from publicly available source by John Huelsenbeck
+ * Some of this code is from publicly available source by John Huelsenbeck and Fredrik Ronquist
+ *
  */
 
 #include "MbRandom.h"
@@ -33,6 +36,8 @@
 #include <iomanip>
 
 using namespace std;
+
+
 
 Exchangeability::Exchangeability(MbRandom *rp, Model *mp) : Parameter(rp, mp) {
 
@@ -77,13 +82,13 @@ double Exchangeability::update(double &oldLnL) {
 	MbVector<double> oldRates(6);
 	MbVector<double> newRates(6);
 	
-	for (int i=0; i<6; i++){
+	for (int i=0; i<6; i++)
+		{
 		oldRates[i] = rates[i];
 		aForward[i] = rates[i] * alpha0;
-	}
+		}
 		
 	ranPtr->dirichletRv(aForward, newRates);
-	
 	double sum = 0.0;
 	for(int i=0; i<6; i++){
 		if(newRates[i] < 0.000001)
@@ -100,6 +105,7 @@ double Exchangeability::update(double &oldLnL) {
 		aReverse[i] = newRates[i] * alpha0;
 		
 	double lnProposalRatio = ranPtr->lnDirichletPdf(aReverse, oldRates) - ranPtr->lnDirichletPdf(aForward, newRates);
+	
 	Tree *t = modelPtr->getActiveTree();
 	t->flipAllCls();
 	t->flipAllTis();

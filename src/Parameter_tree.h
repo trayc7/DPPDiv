@@ -1,13 +1,15 @@
 /* 
- * DPPDiv version 1.0b source code (git: 9c0ac3d2258f89827cfe9ba2b5038f0f656b82c1)
- * Copyright 2009-2011
- * Tracy Heath(1,2,3) (NSF postdoctoral fellowship in biological informatics DBI-0805631)
+ * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
+ * Copyright 2009-2013
+ * Tracy Heath(1,2,3) 
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
  * (1) Department of Ecology and Evolutionary Biology, University of Kansas, Lawrence, KS 66045
  * (2) Integrative Biology, University of California, Berkeley, CA 94720-3140
  * (3) email: tracyh@berkeley.edu
+ *
+ * Also: T Stadler, D Darriba, AJ Aberer, T Flouri, F Izquierdo-Carrasco, and A Stamatakis
  *
  * DPPDiv is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,11 +23,13 @@
  * distribution or http://www.gnu.org/licenses/gpl.txt for more
  * details.
  *
- * Some of this code is from publicly available source by John Huelsenbeck
+ * Some of this code is from publicly available source by John Huelsenbeck and Fredrik Ronquist
+ *
  */
 
 #ifndef PARAMETER_TREE_H
 #define PARAMETER_TREE_H
+
 
 #include <string>
 #include <sstream>
@@ -83,6 +87,21 @@ class Node {
 		void			setIsContaminatedFossil(bool b) { taintFossil = b; }
 		int				getRedFlag() { return redFlag; }
 		void			setRedFlag(int i) { redFlag = i; }
+		double			getNodeAge(void) { return nodeAge; }
+		void			setNodeAge(double d) { nodeAge = d; }
+		
+		double			getFossAttchTime(void) { return fossAttachTime; }
+		void			setFossAttchTime(double d) { fossAttachTime = d; }
+		int				getNumFossAttchLins(void) { return numFossAttachLins; }
+		void			setNumFossAttchLins(int i) { numFossAttachLins = i; }
+		
+		// New implmentation stuff
+
+		int				getNumCalibratingFossils(void) { return numCalFossils; }
+		void			setNumFCalibratingFossils(int i) { numCalFossils = i; }
+		void			insertFossilID(int i) { calibFossilIDs.push_back(i); }
+		int				getIthFossiID(int i) { return calibFossilIDs[i]; }
+		
 
 	private:
 		Node			*lft;
@@ -95,6 +114,7 @@ class Node {
 		bool			isClDirty;
 		bool			isTiDirty;
 		double			nodeDepth;
+		double			nodeAge;
 		bool			isLeaf;
 		bool			isCalib;
 		double			youngt;
@@ -108,7 +128,53 @@ class Node {
 		double			nodeExpCalRate;
 		bool			taintFossil;
 		int				redFlag;
+		
+		// If TGS calibration phi and xi
+		double			fossAttachTime;		// phi_i
+		int				numFossAttachLins;  // xi_i
+		int				numCalFossils;
+		std::vector<int> calibFossilIDs;
 };
+
+class Fossil {
+	
+	public:
+										Fossil(double fa, int nid) :age(fa), nodeID(nid),
+																	fossilBrGamma(0), ancFossIndicator(1) {}
+		
+		int								getFossilIndex(void) { return indx; } 
+		double							getFossilAge(void) { return age; }
+		double							getFossilSppTime(void) { return phi; }
+		int								getFossilMRCANodeID(void) { return nodeID; }
+		double							getFossilMRCANodeAge(void) { return nodeAge; } 
+		int								getFossilFossBrGamma(void) { return fossilBrGamma; }
+		int								getFossilIndicatorVar(void) { return ancFossIndicator; }
+		double							getCalibrationDistance(void) { return nodeAge - age; }
+		
+		void							setFossilIndex(int i) { indx = i; } 
+		void							setFossilAge(double d) { age = d; }
+		void							setFossilSppTime(double d) { phi = d; }
+		void							setFossilMRCANodeID(int i) { nodeID = i; }
+		void							setFossilMRCANodeAge(double d) { nodeAge = d; } 
+		void							setFossilFossBrGamma(int i) { fossilBrGamma = i; }
+		void							setFossilIndicatorVar(int i) { ancFossIndicator = i; }
+
+		
+		
+	private:
+		int								indx;
+		double							age;
+		double							phi;
+		int								nodeID;
+		int								gamma;
+		double							nodeAge;
+		int								fossilBrGamma;
+		int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
+		
+	
+	
+};
+
 
 class Alignment;
 class Calibration;
@@ -120,7 +186,7 @@ class Tree : public Parameter {
 	public:
 										Tree(MbRandom *rp, Model *mp, Alignment *ap, std::string ts, 
 											 bool ubl, bool allnm, bool rndNods, std::vector<Calibration *> clb, 
-											 double rth, bool sb, bool exhpc, ExpCalib *ec);
+											 double rth, bool sb, bool exhpc, ExpCalib *ec, std::vector<Calibration *> tdt);
 										~Tree(void); 
 		Tree							&operator=(const Tree &t);
 		void							clone(const Tree &t);
@@ -135,7 +201,8 @@ class Tree : public Parameter {
 		double							updateAllNodes(double &oldLnL);
 		double							updateAllNodesRnd(double &oldLnL);
 		double							lnPrior();
-		double							lnPriorRatio(double nh, double oh);
+		double							lnPriorRatio(double snh, double soh);
+		double							lnPriorRatioTGS(double snh, double soh, Node *p);
 		double							lnCalibPriorRatio(double nh, double oh, double lb, double ub);
 		double							lnExpCalibPriorRatio(double nh, double oh, double offSt, double expRate);
 		void							print(std::ostream & o) const;
@@ -166,22 +233,47 @@ class Tree : public Parameter {
 		bool							getIsCalibratedTree() { return isCalibTree; }
 		double							getTreeCBDNodePriorProb();
 		double							getTreeCBDNodePriorProb(double netDiv, double relDeath);
+		double							getTreeBDSSTreeNodePriorProb(double netDiv, double relDeath, double fossRate, double sppSampRate, double originTime);
 		double							getTreeSpeciationProbability();
 		double							getSumOfNodeHeights();
 		void							setNodeRateValues();
 		std::vector<Node *>				getListOfCalibratedNodes();
 		double							getRootCalibExpRate() { return root->getNodeExpCalRate(); }
+		void							writeCalNodeBEASTInfoXML(std::ostream &o);
+		void							writeRRTNodeBEASTInfoXML(std::ostream &o);
+		void							getListOfTaxNamesDecFromNode(Node *p, std::vector<std::string> &ndNs);
 		void							checkNodeCalibrationCompatibility();
 		int								checkTreeForCalibrationCompatibility();
 		void							zeroNodeRedFlags();
+		
+		double							getTreeCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate);
+		double							getTreeAncCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate);
+
+		std::string						getCalBDSSNodeInfoParamNames(void);
+		std::string						getCalBDSSNodeInfoParamList(void);
+		std::string						getCalBDSSNodeInfoIndicatorNames(void);
+		std::string						getCalBDSSNodeInfoIndicatorList(void);
+		int								countDecLinsTimeIntersect(Node *p, double t, double ancAge);
+		double							updateFossilBDSSAttachmentTimePhi(void);
+		void							treeScaleUpdateFossilAttchTimes(double sr);
+		void							treeUpdateNodeOldestBoundsAttchTimes(void);
+		double							getNodeLowerBoundTime(Node *p);
+		double							getNodeUpperBoundTime(Node *p);
+		
+		double							updateRJMoveAddDelEdge(void);
+		void							doAddEdgeMove(void);
+		void							doDeleteEdgeMove(void);
+
 							
 	private:
 		void							buildTreeFromNewickDescription(std::string ts);
 		void							initializeNodeDepthsFromUserBL(void);
+		void							initializeTipNodeDepthsFromUserBL(void);
 		void							initializeNodeDepths(void);
 		void							initializeCalibratedNodeDepths(void);
+		double							getUBLTreeScaleDepths(void);
+		double							getNodePathDepth(Node *t);
 		std::vector<double>				recursiveNodeDepthInitialization(Node *p, int &nCont, double maxD);
-		void							adjustNodesCompatibleWCalabrations(void);
 		int								setNodesNumberDecendantTaxa(Node *p);
 		static int						dex(const Node *p);
 		bool							isValidChar(char c);
@@ -198,6 +290,30 @@ class Tree : public Parameter {
 		void							assignMixLambdaHyperPrToNode(Node *p);
 		double							getAMixLambdaHyperPrToNode();
 		
+		int								findTip(std::string tn);
+		
+		void							setTipDateAges(void);
+		
+		double							bdssC1Fxn(double b, double d, double psi);
+		double							bdssC2Fxn(double b, double d, double psi,double rho);
+		
+		double							bdssQFxn(double b, double d, double psi, double rho, double t); // on log scale
+		double							bdssP0Fxn(double b, double d, double psi, double rho, double t);
+
+		void							initializeTGSCalibVariables(void);
+		
+		void							setUPTGSCalibrationFossils();
+		void							initializeFossilSpecVariables();
+		void							initializeFossilAncestorSpecVariables();
+		void							recountFossilAttachNums();
+		int								getFossilLinAttachNumsForFoss(int fID);
+		
+		int								getDecendantFossilAttachBranches(Node *p, double t, int fID);
+		double							getProposedBranchAttachFossils(Node *p, double t);
+		void							setNodeOldestAttchBranchTime(Node *p);
+		int								pickRandAncestorFossil(void);
+		int								pickRandTipFossil(void);
+
 
 		Alignment						*alignmentPtr;
 		int								numTaxa;
@@ -209,11 +325,22 @@ class Tree : public Parameter {
 		bool							moveAllNodes;
 		bool							randShufNdMv;
 		std::vector<Calibration*>		calibNds;
+		std::vector<Calibration*>		datedTips;
+		int								numCalibNds; // if -tgs, then this is actually equal to the number of calibrating fossils, not the number of nodes calibrated
+		int								numExtinctTips;
+		int								numAncFossilsk; // for -tgs, this is the number of fossils that are ancestors
 		double							treeScale;
 		bool							isCalibTree;
 		int								treeTimePrior;
 		bool							softBounds;
 		bool							expHyperPrCal;
+		bool							isTipCals;
+		
+		std::vector<Node *>				calibNodes;
+		std::vector<Fossil *>			fossSpecimens;
+		
+		
 };
+
 
 #endif

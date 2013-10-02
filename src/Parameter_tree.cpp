@@ -1,13 +1,15 @@
 /* 
- * DPPDiv version 1.0b source code (git: 9c0ac3d2258f89827cfe9ba2b5038f0f656b82c1)
- * Copyright 2009-2011
- * Tracy Heath(1,2,3) (NSF postdoctoral fellowship in biological informatics DBI-0805631)
+ * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
+ * Copyright 2009-2013
+ * Tracy Heath(1,2,3) 
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
  * (1) Department of Ecology and Evolutionary Biology, University of Kansas, Lawrence, KS 66045
  * (2) Integrative Biology, University of California, Berkeley, CA 94720-3140
  * (3) email: tracyh@berkeley.edu
+ *
+ * Also: T Stadler, D Darriba, AJ Aberer, T Flouri, F Izquierdo-Carrasco, and A Stamatakis
  *
  * DPPDiv is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,9 +23,9 @@
  * distribution or http://www.gnu.org/licenses/gpl.txt for more
  * details.
  *
- * Some of this code is from publicly available source by John Huelsenbeck
+ * Some of this code is from publicly available source by John Huelsenbeck and Fredrik Ronquist
+ *
  */
-
 
 #include "Alignment.h"
 #include "Calibration.h"
@@ -34,6 +36,7 @@
 #include "Parameter_expcalib.h"
 #include "Parameter_rate.h"
 #include "Parameter_speciaton.h"
+#include "Parameter_treescale.h"
 #include "Parameter_tree.h"
 #include <iostream>
 #include <sstream>
@@ -68,11 +71,15 @@ Node::Node(void) {
 	nodeExpCalRate = -1.0;
 	taintFossil = false;
 	redFlag = 0;
+	nodeAge = 0.0;
+	fossAttachTime = -1.0;
+	numFossAttachLins = -1;
+	numCalFossils = 0;
 }
 
 Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool allnm, 
 		   bool rndNods, vector<Calibration *> clb, double rth, bool sb, bool exhpc,
-		   ExpCalib *ec) : Parameter(rp, mp) {
+		   ExpCalib *ec, vector<Calibration *> tdt) : Parameter(rp, mp) {
 
 	alignmentPtr = ap;
 	numTaxa = 0;
@@ -83,16 +90,24 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	useInputBLs = ubl;
 	moveAllNodes = allnm;
 	calibNds = clb;
+	numCalibNds = calibNds.size();
+	numAncFossilsk = 0;
+	datedTips = tdt;
 	treeScale = rth;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	name = "TR";
 	randShufNdMv = rndNods;
 	softBounds = sb;
 	isCalibTree = false;
+	isTipCals = false; // indicates if there are non-contemp tips
 	expHyperPrCal = exhpc;
 	buildTreeFromNewickDescription(ts); 
-	if(calibNds.size() > 0){
+
+	if(numCalibNds > 0 && treeTimePrior < 6){
 		isCalibTree = true;
+		if(datedTips.size() > 0){
+			setTipDateAges();
+		}
 		setNodeCalibrationPriors(ec);
 		initializeCalibratedNodeDepths();
 		while(checkTreeForCalibrationCompatibility() > 0){
@@ -100,14 +115,30 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 			initializeCalibratedNodeDepths();
 		}
 	}
+	else if(treeTimePrior > 5){ 
+		isCalibTree = true;
+		setUPTGSCalibrationFossils();
+		initializeCalibratedNodeDepths();
+		while(checkTreeForCalibrationCompatibility() > 0){
+			zeroNodeRedFlags();
+			initializeCalibratedNodeDepths();
+		}
+		initializeFossilSpecVariables();
+
+	}
 	else{
 		isCalibTree = false;
 		if(useInputBLs)
-			initializeNodeDepthsFromUserBL(); 
+			initializeTipNodeDepthsFromUserBL(); 
+		else if(isTipCals)
+			initializeTipNodeDepthsFromUserBL();
 		else
 			initializeNodeDepths();
 	}
 	setAllNodeBranchTimes();
+	
+	if(isCalibTree)
+		calibNodes = getListOfCalibratedNodes();
 	
 }
 
@@ -118,6 +149,7 @@ Tree::~Tree(void) {
 }
 
 void Tree::buildTreeFromNewickDescription(string ts) {
+
 	numTaxa = alignmentPtr->getNumTaxa();
 	numNodes = 2 * numTaxa - 1;
 	nodes = new Node[numNodes];
@@ -128,20 +160,15 @@ void Tree::buildTreeFromNewickDescription(string ts) {
 	bool readingBrlen = false;
 	Node *p = NULL, *q = NULL;
 	int nextInteriorNode = numTaxa;
-	for (unsigned i=0; i<ts.size(); i++)
-		{
-                // cout << "Building Node " << i << "of " << ts.size() << endl;
+	for (unsigned i=0; i<ts.size(); i++){
 		char c = ts[i];
-		if ( c == '(' )
-			{
+		if ( c == '(' ){
 			q = &nodes[nextInteriorNode++];
-			if (p == NULL)
-				{
+			if (p == NULL){
 				p = q;
 				root = p;
-				}
-			else
-				{
+			}
+			else{
 				q->setAnc(p);
 				if (p->getLft() == NULL)
 					p->setLft(q);
@@ -149,15 +176,23 @@ void Tree::buildTreeFromNewickDescription(string ts) {
 					p->setRht(q);
 				else
 					{
-					cerr << "ERROR1: Problem adding interior node to tree" << endl;
+					cerr << "ERROR: Problem adding interior node to tree" << endl;
 					exit(1);
 					}
-				}
+			}
 			p = q;
 			readingBrlen = false;
+		}
+		else if ( c == ')' ){
+			if (p->getAnc() == NULL){
+				cerr << "ERROR: Problem moving down the tree" << endl;
+				exit(1);
 			}
-		else if ( c == ')' )
-			{
+			else
+				p = p->getAnc();
+			readingBrlen = false;
+		}
+		else if ( c == ',' ){
 			if (p->getAnc() == NULL)
 				{
 				cerr << "ERROR: Problem moving down the tree" << endl;
@@ -166,74 +201,62 @@ void Tree::buildTreeFromNewickDescription(string ts) {
 			else
 				p = p->getAnc();
 			readingBrlen = false;
-			}
-		else if ( c == ',' )
-			{
-			if (p->getAnc() == NULL)
-				{
-				cerr << "ERROR: Problem moving down the tree" << endl;
-				exit(1);
-				}
-			else
-				p = p->getAnc();
-			readingBrlen = false;
-			}
-		else if ( c == ':' )
-			{
+		}
+		else if ( c == ':' ){
+			// we are now reading a branch length...
 			readingBrlen = true;
-			}
-		else if ( c == ';' )
-			{
+		}
+		else if ( c == ';' ){
 			// we are finished with the tree...check
-			}
-		else
-			{
+		}
+		else{
+			// read the taxon name or branch length into a string
 			string s = "";
 			while ( isValidChar(ts[i]) )
 				s += ts[i++];
 			i--;
-			if (readingBrlen == false)
-				{
-				if ( alignmentPtr->isTaxonPresent(s) == false )
-					{
+			if (readingBrlen == false){
+				// add a tip to the tree 
+				if ( alignmentPtr->isTaxonPresent(s) == false ){
 					cerr << "ERROR: Cannot find taxon in alignment" << endl;
 					exit(1);
-					}
+				}
 				int indexForTaxon = alignmentPtr->getIndexForTaxonNamed(s);
 				q = &nodes[indexForTaxon];
-				if (p == NULL)
-					{
+				if (p == NULL){
 					cerr << "ERROR: Problem adding a tip to the tree" << endl;
 					exit(1);
-					}
-				else
-					{
+				}
+				else{
 					q->setAnc(p);
 					if (p->getLft() == NULL)
 						p->setLft(q);
 					else if (p->getRht() == NULL)
 						p->setRht(q);
-					else
-						{
-						cerr << "ERROR2: Problem adding interior node to tree" << endl;
+					else{
+						cerr << "ERROR: Problem adding interior node to tree" << endl;
 						exit(1);
-						}
 					}
+				}
 				p = q;
 				p->setName(s);
 				p->setIsLeaf(true);
-				}
-			else
-				{
+			}
+			else{
+				// include the branch length information
 				double x;
 				istringstream buf(s);
 				buf >> x;
 				p->setUerBL(x);
-				}
 			}
 		}
+	}
+		
+	// get the down pass sequence
 	getDownPassSequence();
-	root->setRtGrpVal(0.5); 
+	root->setRtGrpVal(0.5); // TAH root rate debug
+	
+	// initialize the node depths
 }
 
 Tree& Tree::operator=(const Tree &t) {
@@ -245,11 +268,10 @@ Tree& Tree::operator=(const Tree &t) {
 
 void Tree::clone(const Tree &t) {
 
-	if (numNodes != t.numNodes || numTaxa != t.numTaxa)
-		{
+	if (numNodes != t.numNodes || numTaxa != t.numTaxa){
 		cerr << "ERROR: Attempting to clone trees of unequal size" << endl;
 		exit(1);
-		}
+	}
 		
 	for (int i=0; i<numNodes; i++){
 		Node *pTo   = &nodes[i];
@@ -271,6 +293,14 @@ void Tree::clone(const Tree &t) {
 		pTo->setNodeCalibPrDist( pFrom->getNodeCalibPrDist() );
 		pTo->setNumDecendantTax( pFrom->getNumDecendantTax() );
 		pTo->setNodeExpCalRate( pFrom->getNodeExpCalRate() );
+		pTo->setNodeAge( pFrom->getNodeAge() );
+		pTo->setIsContaminatedFossil( pFrom->getIsContaminatedFossil() );
+
+		pTo->setFossAttchTime( pFrom->getFossAttchTime() );
+		pTo->setNumFossAttchLins( pFrom->getNumFossAttchLins() );
+		
+		
+		pTo->setNumFCalibratingFossils( pFrom->getNumCalibratingFossils() );
 		
 		
 		if (pFrom->getLft() == NULL)
@@ -288,7 +318,19 @@ void Tree::clone(const Tree &t) {
 		else
 			pTo->setAnc( &nodes[pFrom->getAnc()->getIdx()] );
 	}
-		
+	
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *fTo = fossSpecimens[i];
+		Fossil *fFrom = t.fossSpecimens[i];
+		fTo->setFossilIndex(fFrom->getFossilIndex());
+		fTo->setFossilAge(fFrom->getFossilAge());
+		fTo->setFossilSppTime(fFrom->getFossilSppTime());
+		fTo->setFossilMRCANodeID(fFrom->getFossilMRCANodeID());
+		fTo->setFossilMRCANodeAge(fFrom->getFossilMRCANodeAge());
+		fTo->setFossilFossBrGamma(fFrom->getFossilFossBrGamma());
+		fTo->setFossilIndicatorVar(fFrom->getFossilIndicatorVar());
+	}
+	numAncFossilsk = t.numAncFossilsk;
 	root = &nodes[t.root->getIdx()];
 	treeScale = t.treeScale;
 	treeTimePrior = t.treeTimePrior;
@@ -305,6 +347,39 @@ void Tree::getDownPassSequence(void) {
 
 	int x = 0;
 	passDown(root, &x);
+}
+
+void Tree::setTipDateAges(void){
+	
+	numExtinctTips = datedTips.size();
+	for(vector<Calibration *>::iterator v = datedTips.begin(); v != datedTips.end(); v++){
+		int calbTip = -1;
+		calbTip = findTip((*v)->getTxN1());
+		Node *p = &nodes[calbTip];
+				
+		p->setNodeYngTime((*v)->getYngTime());
+		p->setNodeOldTime((*v)->getOldTime());
+		double test = (*v)->getYngTime();
+		cout << test << endl;
+		p->setNodeAge((*v)->getYngTime());
+		(*v)->setNodeIndex(calbTip);
+		p->setIsCalibratedDepth(true);
+		p->setNodeDepth(p->getNodeAge() / treeScale);
+	}
+}
+
+int Tree::findTip(string tn){
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(p->getIsLeaf()){
+			string n = p->getName();
+			if(n == tn){
+				return i;
+			}
+		}
+	}
+	return -1;
 }
 
 void Tree::initializeNodeDepthsFromUserBL(void) {
@@ -340,6 +415,70 @@ void Tree::initializeNodeDepthsFromUserBL(void) {
 	
 }
 
+void Tree::initializeTipNodeDepthsFromUserBL(void) {
+	
+	double inDepth = getUBLTreeScaleDepths();
+	Node *p = NULL;
+	double scaler = 1.0 / inDepth;
+	Node *q = NULL;
+	double nodeDepth = 0.0;
+	for(int i=0; i<numNodes; i++){
+		p = &nodes[i];
+		if(p->getIsLeaf())
+			p->setNodeDepth(p->getNodeAge() / inDepth);
+		else if(p == root) 
+			p->setNodeDepth(1.0);
+		else {
+			nodeDepth = p->getUerBL();
+			q = p->getAnc();
+			while(q != root){
+				nodeDepth += q->getUerBL();
+				q = q->getAnc();
+			}
+			p->setNodeDepth(1.0 - (nodeDepth * scaler));
+		}
+	}
+	
+}
+
+double Tree::getUBLTreeScaleDepths(void){
+	
+	double rootDepth = 0.0;
+	Node *p = NULL;
+	double *ds = new double[numNodes];
+	for(int i=0; i<numNodes; i++){
+		p = &nodes[i];
+		double inDepth = 0.0;
+		if(p != root){
+			inDepth = getNodePathDepth(p);
+			if(inDepth > rootDepth)
+				rootDepth = inDepth;
+			cout << "node: " << i << " -- " << inDepth << endl;
+		}
+		ds[i] = inDepth;
+	}
+	for(int i=0; i<numNodes; i++){
+		p = &nodes[i];
+		p->setNodeAge(rootDepth - ds[i]);
+		cout << "node: " << i << " -- " << p->getNodeAge() << endl;
+	}
+	return rootDepth;
+
+}
+
+double Tree::getNodePathDepth(Node *t){
+	
+	double inDepth = t->getUerBL();;
+	Node *p = t->getAnc();
+	while(p != root){
+		inDepth += p->getUerBL();
+		p = p->getAnc();
+	}
+	return inDepth;
+	
+}
+
+
 void Tree::initializeNodeDepths(void) {
 
 	vector<Node*> potentialSplits;
@@ -352,31 +491,32 @@ void Tree::initializeNodeDepths(void) {
 	for (unsigned i=0; i<nodeTimes.size(); i++)
 		cout << nodeTimes[i] << " ";
 	cout << endl;
-
 	root->setNodeDepth(1.0);
+	
 	if (root->getLft()->getIsLeaf() == false)
 		potentialSplits.push_back(root->getLft());
 	if (root->getRht()->getIsLeaf() == false)
 		potentialSplits.push_back(root->getRht());
 	
 	int nextTime = 0;
-	while (potentialSplits.size() > 0)
-		{
+	while (potentialSplits.size() > 0){
 		Node *p = potentialSplits[(int)(ranPtr->uniformRv()*potentialSplits.size())];
 		p->setNodeDepth(nodeTimes[nextTime++]);
-		for (vector<Node *>::iterator n=potentialSplits.begin(); n != potentialSplits.end(); n++)
-			{
-			if ( (*n) == p )
-				{
+
+		// remove the node from the list of nodes that can split
+		for (vector<Node *>::iterator n=potentialSplits.begin(); n != potentialSplits.end(); n++){
+			if ( (*n) == p ){
 				potentialSplits.erase( n );
 				break;
-				}
 			}
+		}
+			
+		// add in the nodes that descend from it
 		if (p->getLft()->getIsLeaf() == false)
 			potentialSplits.push_back(p->getLft());
 		if (p->getRht()->getIsLeaf() == false)
 			potentialSplits.push_back(p->getRht());
-		}
+	}
 }
 
 void Tree::initializeCalibratedNodeDepths(void) {
@@ -456,7 +596,7 @@ double Tree::getTemporaryNodeMaxBound(Node *p){
 
 
 vector<double> Tree::recursiveNodeDepthInitialization(Node *p, int &nCont, double maxD) {
-		
+	
 	vector<double> ndTimesC;
 	if(p->getIsLeaf()){
 		for(int i=0; i< nCont; i++)
@@ -555,7 +695,6 @@ vector<double> Tree::recursiveNodeDepthInitialization(Node *p, int &nCont, doubl
 				}
 				ndTimesC.clear();
 				return ndTimesC;
-
 			}
 			for(int i=0; i< nAncN; i++)
 				ndTimesC.push_back( myDepth + ranPtr->uniformRv()*(maxD - myDepth) );
@@ -564,11 +703,6 @@ vector<double> Tree::recursiveNodeDepthInitialization(Node *p, int &nCont, doubl
 		}
 	}
 	return ndTimesC;
-}
-
-void Tree::adjustNodesCompatibleWCalabrations(void) {
-	
-	
 }
 
 int Tree::setNodesNumberDecendantTaxa(Node *p) {
@@ -582,7 +716,6 @@ int Tree::setNodesNumberDecendantTaxa(Node *p) {
 		nds += setNodesNumberDecendantTaxa(p->getRht());
 		p->setNumDecendantTax(nds);
 		return nds;
-		
 	}
 	return 0;
 }
@@ -615,45 +748,282 @@ void Tree::print(std::ostream & o) const {
 double Tree::update(double &oldLnL) {
 
 	double lppr = 0.0;
-	if(moveAllNodes){ 
-		if(randShufNdMv)
-			lppr = updateAllNodesRnd(oldLnL);
-		else lppr = updateAllNodes(oldLnL);
-	}	
-	else lppr = updateOneNode();
-	setAllNodeBranchTimes();
+	double probCalMove = 0.5;
+	if(treeTimePrior == 6){ 
+		recountFossilAttachNums();
+		if(ranPtr->uniformRv() > probCalMove){
+			if(moveAllNodes){ 
+				if(randShufNdMv)
+					lppr = updateAllNodesRnd(oldLnL);
+				else lppr = updateAllNodes(oldLnL);
+			}	
+			else lppr = updateOneNode();
+			setAllNodeBranchTimes();
+		}
+		else{
+			updateFossilBDSSAttachmentTimePhi();
+			modelPtr->setLnLGood(true);
+			modelPtr->setMyCurrLnl(oldLnL);
+			Tree *t = modelPtr->getActiveTree();
+			t->upDateAllCls();
+			t->upDateAllTis();
+			modelPtr->setTiProb();
+			return 0.0;
+		}
+		recountFossilAttachNums();
+	}
+	if(treeTimePrior == 7){ 
+		recountFossilAttachNums();
+		double *probMove = new double[4];
+		probMove[0] = 0.4;
+		probMove[1] = 0.4;
+		probMove[2] = 0.2;
+		int mvType = ranPtr->categoricalRv(probMove,3);
+		if(mvType == 0)
+			lppr = updateAllNodes(oldLnL);
+		else if(mvType == 1){
+			updateFossilBDSSAttachmentTimePhi();
+			modelPtr->setLnLGood(true);
+			modelPtr->setMyCurrLnl(oldLnL);
+			Tree *t = modelPtr->getActiveTree();
+			t->upDateAllCls();
+			t->upDateAllTis();
+			modelPtr->setTiProb();
+			return 0.0;
+		}
+		else if(mvType == 2){
+			updateRJMoveAddDelEdge();
+			modelPtr->setLnLGood(true);
+			modelPtr->setMyCurrLnl(oldLnL);
+			Tree *t = modelPtr->getActiveTree();
+			t->upDateAllCls();
+			t->upDateAllTis();
+			modelPtr->setTiProb();
+			return 0.0;
+		}
+		recountFossilAttachNums();
+	}
+	else{ 
+		if(moveAllNodes){ 
+			if(randShufNdMv)
+				lppr = updateAllNodesRnd(oldLnL);
+			else lppr = updateAllNodes(oldLnL);
+		}	
+		else lppr = updateOneNode();
+		setAllNodeBranchTimes();
+	}
 	return lppr;
 }
 
-double Tree::updateOneNode() {
 
+double Tree::updateFossilBDSSAttachmentTimePhi() {
+	
+	Speciation *s = modelPtr->getActiveSpeciation();
+	s->setAllBDFossParams();
+	double lambda = s->getBDSSSpeciationRateLambda();	
+	double mu = s->getBDSSExtinctionRateMu();
+	double fossRate = s->getBDSSFossilSampRatePsi();
+	double sppSampRate = s->getBDSSSppSampRateRho();
+	recountFossilAttachNums();
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *f = fossSpecimens[i];
+		if(f->getFossilIndicatorVar()){
+			Node *p = &nodes[f->getFossilMRCANodeID()];
+			double nodeDepth = p->getNodeDepth();
+			double fossDepth = f->getFossilAge() / treeScale;
+			double oldPhi = f->getFossilSppTime();
+			double oldSumLogGammas = getProposedBranchAttachFossils(p, oldPhi);
+			double newPhi = fossDepth + ranPtr->uniformRv()*(nodeDepth-fossDepth);
+			f->setFossilSppTime(newPhi);
+			double newSumLogGammas = getProposedBranchAttachFossils(p, newPhi);
+
+			double lnPriorRat = 0.0;
+			double v1 = newSumLogGammas;
+			double v2 = bdssQFxn(lambda, mu, fossRate, sppSampRate, newPhi*treeScale);
+			double v3 = bdssQFxn(lambda, mu, fossRate, sppSampRate, oldPhi*treeScale);
+			double v4 = oldSumLogGammas;
+			lnPriorRat = (v1 - v2) - (v4 - v3);
+			double r = modelPtr->safeExponentiation(lnPriorRat);
+			
+			if(ranPtr->uniformRv() < r){ 
+				f->setFossilSppTime(newPhi);
+				recountFossilAttachNums();
+				setNodeOldestAttchBranchTime(p);
+			}
+			else{
+				f->setFossilSppTime(oldPhi);
+				recountFossilAttachNums();
+				setNodeOldestAttchBranchTime(p);
+			}
+		}
+	}
+	
+	return 0.0;
+}
+
+double Tree::updateRJMoveAddDelEdge() {
+	
+	recountFossilAttachNums();
+	double gA = 0.5; 
+	if(numAncFossilsk == numCalibNds)
+		gA = 1.0;
+	else if(numAncFossilsk == 0)
+		gA = 0.0;
+	
+	double u = ranPtr->uniformRv();
+	if(u < gA)
+		doAddEdgeMove();
+	else
+		doDeleteEdgeMove();
+	
+	return 0.0;
+}
+
+void Tree::doAddEdgeMove(){
+	
+	int k = numAncFossilsk;
+	int m = numCalibNds;
+	int kN = k-1;
+	Speciation *s = modelPtr->getActiveSpeciation();
+	s->setAllBDFossParams();
+	double lambda = s->getBDSSSpeciationRateLambda();	
+	double mu = s->getBDSSExtinctionRateMu();
+	double fossRate = s->getBDSSFossilSampRatePsi();
+	double sppSampRate = s->getBDSSSppSampRateRho();
+	double lnHastings, lnJacobian, lnPriorR;
+
+	int mvFoss = pickRandAncestorFossil();
+	Fossil *f = fossSpecimens[mvFoss];
+	Node *p = &nodes[f->getFossilMRCANodeID()];
+	double oldSumLogGammas = getProposedBranchAttachFossils(p, 0.0);
+
+	double alA = 1.0;
+	if(kN == 0)
+		alA = 2.0;
+	else if(k == m)
+		alA = 0.5;
+	
+	double cf = p->getNodeDepth() * treeScale;
+	double yf = f->getFossilAge();
+	double nu = ranPtr->uniformRv() * (cf - yf);
+	lnHastings = log(alA) + log(k) - log(m - k + 1.0); 
+	lnJacobian = log(cf - yf);
+	double newPhi = yf + nu;
+	double scnewPhi = newPhi / treeScale; 
+	f->setFossilSppTime(scnewPhi);
+	
+	double newSumLogGammas = getProposedBranchAttachFossils(p, 0.0);
+	double v1 = log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, yf)); 
+	double v2 = bdssQFxn(lambda, mu, fossRate, sppSampRate, yf); 
+	double v3 = bdssQFxn(lambda, mu, fossRate, sppSampRate, newPhi); 
+	
+	lnPriorR = (numTaxa - 2 + numCalibNds - kN) * log(lambda);
+	lnPriorR += (newSumLogGammas + log(2.0) + v1 + v2 - v3);
+	lnPriorR -= (((numTaxa - 2 + numCalibNds - k) * log(lambda)) + oldSumLogGammas);
+	
+	double lpr = lnPriorR + lnHastings + lnJacobian;
+	double r = modelPtr->safeExponentiation(lpr);
+	
+	if(ranPtr->uniformRv() < r){ 
+		f->setFossilIndicatorVar(1);
+		f->setFossilSppTime(scnewPhi);
+		recountFossilAttachNums();
+		setNodeOldestAttchBranchTime(p);
+		numAncFossilsk = kN;
+	}
+	else{
+		f->setFossilIndicatorVar(0);
+		f->setFossilFossBrGamma(0);
+		f->setFossilSppTime(yf/treeScale);
+		recountFossilAttachNums();
+		setNodeOldestAttchBranchTime(p);
+	}
+}
+
+void Tree::doDeleteEdgeMove(){
+	
+	int k = numAncFossilsk;
+	int m = numCalibNds;
+	int kN = k+1;
+	Speciation *s = modelPtr->getActiveSpeciation();
+	s->setAllBDFossParams();
+	double lambda = s->getBDSSSpeciationRateLambda();	
+	double mu = s->getBDSSExtinctionRateMu();
+	double fossRate = s->getBDSSFossilSampRatePsi();
+	double sppSampRate = s->getBDSSSppSampRateRho();
+	double lnHastings, lnJacobian, lnPriorR;
+
+	int mvFoss = pickRandTipFossil();
+	Fossil *f = fossSpecimens[mvFoss];
+	Node *p = &nodes[f->getFossilMRCANodeID()];
+	double oldSumLogGammas = getProposedBranchAttachFossils(p, 0.0);
+
+	double alD = 1.0;
+	if(k == 0)
+		alD = 0.5;
+	else if(kN == m)
+		alD = 2.0;
+
+	double cf = p->getNodeDepth() * treeScale;
+	double yf = f->getFossilAge();
+	
+	double oldPhi = f->getFossilSppTime() * treeScale;
+	double oldScPhi = f->getFossilSppTime();
+	double scnewPhi = yf / treeScale;
+	f->setFossilIndicatorVar(0);
+	f->setFossilSppTime(scnewPhi);
+	double newSumLogGammas = getProposedBranchAttachFossils(p, 0.0);
+
+	lnHastings = log(alD) + log(m-k) - log(k+1);
+	lnJacobian = -(log(cf - yf));
+
+	double v1 = log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, yf)); 
+	double v2 = bdssQFxn(lambda, mu, fossRate, sppSampRate, yf); 
+	double v3 = bdssQFxn(lambda, mu, fossRate, sppSampRate, oldPhi); 
+		
+	lnPriorR = ((numTaxa - 2 + numCalibNds - kN) * log(lambda)) + newSumLogGammas;
+	lnPriorR -= (((numTaxa - 2 + numCalibNds - k) * log(lambda)) + (oldSumLogGammas + log(2.0) + v1 + v2 - v3));
+	
+	double lpr = lnPriorR + lnHastings + lnJacobian;
+	double r = modelPtr->safeExponentiation(lpr);
+
+	if(ranPtr->uniformRv() < r){ 
+		f->setFossilIndicatorVar(0);
+		f->setFossilFossBrGamma(0);
+		f->setFossilSppTime(scnewPhi);
+		recountFossilAttachNums();
+		setNodeOldestAttchBranchTime(p);
+		numAncFossilsk = kN;
+	}
+	else{
+		f->setFossilSppTime(oldScPhi);
+		f->setFossilIndicatorVar(1);
+		recountFossilAttachNums();
+		setNodeOldestAttchBranchTime(p);
+	}
+}
+
+double Tree::updateOneNode() {
+	
 	Node *p = NULL;
 	do {
 		p = downPassSequence[(int)(ranPtr->uniformRv()*numNodes)];
 	} while (p->getLft() == NULL || p->getRht() == NULL || p->getAnc() == NULL);
-		
-	double largestTime = p->getAnc()->getNodeDepth();
-	double smallestTime = p->getLft()->getNodeDepth();
-	if (p->getRht()->getNodeDepth() > smallestTime)
-		smallestTime = p->getRht()->getNodeDepth();
-	if(p->getIsCalibratedDepth() && softBounds == false){
-		double ycal = p->getNodeYngTime() / treeScale;
-		double ocal =  largestTime;
-		if(p->getNodeCalibPrDist() == 1)
-			ocal = p->getNodeOldTime() / treeScale;
-		if(ycal > smallestTime)
-			smallestTime = ycal;
-		if(ocal < largestTime)
-			largestTime = ocal;
-	}
+	
+	double largestTime = getNodeUpperBoundTime(p);
+	double smallestTime = getNodeLowerBoundTime(p);
 	double currDepth = p->getNodeDepth();
 	double newNodeDepth = currDepth;
 	double lnPrRatio = 0.0;
 	if(largestTime > smallestTime){
 		newNodeDepth = smallestTime + ranPtr->uniformRv()*(largestTime-smallestTime);
 		
-		p->setNodeDepth(newNodeDepth);
+		if(treeTimePrior > 5)
+			lnPrRatio = lnPriorRatioTGS(newNodeDepth, currDepth, p);
+		else lnPrRatio = lnPriorRatio(newNodeDepth, currDepth);
 
+		p->setNodeDepth(newNodeDepth);
+		
 		flipToRootClsTis(p);
 		updateToRootClsTis(p);
 		modelPtr->setTiProb();
@@ -671,12 +1041,12 @@ double Tree::updateOneNode() {
 		}
 		
 	}
-	lnPrRatio += lnPriorRatio(newNodeDepth, currDepth);
+	if(treeTimePrior > 5)
+		recountFossilAttachNums();
 	return lnPrRatio;
 }
 
 double Tree::updateAllNodes(double &oldLnL) {
-	
 	
 	upDateAllCls(); 
 	upDateAllTis();
@@ -686,30 +1056,26 @@ double Tree::updateAllNodes(double &oldLnL) {
 		p = downPassSequence[i];
 		if(p != root && !p->getIsLeaf()){
 			double currDepth = p->getNodeDepth();
-			double largestTime = p->getAnc()->getNodeDepth();
-			double smallestTime = p->getLft()->getNodeDepth();
-			if (p->getRht()->getNodeDepth() > smallestTime)
-				smallestTime = p->getRht()->getNodeDepth();
+
+			double largestTime = getNodeUpperBoundTime(p);
+			double smallestTime = getNodeLowerBoundTime(p);
 			
-			if(p->getIsCalibratedDepth() && softBounds == false){
-				double ycal = p->getNodeYngTime() / treeScale;
-				double ocal =  largestTime;
-				if(p->getNodeCalibPrDist() == 1)
-					ocal = p->getNodeOldTime() / treeScale;
-				if(ycal > smallestTime)
-					smallestTime = ycal;
-				if(ocal < largestTime)
-					largestTime = ocal;
-			}
+			
 			if (largestTime > smallestTime){
 				double newNodeDepth = smallestTime + ranPtr->uniformRv()*(largestTime-smallestTime);
+				double lnPrRatio = 0.0;
+				if(treeTimePrior > 5)
+					lnPrRatio = lnPriorRatioTGS(newNodeDepth, currDepth, p);
+				else lnPrRatio = lnPriorRatio(newNodeDepth, currDepth);
+				
 				p->setNodeDepth(newNodeDepth);
+				
 				flipToRootClsTis(p);
 				updateToRootClsTis(p);
 				modelPtr->setTiProb();
+				
 				double newLnl = modelPtr->lnLikelihood();
 				double lnLRatio = newLnl - oldLike;
-				double lnPrRatio = lnPriorRatio(newNodeDepth, currDepth);
 				if(p->getIsCalibratedDepth()){
 					if(softBounds && p->getNodeCalibPrDist() == 1){
 						double ycal = p->getNodeYngTime();
@@ -725,8 +1091,9 @@ double Tree::updateAllNodes(double &oldLnL) {
 				double lnR = lnPrRatio + lnLRatio + 0.0;
 				double r = modelPtr->safeExponentiation(lnR);
 				
-				if(ranPtr->uniformRv() < r)
+				if(ranPtr->uniformRv() < r){
 					oldLike = newLnl;
+				}
 				else{
 					p->setNodeDepth(currDepth);
 					flipToRootClsTis(p);
@@ -734,6 +1101,8 @@ double Tree::updateAllNodes(double &oldLnL) {
 				}
 			}
 		}
+		if(treeTimePrior > 5)
+			recountFossilAttachNums();
 	}
 	oldLnL = oldLike;
 	return 0.0;
@@ -753,29 +1122,25 @@ double Tree::updateAllNodesRnd(double &oldLnL) {
 		p = downPassSequence[(*it)];
 		if(p != root && !p->getIsLeaf()){
 			double currDepth = p->getNodeDepth();
-			double largestTime = p->getAnc()->getNodeDepth();
-			double smallestTime = p->getLft()->getNodeDepth();
-			if (p->getRht()->getNodeDepth() > smallestTime)
-				smallestTime = p->getRht()->getNodeDepth();
-			if(p->getIsCalibratedDepth() && softBounds == false){
-				double ycal = p->getNodeYngTime() / treeScale;
-				double ocal =  largestTime;
-				if(p->getNodeCalibPrDist() == 1)
-					ocal = p->getNodeOldTime() / treeScale;
-				if(ycal > smallestTime)
-					smallestTime = ycal;
-				if(ocal < largestTime)
-					largestTime = ocal;
-			}
+			double largestTime = getNodeUpperBoundTime(p);
+			double smallestTime = getNodeLowerBoundTime(p);
+
 			if (largestTime > smallestTime){
 				double newNodeDepth = smallestTime + ranPtr->uniformRv()*(largestTime-smallestTime);
+				
+				double lnPrRatio = 0.0;
+				if(treeTimePrior > 5)
+					lnPrRatio = lnPriorRatioTGS(newNodeDepth, currDepth, p);
+				else lnPrRatio = lnPriorRatio(newNodeDepth, currDepth);
+
 				p->setNodeDepth(newNodeDepth);
+				
 				flipToRootClsTis(p);
 				updateToRootClsTis(p);
 				modelPtr->setTiProb();
+				
 				double newLnl = modelPtr->lnLikelihood();
 				double lnLRatio = newLnl - oldLike;
-				double lnPrRatio = lnPriorRatio(newNodeDepth, currDepth);
 				if(p->getIsCalibratedDepth()){
 					if(softBounds && p->getNodeCalibPrDist() == 1){
 						double ycal = p->getNodeYngTime();
@@ -792,9 +1157,8 @@ double Tree::updateAllNodesRnd(double &oldLnL) {
 				double lnR = lnPrRatio + lnLRatio + 0.0;
 				double r = modelPtr->safeExponentiation(lnR);
 				
-				if(ranPtr->uniformRv() < r){
+				if(ranPtr->uniformRv() < r)
 					oldLike = newLnl;
-				}
 				else{
 					p->setNodeDepth(currDepth);
 					flipToRootClsTis(p);
@@ -802,6 +1166,10 @@ double Tree::updateAllNodesRnd(double &oldLnL) {
 				}
 			}
 		}
+		else if(p->getIsLeaf() && p->getIsCalibratedDepth() == false)
+			p->setNodeDepth(0.0);
+		if(treeTimePrior > 5)
+			recountFossilAttachNums();
 	}
 	oldLnL = oldLike;	
 	return 0.0;
@@ -813,10 +1181,13 @@ void Tree::setAllNodeBranchTimes(void) {
 	for (int n=0; n<numNodes; n++){
 		Node *p = &nodes[n];
 		if(p != root){
+			if(p->getIsLeaf() && p->getIsCalibratedDepth() == false)
+				p->setNodeDepth(0.0);
 			double branchtime = (p->getAnc()->getNodeDepth() - p->getNodeDepth()) * treeScale;
 			if(branchtime < 0){
 				int myID = p->getIdx();
-				cerr << "ERROR: The tree has a negative branch length! " << branchtime << " At Node " << myID << endl;
+				cerr << "ERROR: The tree has a negative branch length! " << branchtime << " At Node " << myID 
+				<< ", With depth = " << p->getNodeDepth() * treeScale << endl;
 				exit(1);
 			}
 			else
@@ -830,23 +1201,25 @@ double Tree::lnPrior() {
 	return 0.0;
 }
 
-double Tree::lnPriorRatio(double nh, double oh) {
+double Tree::lnPriorRatio(double snh, double soh) {
 		
-	nh = nh*treeScale;
-	oh = oh*treeScale;
+	double nh = snh*treeScale;
+	double oh = soh*treeScale;
+
 	
 	if(treeTimePrior == 1) 
 		return 0.0;
-	else if(treeTimePrior == 2){
-		double diff = modelPtr->getActiveSpeciation()->getNetDiversification();
+	else if(treeTimePrior == 2){ 
+		double diff = modelPtr->getActiveSpeciation()->getNetDiversification();		
 		double nator = (-(diff)*nh);
-		double dator = (-(diff)*oh);		
+		double dator = (-(diff)*oh);
+		
 		return nator - dator;
 	}
-	else{
+	else if(treeTimePrior == 3){
 		Speciation *s = modelPtr->getActiveSpeciation();
-		double diff = s->getNetDiversification();	// br-dr
-		double rel = s->getRelativeDeath();			// dr / br
+		double diff = s->getNetDiversification();	
+		double rel = s->getRelativeDeath();			
 		
 		double zn = log(1 - (rel) * exp(-(diff)*nh));
 		double nator = -2 * zn + (-(diff)*nh);
@@ -856,7 +1229,76 @@ double Tree::lnPriorRatio(double nh, double oh) {
 		
 		return nator - dator;
 	}
+	else if(treeTimePrior == 4 || treeTimePrior == 5){ 
+		Speciation *s = modelPtr->getActiveSpeciation();
+		double netDiv = s->getNetDiversification();	
+		double rel = s->getRelativeDeath();			
+		double lambda = netDiv / (1.0 - rel); 
+		double mu = rel * lambda;
+		double fossRate = s->getBDSSFossilSampRatePsi();
+		double sppSampRate = s->getBDSSSppSampRateRho();
+		
+		double topV = -(bdssQFxn(lambda,mu,fossRate,sppSampRate,nh));
+		double botV = -(bdssQFxn(lambda,mu,fossRate,sppSampRate,oh));
+		return topV - botV;
+	}
 	return 0.0;
+}
+
+double Tree::lnPriorRatioTGS(double snh, double soh, Node *p) {
+
+	double nh = snh*treeScale;
+	double oh = soh*treeScale;
+	double oldSumLogGammas = getProposedBranchAttachFossils(p, 0.0);
+	
+	p->setNodeDepth(snh);
+	double newSumLogGammas = getProposedBranchAttachFossils(p, 0.0);
+
+	Speciation *s = modelPtr->getActiveSpeciation();
+	s->setAllBDFossParams();
+	double lambda = s->getBDSSSpeciationRateLambda();	
+	double mu = s->getBDSSExtinctionRateMu();			
+	double fossRate = s->getBDSSFossilSampRatePsi();
+	double sppSampRate = s->getBDSSSppSampRateRho();
+	
+	double topV = -(bdssQFxn(lambda,mu,fossRate,sppSampRate,nh)) + newSumLogGammas;
+	double botV = -(bdssQFxn(lambda,mu,fossRate,sppSampRate,oh)) + oldSumLogGammas;
+	double v = topV - botV;
+	return v;
+		
+}
+
+
+double Tree::bdssC1Fxn(double b, double d, double psi){
+	
+	double v = abs( sqrt( ( (b-d-psi) * (b-d-psi) ) + 4*b*psi) );
+	return v;
+}
+
+double Tree::bdssC2Fxn(double b, double d, double psi, double rho){
+	
+	double v = -( ( b-d-(2*b*rho)-psi ) / (bdssC1Fxn(b,d,psi)) );
+	return v;
+}
+
+double Tree::bdssQFxn(double b, double d, double psi, double rho, double t){
+	
+	double c1Val = bdssC1Fxn(b,d,psi);
+	double c2Val = bdssC2Fxn(b,d,psi,rho);
+	
+	double vX = c1Val * t + 2.0 * log(exp(-c1Val * t) * (1.0 - c2Val) + (1.0 + c2Val));
+	return vX;
+}
+
+double Tree::bdssP0Fxn(double b, double d, double psi, double rho, double t){
+	
+	double c1Val = bdssC1Fxn(b,d,psi);
+	double c2Val = bdssC2Fxn(b,d,psi,rho);
+	
+	double eCfrac = (exp(-c1Val * t) * (1.0 - c2Val) - (1.0 + c2Val)) / (exp(-c1Val * t) * (1.0 - c2Val) + (1.0 + c2Val));
+	double v = ((b + d + psi) + (c1Val * eCfrac)) / (2.0 * b);
+	
+	return v;
 }
 
 
@@ -1122,8 +1564,12 @@ string Tree::getNodeInfoNames(void){
 	}
 	for(int i=0; i<numNodes; i++){
 		p = &nodes[i];
+#		if ASSIGN_ROOT
+		ss << "\tSRate(N" << p->getIdx() << ")";
+#		else
 		if(p != root)
 			ss << "\tSRate(N" << p->getIdx() << ")";
+#		endif
 	}
 	string ni = ss.str();
 	return ni;
@@ -1141,8 +1587,12 @@ string Tree::getNodeInfoList(void){
 	}
 	for(int i=0; i<numNodes; i++){
 		p = &nodes[i];
+#		if ASSIGN_ROOT
+		ss << "\t" << p->getRateGVal();
+#		else
 		if(p != root)
 			ss << "\t" << p->getRateGVal();
+#		endif
 	}
 	string ni = ss.str();
 	return ni;
@@ -1163,8 +1613,12 @@ string Tree::getDownPNodeInfoNames(void){
 	}
 	for(int i=0; i<numNodes; i++){
 		p = downPassSequence[i];
+#		if ASSIGN_ROOT
+		ss << "\tSRate(DP" << i << "|N" << p->getIdx() << ")";
+#		else
 		if(p != root)
 			ss << "\tSRate(DP" << i << "|N" << p->getIdx() << ")";
+#		endif
 	}
 	string ni = ss.str();
 	return ni;
@@ -1182,8 +1636,12 @@ string Tree::getDownPNodeInfoList(void){
 	}
 	for(int i=0; i<numNodes; i++){
 		p = downPassSequence[i];
+#		if ASSIGN_ROOT
+		ss << "\t" << p->getRateGVal();
+#		else
 		if(p != root)
 			ss << "\t" << p->getRateGVal();
+#		endif
 	}
 	string ni = ss.str();
 	return ni;
@@ -1220,6 +1678,87 @@ string Tree::getCalNodeInfoList(void){
 	return ni;
 }
 
+string Tree::getCalBDSSNodeInfoParamNames(void){
+	
+	stringstream ss;
+	Fossil *f = NULL;
+	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
+		int idx = (*v)->getIdx();
+		ss << "\tcalib.time(N" << idx << ")";
+	}
+	for(int i=0; i<fossSpecimens.size(); i++){
+		f = fossSpecimens[i];
+		int nID = f->getFossilMRCANodeID();
+		ss << "\tcal.dist(C" << i << ".nd" << nID << ")";
+	}
+	for(int i=0; i<fossSpecimens.size(); i++){
+		f = fossSpecimens[i];
+		int nID = f->getFossilMRCANodeID();
+		ss << "\tphi(C" << i << ".nd" << nID << ")";
+	}
+	for(int i=0; i<fossSpecimens.size(); i++){
+		f = fossSpecimens[i];
+		int nID = f->getFossilMRCANodeID();
+		ss << "\tgamma(C" << i << ".nd" << nID << ")";
+	}
+	string ni = ss.str();
+	return ni;
+}
+
+
+string Tree::getCalBDSSNodeInfoParamList(void){
+	
+	stringstream ss;
+	Fossil *f = NULL;
+	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
+		setNodeOldestAttchBranchTime((*v));
+		double t = (*v)->getFossAttchTime() * treeScale;
+		ss << "\t" << t;
+	}
+	for(int i=0; i<fossSpecimens.size(); i++){
+		f = fossSpecimens[i];
+		ss << "\t" << f->getCalibrationDistance();
+	}
+	for(int i=0; i<fossSpecimens.size(); i++){
+		f = fossSpecimens[i];
+		if(1) //(f->getFossilIndicatorVar())
+			ss << "\t" << f->getFossilSppTime() * treeScale;
+		else ss << "\t" << f->getFossilAge();
+	}
+	for(int i=0; i<fossSpecimens.size(); i++){
+		f = fossSpecimens[i];
+		ss << "\t" << f->getFossilFossBrGamma();
+	}
+	string ni = ss.str();
+	return ni;
+}
+
+string Tree::getCalBDSSNodeInfoIndicatorNames(void){
+	
+	stringstream ss;
+	Fossil *f = NULL;
+	for(int i=0; i<fossSpecimens.size(); i++){
+		f = fossSpecimens[i];
+		int nID = f->getFossilMRCANodeID();
+		ss << "\tI_f(C" << i << ".nd" << nID << ")";
+	}
+	string ni = ss.str();
+	return ni;
+}
+
+string Tree::getCalBDSSNodeInfoIndicatorList(void){
+	
+	stringstream ss;
+	Fossil *f = NULL;
+	for(int i=0; i<fossSpecimens.size(); i++){
+		f = fossSpecimens[i];
+		ss << "\t" << f->getFossilIndicatorVar();
+	}
+	string ni = ss.str();
+	return ni;
+}
+
+
 
 void Tree::setNodeCalibrationPriors(ExpCalib *ec) {
 	
@@ -1235,7 +1774,7 @@ void Tree::setNodeCalibrationPriors(ExpCalib *ec) {
 			p->setNodeYngTime((*v)->getYngTime());
 			p->setNodeOldTime((*v)->getOldTime());
 		}
-		else if(calDistrib == 2){
+		else if(calDistrib > 1){
 			if(expHyperPrCal){
 				double lv = ec->getLambdaForNode();
 				p->setNodeYngTime((*v)->getYngTime());
@@ -1251,7 +1790,6 @@ void Tree::setNodeCalibrationPriors(ExpCalib *ec) {
 		}
 		(*v)->setNodeIndex(calbNo);
 	}
-
 	for(vector<Calibration *>::iterator v = calibNds.begin(); v != calibNds.end(); v++){
 		Node *p = &nodes[(*v)->getNodeIndex()];
 		int myNdPrD = p->getNodeCalibPrDist();
@@ -1328,7 +1866,7 @@ int Tree::findTaxLftRht(Node *p, std::string t1, std::string t2, int &setNd) {
 		rd = findTaxLftRht(p->getRht(), t1, t2, setNd);
 		if(ld > 0 && rd > 0){
 			setNd = p->getIdx();
-			if(p->getIsCalibratedDepth() == true){
+			if(p->getIsCalibratedDepth() == true && treeTimePrior < 6){
 				cerr << "ERROR: This node (ID = " << setNd << ") has already been calibrated. WTF?" << endl;
 				exit(1);
 			}
@@ -1409,38 +1947,51 @@ double Tree::getTreeCBDNodePriorProb() {
 		return 0.0;
 	else if(treeTimePrior == 2){
 		Speciation *s = modelPtr->getActiveSpeciation();
-		double diff = s->getNetDiversification();	// br-dr
-		for(int i=0; i<numNodes; i++){
-			Node *p = &nodes[i];
-			if(p->getIsLeaf() == false){
-				double nh = p->getNodeDepth() * treeScale;
-				double l = (-(diff)*nh); 
-				if(p == root){
-					l += (-(diff)*nh);
-				}
-				nprb += l;
-			}
-		}
+		double diff = s->getNetDiversification();	
+		nprb = getTreeCBDNodePriorProb(diff, 0.0);
 		return nprb;
 	}
-	else{
+	else if(treeTimePrior == 3){ // Gernhard (2008) conditioned birth death
 		Speciation *s = modelPtr->getActiveSpeciation();
-		double diff = s->getNetDiversification();	// br-dr
-		double rel = s->getRelativeDeath();			// dr / br		
-		for(int i=0; i<numNodes; i++){
-			Node *p = &nodes[i];
-			if(p->getIsLeaf() == false){
-				double nh = p->getNodeDepth() * treeScale;
-				double zn = log(1 - (rel) * exp(-(diff)*nh));
-				double l = -2 * zn + (-(diff)*nh); 
-				if(p == root){
-					l += (-(diff)*nh) - zn;
-				}
-				nprb += l;
-			}
-		}
+		double diff = s->getNetDiversification();	
+		double rel = s->getRelativeDeath();				
+		nprb = getTreeCBDNodePriorProb(diff, rel);
 		return nprb;
 	}
+	else if(treeTimePrior == 4 || treeTimePrior == 5){ // Stadler (2010) code from BEAST 
+		Speciation *s = modelPtr->getActiveSpeciation();
+		Treescale *ts = modelPtr->getActiveTreeScale();
+		double div = s->getNetDiversification();	
+		double rel = s->getRelativeDeath();			
+		double fossRate = s->getBDSSFossilSampRatePsi();
+		double sppSampRate = s->getBDSSSppSampRateRho();
+		double treeOriginTime = ts->getTreeOriginTime();
+		nprb = getTreeBDSSTreeNodePriorProb(div, rel, fossRate, sppSampRate,treeOriginTime);
+		return nprb;
+	}
+	else if(treeTimePrior == 6){
+		// fossilized birth-death
+		Speciation *s = modelPtr->getActiveSpeciation();
+		s->setAllBDFossParams();
+		double lambda = s->getBDSSSpeciationRateLambda();	
+		double mu = s->getBDSSExtinctionRateMu();			
+		double fossRate = s->getBDSSFossilSampRatePsi();
+		double sppSampRate = s->getBDSSSppSampRateRho();
+		nprb = getTreeCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
+		return nprb;
+	}
+	else if(treeTimePrior == 7){
+		// fossilized birth-death
+		Speciation *s = modelPtr->getActiveSpeciation();
+		s->setAllBDFossParams();
+		double lambda = s->getBDSSSpeciationRateLambda();	
+		double mu = s->getBDSSExtinctionRateMu();			
+		double fossRate = s->getBDSSFossilSampRatePsi();
+		double sppSampRate = s->getBDSSSppSampRateRho();
+		nprb = getTreeAncCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
+		return nprb;
+	}
+	
 	return 0.0;
 }
 
@@ -1450,7 +2001,7 @@ double Tree::getTreeCBDNodePriorProb(double netDiv, double relDeath) {
 	if(treeTimePrior == 1)
 		return 0.0;
 	else if(treeTimePrior == 2){
-		double diff = netDiv;	// br-dr
+		double diff = netDiv;	
 		for(int i=0; i<numNodes; i++){
 			Node *p = &nodes[i];
 			if(p->getIsLeaf() == false){
@@ -1464,9 +2015,9 @@ double Tree::getTreeCBDNodePriorProb(double netDiv, double relDeath) {
 		}
 		return nprb;
 	}
-	else{
-		double diff = netDiv;	// br-dr
-		double rel = relDeath;			// dr / br		
+	else if(treeTimePrior == 3){ // Gernhard (2008) conditioned birth death
+		double diff = netDiv;	
+		double rel = relDeath;			
 		for(int i=0; i<numNodes; i++){
 			Node *p = &nodes[i];
 			if(p->getIsLeaf() == false){
@@ -1481,28 +2032,172 @@ double Tree::getTreeCBDNodePriorProb(double netDiv, double relDeath) {
 		}
 		return nprb;
 	}
+	else if(treeTimePrior == 4 || treeTimePrior == 5){ // Stadler (2010) 
+		Speciation *s = modelPtr->getActiveSpeciation();
+		Treescale *ts = modelPtr->getActiveTreeScale();
+		double fossRate = s->getBDSSFossilSampRatePsi();
+		double sppSampRate = s->getBDSSSppSampRateRho();
+		double treeOriginTime = ts->getTreeOriginTime();
+		
+		nprb = getTreeBDSSTreeNodePriorProb(netDiv, relDeath, fossRate, sppSampRate, treeOriginTime);
+		
+		return nprb;
+	}
+	else if(treeTimePrior == 6){
+		// fossilized birth-death
+		Speciation *s = modelPtr->getActiveSpeciation();
+		s->setAllBDFossParams();
+		double lambda = s->getBDSSSpeciationRateLambda();	
+		double mu = s->getBDSSExtinctionRateMu();
+		double fossRate = s->getBDSSFossilSampRatePsi();
+		double sppSampRate = s->getBDSSSppSampRateRho();
+		nprb = getTreeCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
+		return nprb;
+	}
+	else if(treeTimePrior == 7){
+		// fossilized birth-death
+		Speciation *s = modelPtr->getActiveSpeciation();
+		s->setAllBDFossParams();
+		double lambda = s->getBDSSSpeciationRateLambda();	
+		double mu = s->getBDSSExtinctionRateMu();
+		double fossRate = s->getBDSSFossilSampRatePsi();
+		double sppSampRate = s->getBDSSSppSampRateRho();
+		nprb = getTreeAncCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
+		return nprb;
+	}
 	return 0.0;
 }
+
+double Tree::getTreeBDSSTreeNodePriorProb(double netDiv, double relDeath, double fossRate, double sppSampRate, double originTime) {
+	
+	double nprb = 0.0;
+	double lambda = netDiv / (1.0 - relDeath); 
+	double mu = relDeath * lambda;
+	
+	int numExtantTips = numTaxa - numExtinctTips;
+	if(treeTimePrior == 4){ 
+		nprb = -(bdssQFxn(lambda,mu,fossRate,sppSampRate,originTime));
+		nprb += numExtantTips * log(4.0 * sppSampRate);
+		for(int i=0; i<numNodes; i++){
+			Node *p = &nodes[i];
+			if(p->getIsLeaf()){
+				if(p->getIsCalibratedDepth()){ 
+					double nh = p->getNodeDepth() * treeScale;
+					nprb += log(fossRate) + bdssQFxn(lambda,mu,fossRate,sppSampRate,nh);
+					nprb += log(bdssP0Fxn(lambda,mu,fossRate,sppSampRate,nh)); 
+				}
+			}
+			else if(!p->getIsLeaf()){ 
+				double nh = p->getNodeDepth() * treeScale;
+				nprb += log(lambda) - bdssQFxn(lambda,mu,fossRate,sppSampRate,nh);
+			}
+		}
+	}
+	else if(treeTimePrior == 5){ 
+		nprb = ((numTaxa - 2.0) * log(lambda)) - (2.0 * log(1.0 - bdssP0Fxn(lambda, mu, 0.0, sppSampRate, treeScale)));
+		nprb += (numExtantTips * log(4.0 * sppSampRate)) - bdssQFxn(lambda,mu,fossRate,sppSampRate,treeScale);
+		for(int i=0; i<numNodes; i++){
+			Node *p = &nodes[i];
+			if(p->getIsLeaf()){
+				if(p->getIsCalibratedDepth()){
+					double nh = p->getNodeDepth() * treeScale;
+					nprb += log(fossRate) + bdssQFxn(lambda,mu,fossRate,sppSampRate,nh);
+					nprb += log(bdssP0Fxn(lambda,mu,fossRate,sppSampRate,nh));
+				}
+			}
+			else if(!p->getIsLeaf()){ 
+				double nh = p->getNodeDepth() * treeScale;
+				nprb += -bdssQFxn(lambda,mu,fossRate,sppSampRate,nh);
+			}
+		}
+		
+	}
+	return nprb;
+}
+
+double Tree::getTreeCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate) {
+	
+	double nprb = 0.0;
+	recountFossilAttachNums();
+	
+	nprb = ( ((numTaxa - 2 + numCalibNds) * log(lambda)) + (numCalibNds * log(fossRate)) );
+	nprb -= ( 2.0 * log(1.0 - bdssP0Fxn(lambda, mu, 0.0, sppSampRate, treeScale)) );
+	nprb += ( numTaxa * log(4.0 * sppSampRate) ) - bdssQFxn(lambda, mu, fossRate, sppSampRate, treeScale);
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(!p->getIsLeaf()){
+			double myAge = p->getNodeDepth() * treeScale;
+			nprb += -bdssQFxn(lambda, mu, fossRate, sppSampRate, myAge);
+		}
+	}
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *f = fossSpecimens[i];
+		double fossAge = f->getFossilAge();
+		double fossPhi = f->getFossilSppTime() * treeScale;
+		nprb += log(2.0 * f->getFossilFossBrGamma()) + bdssQFxn(lambda, mu, fossRate, sppSampRate, fossAge);
+		nprb -= bdssQFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
+	}
+	
+	return nprb;
+}
+
+double Tree::getTreeAncCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate) {
+	
+	double nprb = 0.0;
+	recountFossilAttachNums();
+	
+	nprb = ( ((numTaxa - 2 + numCalibNds - numAncFossilsk) * log(lambda)) + (numCalibNds * log(fossRate)) );
+	nprb -= ( 2.0 * log(1.0 - bdssP0Fxn(lambda, mu, 0.0, sppSampRate, treeScale)) );
+	nprb += ( numTaxa * log(4.0 * sppSampRate) ) - bdssQFxn(lambda, mu, fossRate, sppSampRate, treeScale);
+	
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(!p->getIsLeaf()){
+			double myAge = p->getNodeDepth() * treeScale;
+			nprb += -bdssQFxn(lambda, mu, fossRate, sppSampRate, myAge);
+		}
+	}
+
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *f = fossSpecimens[i];
+		if(f->getFossilIndicatorVar()){
+			double fossAge = f->getFossilAge();
+			double fossPhi = f->getFossilSppTime() * treeScale;
+			nprb += log(2.0 * f->getFossilFossBrGamma()) + bdssQFxn(lambda, mu, fossRate, sppSampRate, fossAge);
+			nprb += log( bdssP0Fxn(lambda, mu, fossRate, sppSampRate, fossAge) );
+			nprb -= bdssQFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
+		}
+	}
+	return nprb;
+}
+
 
 double Tree::getTreeSpeciationProbability() {
 	
 	if(treeTimePrior == 1)
 		return 0.0;
-	else if(treeTimePrior == 2){
+	else if(treeTimePrior == 2){ // Yule
 		Speciation *s = modelPtr->getActiveSpeciation();
 		double diff = s->getNetDiversification();	
 		double c1 = (numTaxa - 1) * log(diff); 
 		double nps = getTreeCBDNodePriorProb(diff, 0.0);
 		return c1 + nps;
 	}
-	else{
+	else if(treeTimePrior == 3){ // Gernhard (2008) conditioned birth death
 		Speciation *s = modelPtr->getActiveSpeciation();
-		double diff = s->getNetDiversification();	// br-dr
+		double diff = s->getNetDiversification();	
 		double rel = s->getRelativeDeath();
 		double lnC = 0.0; 
 		double c1 = ((numTaxa - 1) * log(diff)) + (numTaxa * log(1 - rel));
 		double nps = getTreeCBDNodePriorProb(diff, rel);
 		return lnC + c1 + nps;
+	}
+	else if(treeTimePrior > 3){
+		double lnC = 0.0; 
+		double nps = getTreeCBDNodePriorProb();
+		return lnC + nps;
 	}
 	return 0.0;
 }
@@ -1526,6 +2221,11 @@ void Tree::setNodeRateValues() {
 	NodeRate *nr = modelPtr->getActiveNodeRate();
 	for(int i=0; i<numNodes; i++){
 		Node *p = &nodes[i];
+#	if ASSIGN_ROOT
+		int nID = p->getIdx();
+		p->setRtGrpVal(nr->getRateForNodeIndexed(nID));
+		p->setRtGrpIdx(nr->getTableNumForNodeIndexed(nID));		
+#	else
 		if(p != root){
 			int nID = p->getIdx();
 			p->setRtGrpVal(nr->getRateForNodeIndexed(nID));
@@ -1535,6 +2235,7 @@ void Tree::setNodeRateValues() {
 			p->setRtGrpVal(0.0);
 			p->setRtGrpIdx(0.0);
 		}
+#	endif
 	}
 }
 
@@ -1552,15 +2253,140 @@ double Tree::getAMixLambdaHyperPrToNode(){
 	
 }
 
+
 vector<Node *> Tree::getListOfCalibratedNodes(){
 	
 	vector<Node *> calibList;
 	for(int i=0; i<numNodes; i++){
 		Node *p = &nodes[i];
-		if(p->getIsCalibratedDepth() && p->getNodeCalibPrDist() == 2)
+		if(p->getIsCalibratedDepth()) 
 			calibList.push_back(p);
 	}
 	return calibList;
+}
+
+void Tree::writeCalNodeBEASTInfoXML(std::ostream &o){
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(p->getIsLeaf() == false && p != root){
+			vector<string> myDecs;
+			getListOfTaxNamesDecFromNode(p, myDecs);
+			int nodeIDX = p->getIdx();
+			o << "\t<taxa id=\"N" << nodeIDX << "\">\n";
+			for(int t=0; t<myDecs.size(); t++)
+				o << "\t\t<taxon idref=\"" << myDecs[t] << "\"/>\n";
+			o << "\t</taxa>\n";
+			myDecs.clear();
+		}
+	}
+	o << "\nSPLIT\n";
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(p->getIsCalibratedDepth()){
+			int nodeIDX = p->getIdx();
+			double lb = p->getNodeYngTime();
+			double ub = p->getNodeOldTime();
+			o << "\t\t\t\t<uniformPrior lower=\"" << lb << "\" upper=\"" << ub << "\">\n";
+			if(p == root)
+				o << "\t\t\t\t\t<parameter idref=\"treeModel.rootHeight\"/>\n";
+			else
+				o << "\t\t\t\t\t<statistic idref=\"tmrca(N" << nodeIDX << ")\"/>\n";
+			o << "\t\t\t\t</uniformPrior>\n";
+		}
+	}
+	o << "\nSPLIT\n";
+
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(p->getIsLeaf() == false && p != root){
+			int nodeIDX = p->getIdx();
+			o << "\t<tmrcaStatistic id=\"tmrca(";
+			if(p == root)
+				o << "root(N" << nodeIDX << "))\">\n";
+			else
+				o << "N" << nodeIDX << ")\">\n";
+			o << "\t\t<mrca>\n\t\t\t<taxa idref=\"";
+			if(p == root)
+				o << "root(N" << nodeIDX << ")\"/>\n";
+			else
+				o << "N" << nodeIDX << "\"/>\n";
+			o << "\t\t</mrca>\n\t\t<treeModel idref=\"treeModel\"/>\n";
+			o << "\t</tmrcaStatistic>\n";
+		}
+	}
+
+	o << "\nSPLIT\n";
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(p->getIsLeaf() == false && p != root){
+			int nodeIDX = p->getIdx();
+			o << "\t\t\t<tmrcaStatistic idref=\"tmrca(";
+			o << "N" << nodeIDX << ")\"/>\n";
+		}
+	}
+	
+}
+
+void Tree::writeRRTNodeBEASTInfoXML(std::ostream &o){
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(p->getIsLeaf() == false && p != root){
+			vector<string> myDecs;
+			getListOfTaxNamesDecFromNode(p, myDecs);
+			int nodeIDX = p->getIdx();
+			o << "\t<taxa id=\"N" << nodeIDX << "\">\n";
+			for(int t=0; t<myDecs.size(); t++)
+				o << "\t\t<taxon idref=\"" << myDecs[t] << "\"/>\n";
+			o << "\t</taxa>\n";
+			myDecs.clear();
+		}
+	}
+	o << "\nSPLIT\n";
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(p->getIsLeaf() == false && p != root){
+			int nodeIDX = p->getIdx();
+			o << "\t<tmrcaStatistic id=\"tmrca(";
+			if(p == root)
+				o << "root(N" << nodeIDX << "))\">\n";
+			else
+				o << "N" << nodeIDX << ")\">\n";
+			o << "\t\t<mrca>\n\t\t\t<taxa idref=\"";
+			if(p == root)
+				o << "root(N" << nodeIDX << ")\"/>\n";
+			else
+				o << "N" << nodeIDX << "\"/>\n";
+			o << "\t\t</mrca>\n\t\t<treeModel idref=\"treeModel\"/>\n";
+			o << "\t</tmrcaStatistic>\n";
+		}
+	}
+	
+	o << "\nSPLIT\n";
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(p->getIsLeaf() == false && p != root){
+			int nodeIDX = p->getIdx();
+			o << "\t\t\t<tmrcaStatistic idref=\"tmrca(";
+			o << "N" << nodeIDX << ")\"/>\n";
+		}
+	}
+	
+}
+
+void Tree::getListOfTaxNamesDecFromNode(Node *p, std::vector<std::string> &ndNs){
+	
+	if(p->getIsLeaf())
+		ndNs.push_back(p->getName());
+	else{
+		getListOfTaxNamesDecFromNode(p->getLft(), ndNs);
+		getListOfTaxNamesDecFromNode(p->getRht(), ndNs);
+	}
+	
 }
 
 void Tree::checkNodeCalibrationCompatibility(){
@@ -1586,10 +2412,12 @@ void Tree::zeroNodeRedFlags(){
 	for(int i=0; i<numNodes; i++){
 		Node *p = &nodes[i];
 		p->setRedFlag(0);
-		if(p->getIsLeaf() == false && p != root)
+		if(p->getIsLeaf() == false && p != root){
 			p->setNodeDepth(0.0);
+		}
 	}
 }
+
 
 int Tree::checkTreeForCalibrationCompatibility(){
 	
@@ -1606,14 +2434,298 @@ int Tree::checkTreeForCalibrationCompatibility(){
 				double lb = p->getNodeYngTime();
 				double ub = p->getNodeOldTime();
 				double myDepth = p->getNodeDepth() * treeScale;
+				if(lb == ub){
+					p->setNodeDepth(ub / treeScale);
+					myDepth = ub;
+				}
 				
 				if(myDepth > ub || myDepth < lb){
 					p->setRedFlag(1);
 					numIncomp++;
+					cout << p->getIdx() << " -- " << myDepth << " -- " << lb << " - " << ub << endl;
+					if(myDepth > ub)
+						cout << p->getIdx() << " -- " << myDepth << " > " << ub << endl;
+					if(myDepth < lb)
+						cout << p->getIdx() << " -- " << myDepth << " < " << lb << endl;
 				}
 			}
 		}
 	}
-	cout << numIncomp << endl;
 	return numIncomp;
 }
+
+
+void Tree::initializeTGSCalibVariables(){  // depricated
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(p->getIsCalibratedDepth()){
+			double fA = p->getNodeYngTime() / treeScale;
+			double currDepth = p->getNodeDepth();
+			double phii = fA + ranPtr->uniformRv()*(currDepth-fA);
+			int xi = countDecLinsTimeIntersect(p, phii, currDepth);
+			p->setFossAttchTime(phii);
+			p->setNumFossAttchLins(xi);
+		}
+	}
+}
+
+int Tree::countDecLinsTimeIntersect(Node *p, double t, double ancAge){
+	
+	int n = 0;
+	
+	double myAge = p->getNodeDepth();
+	if(myAge < t)
+		return 1;
+	else{
+		n += countDecLinsTimeIntersect(p->getLft(), t, myAge);
+		n += countDecLinsTimeIntersect(p->getRht(), t, myAge);
+	}
+	
+	
+	return n;
+}
+
+double Tree::getNodeLowerBoundTime(Node *p){
+	
+	bool q = p->getIsCalibratedDepth();
+	double t = p->getLft()->getNodeDepth();
+	if (p->getRht()->getNodeDepth() > t)
+		t = p->getRht()->getNodeDepth();
+	if(q && softBounds == false){
+		double fA = p->getNodeYngTime() / treeScale;
+		if(fA > t)
+			t = fA;
+		if(treeTimePrior > 5){
+			double phi = p->getFossAttchTime();
+			if(phi > t)
+				t = phi;
+		}
+		
+	}
+	
+	
+	return t;
+}
+
+double Tree::getNodeUpperBoundTime(Node *p){
+	
+	double t = p->getAnc()->getNodeDepth();
+	
+	if(p->getIsCalibratedDepth() && softBounds == false){
+		double ocal =  t;
+		if(p->getNodeCalibPrDist() == 1)
+			ocal = p->getNodeOldTime() / treeScale;
+		if(ocal < t)
+			t = ocal;
+	}
+	
+	
+	return t;
+}
+
+void Tree::setUPTGSCalibrationFossils() {
+	
+	int calID = 0;
+	for(vector<Calibration *>::iterator v = calibNds.begin(); v != calibNds.end(); v++){
+		int calbNo = -1;
+		calbNo = findCalibNode((*v)->getTxN1(), (*v)->getTxN2());
+		Node *p = &nodes[calbNo];
+		double fAge = (*v)->getYngTime();
+		Fossil *f = new Fossil(fAge, calbNo);
+		fossSpecimens.push_back(f);
+		int nPFoss = p->getNumCalibratingFossils();
+		p->setNumFCalibratingFossils(nPFoss + 1);
+		
+		if(nPFoss > 1){
+			if(p->getNodeYngTime() < fAge)
+				p->setNodeYngTime(fAge);				
+		}
+		else p->setNodeYngTime(fAge);
+		p->setNodeOldTime(treeScale * 1.1);
+		p->setNodeExpCalRate((*v)->getCalExponRate());
+		
+		(*v)->setNodeIndex(calbNo);
+		p->insertFossilID(calID);
+		calID += 1;
+	}
+}
+
+void Tree::initializeFossilSpecVariables(){
+	
+	numAncFossilsk = 0;
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *f = fossSpecimens[i];
+		int nID = f->getFossilMRCANodeID();
+		Node *p = &nodes[nID];
+		double fA = f->getFossilAge() / treeScale;
+		double currDepth = p->getNodeDepth();
+		double prTip = 1.0;
+		if(treeTimePrior == 7)
+			prTip = 0.5;
+		if(ranPtr->uniformRv() < prTip){
+			double phi = fA + ranPtr->uniformRv()*(currDepth-fA);
+			f->setFossilSppTime(phi);
+			f->setFossilIndicatorVar(1);
+			double nodeBound = p->getFossAttchTime();
+			if(phi > nodeBound)
+				p->setFossAttchTime(phi);
+		}
+		else{
+			numAncFossilsk += 1;
+			f->setFossilSppTime(fA);
+			f->setFossilFossBrGamma(0);
+			f->setFossilIndicatorVar(0);
+			double nodeBound = p->getFossAttchTime();
+			if(fA > nodeBound)
+				p->setFossAttchTime(fA);
+
+		}
+	}
+	recountFossilAttachNums();
+}
+
+
+
+void Tree::recountFossilAttachNums(){
+	
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *fi = fossSpecimens[i];
+		double fiPhi = fi->getFossilSppTime();
+		Node *p = &nodes[fi->getFossilMRCANodeID()];
+		int fiGamma = getDecendantFossilAttachBranches(p, fiPhi, i);
+		fi->setFossilFossBrGamma(fiGamma);
+		fi->setFossilMRCANodeAge(p->getNodeDepth() * treeScale);
+	}
+}
+
+
+int Tree::getFossilLinAttachNumsForFoss(int fID){
+	
+	Fossil *fi = fossSpecimens[fID];
+	double fiPhi = fi->getFossilSppTime();
+	Node *p = &nodes[fi->getFossilMRCANodeID()];
+	int g = 0;
+	if(fi->getFossilIndicatorVar())
+		g = getDecendantFossilAttachBranches(p, fiPhi, fID);
+	
+	return g;
+	
+}
+
+
+
+int Tree::getDecendantFossilAttachBranches(Node *p, double t, int fID){
+	
+	int n = 0;
+	
+	double nodeAge = p->getNodeDepth();
+	if(nodeAge < t)
+		return 1; 
+	else{
+		for(int i=0; i<p->getNumCalibratingFossils(); i++){
+			int idx = p->getIthFossiID(i);
+			if(idx != fID){
+				Fossil *f = fossSpecimens[idx];
+				if(f->getFossilSppTime() > t && (f->getFossilAge()/treeScale) < t)
+					n += 1;
+			}
+		}
+		n += getDecendantFossilAttachBranches(p->getLft(), t, fID);
+		n += getDecendantFossilAttachBranches(p->getRht(), t, fID);
+	}
+	
+	return n;
+}
+
+
+double Tree::getProposedBranchAttachFossils(Node *p, double t){
+	
+	double sumLog = 0.0;
+	
+	double nodeAge = p->getNodeDepth();
+	if(nodeAge < t || p->getIsLeaf())
+		return 0.0;
+	else{
+		for(int i=0; i<p->getNumCalibratingFossils(); i++){
+			int idx = p->getIthFossiID(i);
+			int a = 0;
+			Fossil *f = fossSpecimens[idx];
+			if(f->getFossilIndicatorVar()){
+				a = getDecendantFossilAttachBranches(p,f->getFossilSppTime(),idx);
+				sumLog += log(a);
+			}
+			
+				
+		}
+		sumLog += getProposedBranchAttachFossils(p->getLft(), t);
+		sumLog += getProposedBranchAttachFossils(p->getRht(), t);
+	}
+	return sumLog;
+}
+
+void Tree::treeScaleUpdateFossilAttchTimes(double sr){
+	
+
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *f = fossSpecimens[i];
+		int nID = f->getFossilMRCANodeID();
+		Node *p = &nodes[nID];
+		double oldPhi = f->getFossilSppTime();
+		double newPhi = oldPhi * sr;
+		f->setFossilSppTime(newPhi);
+		double nodeBound = p->getFossAttchTime();
+		if(newPhi > nodeBound)
+			p->setFossAttchTime(newPhi);
+	}
+	recountFossilAttachNums();
+	
+}
+
+void Tree::treeUpdateNodeOldestBoundsAttchTimes(){
+	
+	
+	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
+		setNodeOldestAttchBranchTime((*v));
+	}
+}
+
+void Tree::setNodeOldestAttchBranchTime(Node *p){
+	
+	double t = 0.0;
+	for(int i=0; i<p->getNumCalibratingFossils(); i++){
+		int idx = p->getIthFossiID(i);
+		Fossil *f = fossSpecimens[idx];
+		double phi = f->getFossilSppTime();
+		if(phi > t)
+			t = phi;
+	}
+	p->setFossAttchTime(t);
+}
+
+int Tree::pickRandAncestorFossil(){
+	
+	vector<int> af;
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *f = fossSpecimens[i];
+		if(f->getFossilIndicatorVar() == 0)
+			af.push_back(i);
+	}
+	int v = (int)(ranPtr->uniformRv()*af.size());
+	return af[v];
+}
+
+int Tree::pickRandTipFossil(){
+	
+	vector<int> af;
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *f = fossSpecimens[i];
+		if(f->getFossilIndicatorVar() == 1)
+			af.push_back(i);
+	}
+	int v = (int)(ranPtr->uniformRv()*af.size());
+	return af[v];
+}
+
+
+// END

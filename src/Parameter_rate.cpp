@@ -1,13 +1,15 @@
 /* 
- * DPPDiv version 1.0b source code (git: 9c0ac3d2258f89827cfe9ba2b5038f0f656b82c1)
- * Copyright 2009-2011
- * Tracy Heath(1,2,3) (NSF postdoctoral fellowship in biological informatics DBI-0805631)
+ * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
+ * Copyright 2009-2013
+ * Tracy Heath(1,2,3) 
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
  * (1) Department of Ecology and Evolutionary Biology, University of Kansas, Lawrence, KS 66045
  * (2) Integrative Biology, University of California, Berkeley, CA 94720-3140
  * (3) email: tracyh@berkeley.edu
+ *
+ * Also: T Stadler, D Darriba, AJ Aberer, T Flouri, F Izquierdo-Carrasco, and A Stamatakis
  *
  * DPPDiv is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +23,8 @@
  * distribution or http://www.gnu.org/licenses/gpl.txt for more
  * details.
  *
- * Some of this code is from publicly available source by John Huelsenbeck
+ * Some of this code is from publicly available source by John Huelsenbeck and Fredrik Ronquist
+ *
  */
 
 #include "MbRandom.h"
@@ -34,6 +37,8 @@
 #include <string>
 
 using namespace std;
+
+
 
 void RateGroup::print(std::ostream &ss) const {
 	
@@ -65,6 +70,7 @@ void RateGroup::setRateValuesForEachElem(Tree *t)  {
 	}
 }
 
+
 NodeRate::NodeRate(MbRandom *rp, Model *mp, int nn, double a, double b, 
 				   double cp, double fxrt, int rm) : Parameter(rp, mp) {
 	alpha             = a;
@@ -76,10 +82,13 @@ NodeRate::NodeRate(MbRandom *rp, Model *mp, int nn, double a, double b,
 	
 	subRateModelType = rm;
 	
+#	if ASSIGN_ROOT
+	rootID = numNodes + 1;
+#	else
 	int ntax = (nn + 1) / 2;
 	rootID = ntax;
+#	endif
 	
-	// initialize from prior
 	if(subRateModelType == 2){
 		double fixrate = fxrt;
 		if(fixrate < 0.0){
@@ -190,7 +199,6 @@ double NodeRate::updateDPM(double &oldLnL) {
 		}
 		else{
 			(*p)->setRate(oldR);
-			
 			(*p)->updateRelevantNodesinTre(t);
 		}
 	}
@@ -234,7 +242,9 @@ double NodeRate::updateDPM(double &oldLnL) {
 			}
 						
 			normalizeVector(lnProb);
+	
 			unsigned whichTable = ranPtr->categoricalRv(&lnProb[0], lnProb.size());
+			
 			RateGroup *newGroup = NULL;
 			if ( whichTable < rateGroups.size() ){
 				newGroup = rateGroups[whichTable];
@@ -245,7 +255,6 @@ double NodeRate::updateDPM(double &oldLnL) {
 				rateGroups.push_back( newGroup );
 				newGroup->addRateElement(i);  
 			}
-				
 			for (int j=0; j<numAuxiliary; j++){
 				if (auxiliaryRateGroups[j] != newGroup)
 					delete auxiliaryRateGroups[j];
@@ -255,6 +264,7 @@ double NodeRate::updateDPM(double &oldLnL) {
 	}
 	
 	delete [] auxiliaryRateGroups;
+	
 	t->flipAllCls();
 	t->flipAllTis();
 	t->upDateAllCls();
@@ -327,14 +337,15 @@ double NodeRate::updateUnCorrGamma(double &oldLnL) {
 		(ranPtr->lnGammaPdf(alpha, beta, newR)-ranPtr->lnGammaPdf(alpha, beta, oldR)) + 
 		(log(newR)-log(oldR));
 		double r = modelPtr->safeExponentiation(lnR);
-		if ( ranPtr->uniformRv() < r )
+		if ( ranPtr->uniformRv() < r ){
 			oldLike = newLnL;
+		}
 		else{
-			(*p)->setRate(oldR);			
+			(*p)->setRate(oldR);
 			(*p)->updateRelevantNodesinTre(t);
 		}
 	}
-
+			
 	t->flipAllCls();
 	t->flipAllTis();
 	t->upDateAllCls();
@@ -429,7 +440,11 @@ double NodeRate::getAverageRate(){
 		if(i != rootID)
 			sumRt += getRateForNodeIndexed(i);
 	}
+#	if ASSIGN_ROOT
+	return sumRt / (numNodes);
+#	else
 	return sumRt / (numNodes - 1);
+#	endif
 }
 
 string NodeRate::writeParam(void){

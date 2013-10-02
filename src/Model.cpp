@@ -1,13 +1,15 @@
 /* 
- * DPPDiv version 1.0b source code (git: 9c0ac3d2258f89827cfe9ba2b5038f0f656b82c1)
- * Copyright 2009-2011
- * Tracy Heath(1,2,3) (NSF postdoctoral fellowship in biological informatics DBI-0805631)
+ * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
+ * Copyright 2009-2013
+ * Tracy Heath(1,2,3) 
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
  * (1) Department of Ecology and Evolutionary Biology, University of Kansas, Lawrence, KS 66045
  * (2) Integrative Biology, University of California, Berkeley, CA 94720-3140
  * (3) email: tracyh@berkeley.edu
+ *
+ * Also: T Stadler, D Darriba, AJ Aberer, T Flouri, F Izquierdo-Carrasco, and A Stamatakis
  *
  * DPPDiv is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +23,8 @@
  * distribution or http://www.gnu.org/licenses/gpl.txt for more
  * details.
  *
- * Some of this code is from publicly available source by John Huelsenbeck
+ * Some of this code is from publicly available source by John Huelsenbeck and Fredrik Ronquist
+ *
  */
 
 #include "cpuspec.h"
@@ -52,7 +55,8 @@ using namespace std;
 Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, double rb, 
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double fxclkrt, bool roofix,
-			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod) {
+			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
+			 bool ihp, string tipdfn) {
 
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -63,6 +67,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	myCurLnL = 0.0;
 	lnLGood = false;
 	calibfilen = clfn;
+	tipDateFileN = tipdfn;
 	fixRootHeight = roofix;
 	zeroNodeTimeMove = false;
 	exponCalibHyperParm = ehpc;
@@ -71,6 +76,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixedClockRate = fxclkrt;
 	fixSomeModParams = fxmod;
 	double initRootH = 1.0;
+	runIndCalHP = ihp;
 	rHtY = 0.0;
 	rHtO = 0.0;
 	int tsPrDist = 1;
@@ -112,20 +118,21 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		exit(1);
 	}
 	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, pm, cpfix);
-	ExpCalib *excal = new ExpCalib(ranPtr, this, dphpc, dphpng, initRootH, gamhp);
+	ExpCalib *excal = new ExpCalib(ranPtr, this, dphpc, dphpng, initRootH, gamhp, runIndCalHP);
 	NodeRate *nr = new NodeRate(ranPtr, this, nn, ra, rb, conp->getCurrentCP(), fxclkrt, rmod);
 	for (int i=0; i<2; i++){ 
 		parms[i].push_back( new Basefreq(ranPtr, this, 4, fxmod) );					// base frequency parameter
 		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
 		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fxmod) );		// gamma shape parameter for rate variation across sites
-		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, ts, ubl, alnm, rndNo, calibrs, initRootH, sfb, ehpc, excal) );    // rooted phylogenetic tree
+		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, ts, ubl, alnm, rndNo, 
+									 calibrs, initRootH, sfb, ehpc, excal, tipDates) );    // rooted phylogenetic tree
 		parms[i].push_back( nr );												// restaurant containing node rates
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, ehpc) ); // the tree scale prior
-		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda) );			// hyper prior on diversification for cBDP speciation
+		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, initRootH) );												// hyper prior on diversification for cBDP speciation
 		parms[i].push_back( excal );											// hyper prior exponential node calibration parameters
 	}
-	numParms = parms[0].size();
+	numParms = (int)parms[0].size();
 	activeParm = 0;
 	for (int i=0; i<numParms; i++)
 		*parms[0][i] = *parms[1][i];
@@ -379,6 +386,10 @@ void Model::setTiProb(void) {
 			p->setIsTiDirty(false);
 			}
 		}
+#	if ASSIGN_ROOT
+	Node *roo = t->getRoot();
+	t->setRootRateValue(r->getRateForNodeIndexed(roo->getIdx()));
+#	endif
 }
 
 void Model::setTiProb(Node *p, Shape *s, NodeRate *r) {
@@ -387,7 +398,12 @@ void Model::setTiProb(Node *p, Shape *s, NodeRate *r) {
 	int idx      = p->getIdx();
 	double branchProportion =  p->getAnc()->getNodeDepth() - p->getNodeDepth();
 	double rP = r->getRateForNodeIndexed(p->getIdx());
+#	if 0
+	double rA = r->getRateForNodeIndexed(p->getAnc()->getIdx());
+	double v = branchProportion * (rP + rA) * 0.5;
+#	else
 	double v = branchProportion * rP;
+#	endif
 	
 	if(rP == 0.0){
 		cerr << "ERROR: Problem rP = 0" << endl;
@@ -418,7 +434,11 @@ void Model::setNodeRateGrpIndxs(void) {
 	
 	Tree *t     = getActiveTree();
 	NodeRate *r = getActiveNodeRate();
+#	if ASSIGN_ROOT
+	int rtID = t->getNumNodes() + 2;
+#	else
 	int rtID = t->getRoot()->getIdx();  
+#	endif
 	for(int n=0; n<t->getNumNodes(); n++){
 		if(n != rtID){
 			Node *p = t->getNodeByIndex(n);
@@ -429,6 +449,7 @@ void Model::setNodeRateGrpIndxs(void) {
 		}
 	}
 }
+
 
 void Model::updateAccepted(void) {
 
@@ -453,9 +474,34 @@ void Model::updateRejected(void) {
 
 }
 
+
 void Model::upDateRateMatrix(void) {
 
 	tiCalculator->updateQ( getActiveExchangeability()->getRate(), getActiveBasefreq()->getFreq() );
+}
+
+void Model::writeUnifTreetoFile(void) {
+	
+	Tree *t = getActiveTree();
+	t->checkNodeCalibrationCompatibility();
+	t->setAllNodeBranchTimes();
+	string ts = t->getTreeDescription();
+	ofstream out;
+	out.open("uniformized_t.phy");
+	out << ts << "\n";
+	out.close();
+	if(t->getIsCalibratedTree()){
+		ofstream xmlo;
+		xmlo.open("calib_beast.xml");
+		t->writeCalNodeBEASTInfoXML(xmlo);
+		xmlo.close();
+	}
+	else{
+		ofstream xmlo;
+		xmlo.open("calib_beast.xml");
+		t->writeRRTNodeBEASTInfoXML(xmlo);
+		xmlo.close();
+	}
 }
 
 double Model::getMyCurrLnL(void) {
@@ -470,7 +516,15 @@ double Model::getMyCurrLnL(void) {
 
 
 double Model::readCalibFile(void) {
-		
+	
+	/*
+	3
+	T1	T3	0.4	0.8
+	T6	T7	0.1	0.2
+	T10 T9  0.9	0.9
+	*/
+	
+	
 	cout << "\nCalibrations:" << endl;
 	bool rootIs = false;
 	Calibration *rooCal;
@@ -480,7 +534,7 @@ double Model::readCalibFile(void) {
 	string *calList = new string[nlins];
 	for(int i=0; i<nlins; i++){
 		calList[i] = getLineFromFile(calibfilen, i+2);
-		Calibration *cal = new Calibration(calList[i]);
+		Calibration *cal = new Calibration(calList[i], 0);
 		calibrs.push_back(cal);
 		if(cal->getIsRootCalib()){
 			rooCal = cal;
@@ -505,7 +559,7 @@ double Model::readCalibFile(void) {
 				fixRootHeight = false;
 			}
 		}
-		else if(rooCal->getPriorDistributionType() == 2){
+		else if(rooCal->getPriorDistributionType() > 1){
 			fixRootHeight = false;
 			yb = rooCal->getYngTime();
 			double expMean = yb * 0.2;
@@ -519,7 +573,7 @@ double Model::readCalibFile(void) {
 			double tmpv;
 			if((*v)->getPriorDistributionType() == 1)
 				tmpv = (*v)->getOldTime();
-			else if((*v)->getPriorDistributionType() == 2)
+			else if((*v)->getPriorDistributionType() > 1)
 				tmpv = (*v)->getYngTime() * 1.1;
 			if(tmpv > yb)
 				yb = tmpv;
@@ -560,6 +614,27 @@ double Model::readCalibFile(void) {
 	return initTScale;
 }
 
+void Model::readTipDateFile(void){
+	
+	/*
+	    3
+		X50    20.4
+		X59    40.1
+		
+	*/
+	string ln = getLineFromFile(tipDateFileN, 1);
+	int nlins = atoi(ln.c_str());
+	string *calList = new string[nlins];
+	for(int i=0; i<nlins; i++){
+		calList[i] = getLineFromFile(tipDateFileN, i+2);
+		Calibration *cal = new Calibration(calList[i], 1);
+		tipDates.push_back(cal);
+	}
+	delete [] calList;
+
+}
+
+
 Calibration* Model::getRootCalibration(void) {
 
 	for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
@@ -569,9 +644,10 @@ Calibration* Model::getRootCalibration(void) {
 	return NULL;
 }
 
+
 void Model::setUpdateProbabilities(bool initial) {
 
-	double bfp, srp, shp, ntp, dpp, cpa, tsp, spp, ehp;
+	double bfp, srp, shp, ntp, dpp, cpa, tsp, spp, ehp, fcp;
 	if(initial){
 		bfp = 0.3;
 		srp = 0.3;
@@ -582,6 +658,7 @@ void Model::setUpdateProbabilities(bool initial) {
 		tsp = 0.3;
 		spp = 0.4;
 		ehp = 0.0;
+		fcp = 0.0;
 	}
 	else{
 		bfp = 0.2;
@@ -618,13 +695,13 @@ void Model::setUpdateProbabilities(bool initial) {
 		spp = 0.0;
 	if(fixRootHeight)
 		tsp = 0.0;
-	if(treeTimePrior == 1 || treeTimePrior == 4)
+	if(treeTimePrior == 1) 
 		spp = 0.0;
 	if(zeroNodeTimeMove == 1){
 		ntp = 0.0;
 		cout << "All internal node times are fixed" << endl;
 	}
-	if(fixedClockRate < 0.0)
+	if(fixedClockRate > 0.0)
 		cpa = 0.0;
 	if(exponCalibHyperParm){
 		if(initial)
@@ -636,6 +713,15 @@ void Model::setUpdateProbabilities(bool initial) {
 		bfp = 0.0;
 		shp = 0.0;
 	}
+	
+	if(treeTimePrior > 3) 
+		spp = 0.5;
+	
+	if(treeTimePrior > 5){
+		ntp = 0.8;
+		fcp = 0.4;
+	}
+	
 	updateProb.clear();
 	updateProb.push_back(bfp); // 1 basefreq
 	updateProb.push_back(srp); // 2 sub rates
@@ -652,4 +738,11 @@ void Model::setUpdateProbabilities(bool initial) {
 	for (unsigned i=0; i<updateProb.size(); i++)
 		updateProb[i] /= sum;
 }
+
+
+
+
+// end model
+
+
 

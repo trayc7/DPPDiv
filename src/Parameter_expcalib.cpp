@@ -1,13 +1,15 @@
 /* 
- * DPPDiv version 1.0b source code (git: 9c0ac3d2258f89827cfe9ba2b5038f0f656b82c1)
- * Copyright 2009-2011
- * Tracy Heath(1,2,3) (NSF postdoctoral fellowship in biological informatics DBI-0805631)
+ * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
+ * Copyright 2009-2013
+ * Tracy Heath(1,2,3) 
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
  * (1) Department of Ecology and Evolutionary Biology, University of Kansas, Lawrence, KS 66045
  * (2) Integrative Biology, University of California, Berkeley, CA 94720-3140
  * (3) email: tracyh@berkeley.edu
+ *
+ * Also: T Stadler, D Darriba, AJ Aberer, T Flouri, F Izquierdo-Carrasco, and A Stamatakis
  *
  * DPPDiv is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,7 +23,8 @@
  * distribution or http://www.gnu.org/licenses/gpl.txt for more
  * details.
  *
- * Some of this code is from publicly available source by John Huelsenbeck
+ * Some of this code is from publicly available source by John Huelsenbeck and Fredrik Ronquist
+ *
  */
 
 #include "Parameter.h"
@@ -70,7 +73,10 @@ void LambdaTable::printLambdaTableInfo(){
 	cout << "}" << endl;
 }
 
-ExpCalib::ExpCalib(MbRandom *rp, Model *mp, bool dphplc, int dphpng, double ts, bool ghp) : Parameter(rp, mp){
+
+
+ExpCalib::ExpCalib(MbRandom *rp, Model *mp, bool dphplc, int dphpng, 
+				   double ts, bool ghp, bool ihp) : Parameter(rp, mp){
 	
 	betaAlph1 = 1.0;
 	betaAlph2 = 20.0;
@@ -83,6 +89,7 @@ ExpCalib::ExpCalib(MbRandom *rp, Model *mp, bool dphplc, int dphpng, double ts, 
 	dpmCP = 0.001;
 	gammaHPVals = ghp;
 	prNGrpsDPM = dphpng;
+	indHPMod = ihp;
 	
 	if(gammaHPVals){
 		gHPAlph = 2.0;
@@ -101,6 +108,7 @@ ExpCalib::ExpCalib(MbRandom *rp, Model *mp, bool dphplc, int dphpng, double ts, 
 		cout << "DPM fossil calibration lambda parameter = " << dpmLambdaExpParm << endl;
 	else
 		cout << "Contamination model fossil calibration lambda parameters: lambda1 = " << majorityExpParm << ", lambda2 = " << outlieExpParm << endl;
+	
 }
 
 ExpCalib::~ExpCalib(void){
@@ -156,12 +164,16 @@ void ExpCalib::print(std::ostream & o) const {
 		}
 	}
 	o << endl;
+	
 }
 
 double ExpCalib::update(double &oldLnL) {
 
-	if(dpmLHP)
-		updateDPMHyperPrior();
+	if(dpmLHP){
+		if(indHPMod)
+			updateIndMHyperPrior();
+		else updateDPMHyperPrior();
+	}
 	else
 		updateContamination();
 	modelPtr->setLnLGood(true);
@@ -283,7 +295,47 @@ void ExpCalib::updateDPMHyperPrior() {
 	}
 	
 	delete [] auxilLTs;
+	
 	assignDPMLambdasToCals();
+	
+}
+
+void ExpCalib::updateIndMHyperPrior() {
+	
+	Tree *t = modelPtr->getActiveTree();
+	double tuning = log(2.0);
+	for(vector<LambdaTable *>::iterator lt=dpmLambdaHyp.begin(); lt != dpmLambdaHyp.end(); lt++){
+		double oldTL = (*lt)->getTableLambda();
+		double oldPr = (*lt)->getPriorPrForDiners(t);
+		double newTL = oldTL * exp(tuning * (ranPtr->uniformRv() - 0.5));
+		double minV = 0.0001;
+		double maxV = 1000;
+		bool validV = false;
+		do{
+			if(newTL < minV)
+				newTL = minV * minV / newTL;
+			else if(newTL > maxV)
+				newTL = maxV * maxV / newTL;
+			else
+				validV = true;
+		} while(!validV);
+		(*lt)->setTableLambda(newTL);
+		double newPr = (*lt)->getPriorPrForDiners(t);
+		
+		double lpr = (newPr - oldPr) + (log(newTL) - log(oldTL));
+		if(gammaHPVals)
+			lpr += (ranPtr->lnGammaPdf(gHPAlph, gHPBetaDP, newPr) - ranPtr->lnGammaPdf(gHPAlph, gHPBetaDP, oldPr));
+		else
+			lpr += (ranPtr->lnExponentialPdf(dpmLambdaExpParm, newPr) - ranPtr->lnExponentialPdf(dpmLambdaExpParm, oldPr));
+		
+		double r = modelPtr->safeExponentiation(lpr);
+		if(ranPtr->uniformRv() >= r){
+			(*lt)->setTableLambda(oldTL);
+		}
+	}
+
+	assignDPMLambdasToCals();
+	
 }
 
 
@@ -486,13 +538,11 @@ void ExpCalib::initializeDPMLambdasToCals(){
 		if(prNGrpsDPM > numCalNodes){
 			cerr << "ERROR: the prior mean number of calibration clusters is > the number of calibrated nodes!" << endl;
 			exit(1);
-		}		
-		dpmCP = calculateFromPriorMean(prNGrpsDPM, numCalNodes);
-		int seated = 0;
-		for(vector<Node *>::iterator v = calibNodeList.begin(); v != calibNodeList.end(); v++){
-			double prNewTable = dpmCP / (seated + dpmCP);
-			int ndID = (*v)->getIdx();
-			if(ranPtr->uniformRv() < prNewTable){
+		}
+		if(indHPMod){
+			int seated = 0;
+			for(vector<Node *>::iterator v = calibNodeList.begin(); v != calibNodeList.end(); v++){
+				int ndID = (*v)->getIdx();
 				double lmda;
 				if(gammaHPVals)
 					lmda = ranPtr->gammaRv(gHPAlph, gHPBetaDP);
@@ -501,19 +551,39 @@ void ExpCalib::initializeDPMLambdasToCals(){
 				LambdaTable *lt = new LambdaTable(ranPtr, lmda);
 				dpmLambdaHyp.push_back(lt);
 				lt->addDiner(ndID);
+				seated++;
 			}
-			else{
-				double u = ranPtr->uniformRv();
-				double sum = 0.0;
-				for(vector<LambdaTable *>::iterator p=dpmLambdaHyp.begin(); p != dpmLambdaHyp.end(); p++){
-					sum += (double)((*p)->getNumDiners()) / seated;
-					if(u < sum){
-						(*p)->addDiner(ndID);
-						break;
+
+		}
+		else{
+			dpmCP = calculateFromPriorMean(prNGrpsDPM, numCalNodes);
+			int seated = 0;
+			for(vector<Node *>::iterator v = calibNodeList.begin(); v != calibNodeList.end(); v++){
+				double prNewTable = dpmCP / (seated + dpmCP);
+				int ndID = (*v)->getIdx();
+				if(ranPtr->uniformRv() < prNewTable){
+					double lmda;
+					if(gammaHPVals)
+						lmda = ranPtr->gammaRv(gHPAlph, gHPBetaDP);
+					else
+						lmda = ranPtr->exponentialRv(dpmLambdaExpParm);
+					LambdaTable *lt = new LambdaTable(ranPtr, lmda);
+					dpmLambdaHyp.push_back(lt);
+					lt->addDiner(ndID);
+				}
+				else{
+					double u = ranPtr->uniformRv();
+					double sum = 0.0;
+					for(vector<LambdaTable *>::iterator p=dpmLambdaHyp.begin(); p != dpmLambdaHyp.end(); p++){
+						sum += (double)((*p)->getNumDiners()) / seated;
+						if(u < sum){
+							(*p)->addDiner(ndID);
+							break;
+						}
 					}
 				}
+				seated++;
 			}
-			seated++;
 		}
 		assignDPMLambdasToCals();
 	}
@@ -566,7 +636,6 @@ double ExpCalib::getProbsAcrossAllTables(){
 	}
 	return lnProbTables;
 }
-
 
 
 

@@ -1,3 +1,32 @@
+/* 
+ * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
+ * Copyright 2009-2013
+ * Tracy Heath(1,2,3) 
+ * Mark Holder(1)
+ * John Huelsenbeck(2)
+ *
+ * (1) Department of Ecology and Evolutionary Biology, University of Kansas, Lawrence, KS 66045
+ * (2) Integrative Biology, University of California, Berkeley, CA 94720-3140
+ * (3) email: tracyh@berkeley.edu
+ *
+ * Also: T Stadler, D Darriba, AJ Aberer, T Flouri, F Izquierdo-Carrasco, and A Stamatakis
+ *
+ * DPPDiv is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * General Public License (the file gpl.txt included with this
+ * distribution or http://www.gnu.org/licenses/gpl.txt for more
+ * details.
+ *
+ * Some of this code is from publicly available source by John Huelsenbeck and Fredrik Ronquist
+ *
+ */
+
 #include "cpuspec.h"
 #include "Alignment.h"
 #include "MbRandom.h"
@@ -18,15 +47,18 @@
 #include <string>
 #include <vector>
 #include <fstream>
+
+
+#include <xmmintrin.h> // Needed for XCode
+#include <emmintrin.h>
+#include <pmmintrin.h>
+
 #include <omp.h>
 
 
 using namespace std;
 double Model::lnLikelihood(void) {
         
-        // ALIGNED ( double * clP );
-        // ALIGNED ( double * clL );
-        // ALIGNED ( double * clR );
         double * clP;
         double * clL;
         double * clR;
@@ -34,15 +66,12 @@ double Model::lnLikelihood(void) {
 
 	if(runUnderPrior){
 		myCurLnL = 0.0;
-              //  cout << "!! Returning likelihood begin " << myCurLnL << endl;
 		return 0.0;
 	}
 	Tree *t = getActiveTree();
 	MbMatrix<double> *tL = new MbMatrix<double>[numGammaCats];
 	MbMatrix<double> *tR = new MbMatrix<double>[numGammaCats];
 
-//        cout << "!!! "<< t -> getNumNodes() << " " << numPatterns << " " << numGammaCats << endl;
-	
 	for (int n=0; n<t->getNumNodes(); n++) {
 		Node *p = t->getDownPassNode(n);
 		if (p->getLft() != NULL && p->getRht() != NULL && p->getIsClDirty() == true) {
@@ -60,18 +89,7 @@ double Model::lnLikelihood(void) {
 // parallelisation                      
                                 int p = c * numGammaCats * 4;
 				for (int k=0; k<numGammaCats; k++) {
-/*                                
-#					if 0
-					for (int i=0; i<4; i++) {
-						double sumL = 0.0, sumR = 0.0;
-						for (int j=0; j<4; j++) {
-							sumL += tL[k][i][j] * clL[j];
-							sumR += tR[k][i][j] * clR[j];
-						}
-						clP[i] = sumL * sumR;
-					}
-#					else
-*/
+
 					double sumL = 0.0, sumR = 0.0;
 #ifdef _TOM_SSE3
                                         #ifdef _ASM_DEBUG
@@ -226,9 +244,6 @@ double Model::lnLikelihood(void) {
 // parallelisation
                                         p += 4;
 					
-					//clL += 4; 
-					//clR += 4;
-					//clP += 4;
 				}
 			}
 			p->setIsClDirty(false);
@@ -248,15 +263,6 @@ double Model::lnLikelihood(void) {
                 #ifdef _TOM_AVX
                 ALIGNED ( double siteProbTmp[4] );
                 #endif
-/*                
-#		if 0
-		for (int k=0; k<4; k++){
-			for (int i=0; i<4; i++)
-				siteProb += clP[i] * f[i] ;
-			clP += 4;
-		}
-#		else
-*/
 
 #ifdef _TOM_SSE3
                                         #ifdef _ASM_DEBUG
@@ -371,6 +377,5 @@ double Model::lnLikelihood(void) {
 	delete [] tL;
 	delete [] tR;
 	myCurLnL = lnL;
-//        cout << "!! Returning likelihood " << lnL << endl;
 	return lnL;
 }

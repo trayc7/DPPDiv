@@ -1,13 +1,15 @@
 /* 
- * DPPDiv version 1.0b source code (git: 9c0ac3d2258f89827cfe9ba2b5038f0f656b82c1)
- * Copyright 2009-2011
- * Tracy Heath(1,2,3) (NSF postdoctoral fellowship in biological informatics DBI-0805631)
+ * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
+ * Copyright 2009-2013
+ * Tracy Heath(1,2,3) 
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
  * (1) Department of Ecology and Evolutionary Biology, University of Kansas, Lawrence, KS 66045
  * (2) Integrative Biology, University of California, Berkeley, CA 94720-3140
  * (3) email: tracyh@berkeley.edu
+ *
+ * Also: T Stadler, D Darriba, AJ Aberer, T Flouri, F Izquierdo-Carrasco, and A Stamatakis
  *
  * DPPDiv is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,8 +23,10 @@
  * distribution or http://www.gnu.org/licenses/gpl.txt for more
  * details.
  *
- * Some of this code is from publicly available source by John Huelsenbeck
+ * Some of this code is from publicly available source by John Huelsenbeck and Fredrik Ronquist
+ *
  */
+
 
 #include "MbRandom.h"
 #include "Mcmc.h"
@@ -35,10 +39,14 @@
 #include "Parameter_tree.h"
 #include "Parameter_shape.h"
 #include "Parameter_speciaton.h"
+#include "Parameter_treescale.h"
 #include "util.h"
+
 #include <iomanip>
 #include <iostream>
 #include <ctime>
+
+#include <time.h>
 
 using namespace std;
 
@@ -89,6 +97,8 @@ void Mcmc::runChain(void) {
 		printAllModelParams(dOut);
 	}
 	
+	int timeSt = time(NULL);
+	bool testLnL = false;
 	int modifyUProbsGen = (int)numCycles * 0.5;
 	for (int n=1; n<=numCycles; n++){
 		if(modUpdateProbs && n == modifyUProbsGen)
@@ -133,7 +143,7 @@ void Mcmc::runChain(void) {
 			modelPtr->setTiProb();
 		}
 		
-		if(n < 10){ 
+		if(n < 100){ 
 			Tree *t = modelPtr->getActiveTree(); 
 			t->setNodeRateValues();
 		}
@@ -170,9 +180,12 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &treeOut, ofstream &
 	Tree *t = modelPtr->getActiveTree();
 	Shape *sh = modelPtr->getActiveShape();
 	Speciation *sp = modelPtr->getActiveSpeciation();
+	Treescale *ts = modelPtr->getActiveTreeScale();
 	ExpCalib *hpex;
+	sp->setAllBDFossParams();
 	bool expHPCal = modelPtr->getExponCalibHyperParm();
 	bool dpmHPCal = modelPtr->getExponDPMCalibHyperParm();
+	int treePr = modelPtr->getTreeTimePriorNum();
 	if(expHPCal)
 		hpex = modelPtr->getActiveExpCalib();
 	
@@ -182,7 +195,14 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &treeOut, ofstream &
 		treeOut << "#NEXUS\nbegin trees;\n";
 		figTOut << "#NEXUS\nbegin trees;\n";
 		nodeOut << "Gen\tlnL";
-		nodeOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)\tPr(speciation)\tave.subrate\tnum.DPMgroups\tDPM.conc";
+		nodeOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)";
+		if(treePr > 3)
+			nodeOut << "\tbdss.psi\tbdss.rho";
+		if(treePr == 4)
+			nodeOut << "\tbdss.torig";
+		if(treePr > 5)
+			nodeOut << "\tbdss.lambda\tbdss.mu\tbdss.prsp";
+		nodeOut << "\tPr(speciation)\tave.subrate\tnum.DPMgroups\tDPM.conc";
 		if(expHPCal){
 			if(dpmHPCal)
 				nodeOut << "\texpHP.dpmConP\texpHP.dpmNumLs";
@@ -193,9 +213,16 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &treeOut, ofstream &
 		nodeOut << t->getNodeInfoNames();
 		if(expHPCal)
 			nodeOut << t->getCalNodeInfoNames();
+		
+		if(treePr > 5){
+			nodeOut << t->getCalBDSSNodeInfoParamNames();
+		}
+		if(treePr == 7){
+			nodeOut << t->getCalBDSSNodeInfoIndicatorNames();
+		}
+		
 		nodeOut << "\n";
 	}
-
 	paraOut << gen << "\t" << lnl;
 	for(int i=0; i<f->getNumStates(); i++)
 		paraOut << "\t" << f->getFreq(i);
@@ -216,6 +243,17 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &treeOut, ofstream &
 	nodeOut << gen << "\t" << lnl;
 	nodeOut << "\t" << sp->getNetDiversification();
 	nodeOut << "\t" << sp->getRelativeDeath();
+	if(treePr > 3){
+		nodeOut << "\t" << sp->getBDSSFossilSampRatePsi();
+		nodeOut << "\t" << sp->getBDSSSppSampRateRho();
+	}
+	if(treePr == 4)
+		nodeOut << "\t" << ts->getTreeOriginTime();
+	if(treePr > 5){
+		nodeOut << "\t" << sp->getBDSSSpeciationRateLambda();
+		nodeOut << "\t" << sp->getBDSSExtinctionRateMu();
+		nodeOut << "\t" << sp->getBDSSFossilSampProbS();
+	}
 	nodeOut << "\t" << t->getTreeSpeciationProbability();
 	nodeOut << "\t" << nr->getAverageRate();
 	nodeOut << "\t" << nr->getNumRateGroups();
@@ -234,6 +272,13 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &treeOut, ofstream &
 	nodeOut << t->getNodeInfoList();
 	if(expHPCal)
 		nodeOut << t->getCalNodeInfoList();
+
+	if(treePr > 5){
+		nodeOut << t->getCalBDSSNodeInfoParamList();
+	}
+	if(treePr == 7){
+		nodeOut << t->getCalBDSSNodeInfoIndicatorList();
+	}
 	nodeOut << "\n";
 	
 	if(gen == numCycles){
@@ -302,3 +347,9 @@ void Mcmc::sampleRtsFChain(int gen, std::ofstream &rOut){
 	rOut << "\n";
 }
 
+
+
+
+
+
+// end
