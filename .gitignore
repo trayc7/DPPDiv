@@ -1,4 +1,10 @@
 src/dppdiv-seq-sse
+src/dppdiv-seq 
+src/dppdiv-seq-avx 
+src/dppdiv-seq-sse
+src/dppdiv-par
+src/dppdiv-par-sse
+src/dppdiv-par-avx
 src/*.o
 build/*
 *.ant.tre
