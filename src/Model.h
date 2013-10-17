@@ -30,8 +30,6 @@
 #ifndef MODEL_H
 #define MODEL_H
 #define ASSIGN_ROOT 0
-#define _TOM_SSE3 1
-#undef _TOM_AVX 
 
 #include <string>
 #include <vector>
