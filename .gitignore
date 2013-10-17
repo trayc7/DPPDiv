@@ -1,2 +1,3 @@
 src/dppdiv-seq-sse
 src/*.o
+build/*
