@@ -179,7 +179,12 @@ double Speciation::updateRelDeathRt(void) {
 			validV = true;
 	}while(!validV);
 	relativeDeath = newRD;
-	return 0.0;
+	
+	double betA = 1.0;
+	double betB = 1.0;
+	double nv = ranPtr->lnBetaPdf(betA, betB, newRD);
+	double dv = ranPtr->lnBetaPdf(betA, betB, oldRD);
+	return nv - dv; //0.0;
 }
 
 double Speciation::updateNetDivRate(void) {
@@ -190,6 +195,7 @@ double Speciation::updateNetDivRate(void) {
 	double tuning = log(2.0);
 	double rv = ranPtr->uniformRv();
 	double c = tuning * (rv - 0.5);
+	double exr = 10.0;
 	newND = oldND * exp(c);
 	double minV = 0.0001;
 	double maxV = maxdivV;
@@ -204,7 +210,9 @@ double Speciation::updateNetDivRate(void) {
 	} while(!validV);
 	netDiversificaton = newND;
 	lpr = c; 
-	return lpr;
+	double num = ranPtr->lnExponentialPdf(exr, newND);
+	double dem = ranPtr->lnExponentialPdf(exr, oldND);
+	return lpr + (num - dem);
 }
 
 double Speciation::updateBDSSSampleProbRho(void) {
@@ -246,7 +254,11 @@ double Speciation::updateBDSSFossilProbS(void) {
 			validV = true;
 	}while(!validV);
 	probSpeciationS = newS;
-	return 0.0;
+	double betA = 1.0;
+	double betB = 1.0;
+	double nv = ranPtr->lnBetaPdf(betA, betB, newS);
+	double dv = ranPtr->lnBetaPdf(betA, betB, oldS);
+	return nv - dv; //0.0;
 }
 
 
