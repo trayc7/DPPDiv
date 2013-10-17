@@ -67,19 +67,19 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
 void Mcmc::runChain(void) {
 	
 	string pFile = fileNamePref + ".p"; // parameter file name
-	string treFile = fileNamePref + ".t"; // tree file name
+	//string treFile = fileNamePref + ".t"; // tree file name
 	string figTFile = fileNamePref + ".ant.tre"; // write to a file with the nodes colored by their rate classes
 	string dFile = fileNamePref + ".info.out";
 	string ndFile = fileNamePref + ".nodes.out"; // info about nodes
 	string mtxFile = fileNamePref + ".rates.out"; // info about nodes
 	ofstream pOut(pFile.c_str(), ios::out);
-	ofstream tOut(treFile.c_str(), ios::out);
+	//ofstream tOut(treFile.c_str(), ios::out);
 	ofstream fTOut(figTFile.c_str(), ios::out);
 	ofstream nOut(ndFile.c_str(), ios::out);
 	ofstream mxOut;
 	ofstream dOut;
 	
-	writeCalibrationTree();
+	//writeCalibrationTree();
 	if(writeInfoFile)
 		dOut.open(dFile.c_str(), ios::out);
 	if(printratef)
@@ -149,12 +149,12 @@ void Mcmc::runChain(void) {
 		}
 		
 		if ( n % sampleFrequency == 0 || n == 1)
-			sampleChain(n, pOut, tOut, fTOut, nOut, oldLnLikelihood);
+			sampleChain(n, pOut, fTOut, nOut, oldLnLikelihood);
 			
 	}
 	cout << "   Markov chain completed." << endl;
 	pOut.close();
-	tOut.close();
+	//tOut.close();
 	fTOut.close();
 	dOut.close();
 	nOut.close();
@@ -171,7 +171,7 @@ double Mcmc::safeExponentiation(double lnX) {
 		return exp(lnX);
 }
 
-void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &treeOut, ofstream &figTOut, 
+void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut, 
 					   ofstream &nodeOut, double lnl) {
 
 	Basefreq *f = modelPtr->getActiveBasefreq();
@@ -192,7 +192,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &treeOut, ofstream &
 	if(gen == 1){
 		paraOut << "Gen\tlnLikelihood\tf(A)\tf(C)\tf(G)\tf(T)";
 		paraOut << "\tr(AC)\tr(AG)\tr(AT)\tr(CG)\tr(CT)\tr(GT)\tshape\tave rate\tnum rate groups\tconc param\n";
-		treeOut << "#NEXUS\nbegin trees;\n";
+		//treeOut << "#NEXUS\nbegin trees;\n";
 		figTOut << "#NEXUS\nbegin trees;\n";
 		nodeOut << "Gen\tlnL";
 		nodeOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)";
@@ -234,8 +234,8 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &treeOut, ofstream &
 	paraOut << "\t" << nr->getConcenParam();
 	paraOut << "\n";
 	
-	treeOut << "  tree t" << gen << " = ";
-	treeOut << t->getTreeDescription() << "\n";
+	//treeOut << "  tree t" << gen << " = ";
+	//treeOut << t->getTreeDescription() << "\n";
 	
 	figTOut << "  tree t" << gen << " = ";
 	figTOut << t->getFigTreeDescription() << "\n";
@@ -282,7 +282,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &treeOut, ofstream &
 	nodeOut << "\n";
 	
 	if(gen == numCycles){
-		treeOut << "end;\n";
+		//treeOut << "end;\n";
 		figTOut << "end;\n";
 		figTOut << "\nbegin figtree;\n";
 		figTOut << "    set appearance.branchColorAttribute=\"rate_cat\";\n";

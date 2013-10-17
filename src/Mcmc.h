@@ -45,7 +45,7 @@ class Mcmc {
 	private:
 		void			runChain(void);
 		double			safeExponentiation(double lnX);
-		void			sampleChain(int gen, std::ofstream &paraOut, std::ofstream &treeOut, 
+		void			sampleChain(int gen, std::ofstream &paraOut, 
 									std::ofstream &figTOut, std::ofstream &nodeOut, double lnl);
 		void			sampleRtsFChain(int gen, std::ofstream &rOut);
 		void			printAllModelParams(std::ofstream &dOut);
