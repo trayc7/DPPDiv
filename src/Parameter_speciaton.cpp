@@ -48,7 +48,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double i
 	relativeDeath = bda;
 	netDiversificaton = bdr;
 	probSpeciationS = ranPtr->uniformRv();
-	extantSampleRate = 1.0; 
+	extantSampleRate = ranPtr->betaRv(1.0,1.0);
 	setAllBDFossParams();	
 	treeTimePrior = modelPtr->getTreeTimePriorNum(); 
 	
@@ -136,10 +136,10 @@ double Speciation::update(double &oldLnL) {
 	}
 	else if(treeTimePrior > 3){ 
 		double *probMove = new double[4];
-		probMove[0] = 0.3;
+		probMove[0] = 0.2;
 		probMove[1] = 0.3;
-		probMove[2] = 0.4;
-		probMove[3] = 0.0;
+		probMove[2] = 0.3;
+		probMove[3] = 0.2;
 		int mvType = ranPtr->categoricalRv(probMove,4);
 		if(mvType == 0)
 			lnProposalRatio += updateRelDeathRt();
@@ -233,7 +233,11 @@ double Speciation::updateBDSSSampleProbRho(void) {
 			validV = true;
 	}while(!validV);
 	extantSampleRate = newSP;
-	return 0.0;
+	double betA = 1.0;
+	double betB = 1.0;
+	double nv = ranPtr->lnBetaPdf(betA, betB, newSP);
+	double dv = ranPtr->lnBetaPdf(betA, betB, oldSP);
+	return nv - dv; //0.0;
 }
 
 double Speciation::updateBDSSFossilProbS(void) {
