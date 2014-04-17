@@ -47,17 +47,17 @@
 #include <string>
 #include <vector>
 #include <fstream>
-#include <omp.h>
-
+#include <cstring>
 
 using namespace std;
 
 Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, double rb, 
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
-			 string clfn, int nodpr, double bdr, double bda, double fxclkrt, bool roofix,
+			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn) {
+			 bool ihp, string tipdfn, bool fxtr) {
 
+	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
 	priorMeanN   = pm;
@@ -75,6 +75,8 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	turnedOffMove = offmv;
 	fixedClockRate = fxclkrt;
 	fixSomeModParams = fxmod;
+	fixTestRun = fxtr;
+	estAbsRts = false;
 	double initRootH = 1.0;
 	runIndCalHP = ihp;
 	rHtY = 0.0;
@@ -101,6 +103,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	
 	cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
 	
+	// ...and initialize some important variables
 	numGammaCats = 4;
 	numPatterns  = alignmentPtr->getNumChar();
 	
@@ -129,7 +132,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		parms[i].push_back( nr );												// restaurant containing node rates
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, ehpc) ); // the tree scale prior
-		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, initRootH) );												// hyper prior on diversification for cBDP speciation
+		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH) );												// hyper prior on diversification for cBDP speciation
 		parms[i].push_back( excal );											// hyper prior exponential node calibration parameters
 	}
 	numParms = (int)parms[0].size();
@@ -141,16 +144,25 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		parms[0][i]->print(std::cout);
 	
 		
+	// initialize the probabilities for updating different parameters
 	setUpdateProbabilities(true);	
 	if(ehpc)
 		excal->getAllExpHPCalibratedNodes();
+		
+	// allocate and initialize conditional likelihoods
 	initializeConditionalLikelihoods();
+	
+	// allocate the transition probability matrices
 	initializeTransitionProbabilityMatrices();
+	
+	// instantiate the transition probability calculator
 	tiCalculator = new MbTransitionMatrix( getActiveExchangeability()->getRate(), getActiveBasefreq()->getFreq(), true );
 	
 	setTiProb();
 	myCurLnL = lnLikelihood();
 	cout << "lnL = " << myCurLnL << endl;
+	
+
 }
 
 Model::~Model(void) {
@@ -267,6 +279,7 @@ ExpCalib* Model::getActiveExpCalib(void) {
 
 void Model::initializeConditionalLikelihoods(void) {
 
+	// allocate conditional likelihoods
 	int nNodes = 2*alignmentPtr->getNumTaxa()-1;
 	int nChar  = alignmentPtr->getNumChar();
 	int sizeOneNode = nChar * numGammaCats * 4;
@@ -281,6 +294,7 @@ void Model::initializeConditionalLikelihoods(void) {
 			clPtr[i][j] = &cls[ i * sizeOneSpace + j * sizeOneNode ];
 		}
 		
+	// initialize the tip conditional likelihoods
 	for (int i=0; i<alignmentPtr->getNumTaxa(); i++)
 		{
 		double *cl0 = clPtr[0][i];
@@ -386,6 +400,7 @@ void Model::setTiProb(void) {
 			p->setIsTiDirty(false);
 			}
 		}
+	// TAH root rate debug. This stuff below is stupid anyway
 #	if ASSIGN_ROOT
 	Node *roo = t->getRoot();
 	t->setRootRateValue(r->getRateForNodeIndexed(roo->getIdx()));
@@ -396,7 +411,10 @@ void Model::setTiProb(Node *p, Shape *s, NodeRate *r) {
 
 	int activeTi = p->getActiveTi();
 	int idx      = p->getIdx();
-	double branchProportion =  p->getAnc()->getNodeDepth() - p->getNodeDepth();
+	Treescale *ts     = getActiveTreeScale();
+	double sv = 1.0; //ts->getScaleValue();  // FIXPARM
+	if(estAbsRts) sv = ts->getScaleValue();
+	double branchProportion =  (p->getAnc()->getNodeDepth() - p->getNodeDepth()) * sv;
 	double rP = r->getRateForNodeIndexed(p->getIdx());
 #	if 0
 	double rA = r->getRateForNodeIndexed(p->getAnc()->getIdx());
@@ -406,6 +424,8 @@ void Model::setTiProb(Node *p, Shape *s, NodeRate *r) {
 #	endif
 	
 	if(rP == 0.0){
+		// then this means that this is calculating the lnl for nodes that are not assigned to 
+		// RateGroups in currentRateGroups
 		cerr << "ERROR: Problem rP = 0" << endl;
 		exit(1);
 	}
@@ -428,6 +448,9 @@ void Model::setTiProb(Node *p, Shape *s, NodeRate *r) {
 	rt = s->getRate(3);
 	tis[activeTi][idx][3] = tiCalculator->tiProbs( v*rt, tis[activeTi][idx][3] );
 #	endif
+	// set node info for printing
+	//p->setBranchTime(branchProportion);
+	//p->setRtGrpVal(rP);
 }
 
 void Model::setNodeRateGrpIndxs(void) {
@@ -437,8 +460,9 @@ void Model::setNodeRateGrpIndxs(void) {
 #	if ASSIGN_ROOT
 	int rtID = t->getNumNodes() + 2;
 #	else
-	int rtID = t->getRoot()->getIdx();  
+	int rtID = t->getRoot()->getIdx();  // TAH root rate debug
 #	endif
+	//int numRCats = r->getNumRateGroups();
 	for(int n=0; n<t->getNumNodes(); n++){
 		if(n != rtID){
 			Node *p = t->getNodeByIndex(n);
@@ -524,6 +548,12 @@ double Model::readCalibFile(void) {
 	T10 T9  0.9	0.9
 	*/
 	
+	/*
+	TAH
+	This also initializes the root height parameter
+	I'm not sure how best to do this
+	
+	*/
 	
 	cout << "\nCalibrations:" << endl;
 	bool rootIs = false;
@@ -559,6 +589,7 @@ double Model::readCalibFile(void) {
 				fixRootHeight = false;
 			}
 		}
+		//else if(rooCal->getPriorDistributionType() == 2){
 		else if(rooCal->getPriorDistributionType() > 1){
 			fixRootHeight = false;
 			yb = rooCal->getYngTime();
@@ -573,6 +604,7 @@ double Model::readCalibFile(void) {
 			double tmpv;
 			if((*v)->getPriorDistributionType() == 1)
 				tmpv = (*v)->getOldTime();
+			//else if((*v)->getPriorDistributionType() == 2)
 			else if((*v)->getPriorDistributionType() > 1)
 				tmpv = (*v)->getYngTime() * 1.1;
 			if(tmpv > yb)
@@ -652,10 +684,10 @@ void Model::setUpdateProbabilities(bool initial) {
 		bfp = 0.3;
 		srp = 0.3;
 		shp = 0.3;
-		ntp = 0.4;
+		ntp = 0.6;
 		dpp = 0.5;
 		cpa = 0.3;
-		tsp = 0.3;
+		tsp = 0.5;
 		spp = 0.4;
 		ehp = 0.0;
 		fcp = 0.0;
@@ -686,23 +718,21 @@ void Model::setUpdateProbabilities(bool initial) {
 	else if(turnedOffMove == 5){
 		dpp = 0.0;
 		cpa = 0.0;
-		setNodeRateGrpIndxs(); 
-		*parms[0][3] = *parms[1][3]; 
+		setNodeRateGrpIndxs(); // set the rates on the tree
+		*parms[0][3] = *parms[1][3]; //make sure both trees are the same
 	}
-	else if(turnedOffMove == 6 || cpfix == true) 
+	else if(turnedOffMove == 6 || cpfix == true) // if this move is turned off then the cp is set using the prior mean number of groups
 		cpa = 0.0;
 	else if(turnedOffMove == 8)
 		spp = 0.0;
 	if(fixRootHeight)
 		tsp = 0.0;
-	if(treeTimePrior == 1) 
+	if(treeTimePrior == 1) // treeTimePrior = 4 is now BDSS || treeTimePrior == 4)
 		spp = 0.0;
 	if(zeroNodeTimeMove == 1){
 		ntp = 0.0;
 		cout << "All internal node times are fixed" << endl;
 	}
-	if(fixedClockRate > 0.0)
-		cpa = 0.0;
 	if(exponCalibHyperParm){
 		if(initial)
 			ehp = 0.3;
@@ -714,12 +744,24 @@ void Model::setUpdateProbabilities(bool initial) {
 		shp = 0.0;
 	}
 	
-	if(treeTimePrior > 3) 
+	if(treeTimePrior > 3) // might want to change this
 		spp = 0.5;
 	
 	if(treeTimePrior > 5){
 		ntp = 0.8;
 		fcp = 0.4;
+	}
+	if(fixedClockRate > 0.0){ // FIXPARM
+		cpa = 0.0;
+		dpp = 0.0;
+		//spp = 0.0;
+	}
+	
+	// TAH: FIXING 6 Feb
+	if(fixTestRun){
+		spp = 0.0;
+		//tsp = 0.0;
+		//ntp = 0.0;
 	}
 	
 	updateProb.clear();

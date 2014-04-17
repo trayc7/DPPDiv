@@ -67,19 +67,16 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
 void Mcmc::runChain(void) {
 	
 	string pFile = fileNamePref + ".p"; // parameter file name
-	//string treFile = fileNamePref + ".t"; // tree file name
 	string figTFile = fileNamePref + ".ant.tre"; // write to a file with the nodes colored by their rate classes
 	string dFile = fileNamePref + ".info.out";
 	string ndFile = fileNamePref + ".nodes.out"; // info about nodes
 	string mtxFile = fileNamePref + ".rates.out"; // info about nodes
 	ofstream pOut(pFile.c_str(), ios::out);
-	//ofstream tOut(treFile.c_str(), ios::out);
 	ofstream fTOut(figTFile.c_str(), ios::out);
 	ofstream nOut(ndFile.c_str(), ios::out);
 	ofstream mxOut;
 	ofstream dOut;
 	
-	//writeCalibrationTree();
 	if(writeInfoFile)
 		dOut.open(dFile.c_str(), ios::out);
 	if(printratef)
@@ -134,7 +131,11 @@ void Mcmc::runChain(void) {
 		}
 		else{
 			modelPtr->updateRejected();
-			Tree *t = modelPtr->getActiveTree(); 
+			
+			// TAH : without this, the lnls were not right for some moves following rejected ones 
+			Tree *t = modelPtr->getActiveTree();
+			Treescale *ts = modelPtr->getActiveTreeScale();
+			t->setTreeScale(ts->getScaleValue());
 			t->flipAllCls();
 			t->flipAllTis();
 			t->upDateAllCls();
@@ -148,13 +149,37 @@ void Mcmc::runChain(void) {
 			t->setNodeRateValues();
 		}
 		
-		if ( n % sampleFrequency == 0 || n == 1)
+		// sample chain
+		if ( n % sampleFrequency == 0 || n == 1){
 			sampleChain(n, pOut, fTOut, nOut, oldLnLikelihood);
-			
+			//sampleRtsFChain(n, mxOut);
+		}
+		
+		//Logger & logger = Logger::getInstance();
+		//std::ostream &o = logger.debugStream();
+		//parm->print(o);
+		//parm->print(std::cerr);
+#		if 0
+		if( n % 20 == 0 || n == 1)
+			modelPtr->getActiveTree()->verifyTreeDebug(n, parm->getName());
+#		endif
+	
+		if(testLnL){
+			Tree *t = modelPtr->getActiveTree(); 
+			t->flipAllCls();
+			t->flipAllTis();
+			t->upDateAllCls();
+			t->upDateAllTis();
+			modelPtr->upDateRateMatrix();
+			modelPtr->setTiProb();
+			double chklnl = modelPtr->lnLikelihood();
+			cout << "   " << n << "  " << parm->getName() << " -->  OL" << prevlnl << "   ---   NL" << newLnLikelihood << "  (" << chklnl << ", " << oldLnLikelihood << ")\n\n";
+		}
 	}
-	cout << "   Markov chain completed." << endl;
+	Tree *t = modelPtr->getActiveTree();
+	int timeEnd = time(NULL);
+	cout << "   Markov chain completed in " << (static_cast<float>(timeEnd - timeSt)) << " seconds" << endl;
 	pOut.close();
-	//tOut.close();
 	fTOut.close();
 	dOut.close();
 	nOut.close();
@@ -192,7 +217,6 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 	if(gen == 1){
 		paraOut << "Gen\tlnLikelihood\tf(A)\tf(C)\tf(G)\tf(T)";
 		paraOut << "\tr(AC)\tr(AG)\tr(AT)\tr(CG)\tr(CT)\tr(GT)\tshape\tave rate\tnum rate groups\tconc param\n";
-		//treeOut << "#NEXUS\nbegin trees;\n";
 		figTOut << "#NEXUS\nbegin trees;\n";
 		nodeOut << "Gen\tlnL";
 		nodeOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)";
@@ -219,10 +243,12 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		}
 		if(treePr == 7){
 			nodeOut << t->getCalBDSSNodeInfoIndicatorNames();
+			nodeOut << "\tnum.tips";
 		}
 		
 		nodeOut << "\n";
 	}
+	// then print stuff
 	paraOut << gen << "\t" << lnl;
 	for(int i=0; i<f->getNumStates(); i++)
 		paraOut << "\t" << f->getFreq(i);
@@ -233,10 +259,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 	paraOut << "\t" << nr->getNumRateGroups();
 	paraOut << "\t" << nr->getConcenParam();
 	paraOut << "\n";
-	
-	//treeOut << "  tree t" << gen << " = ";
-	//treeOut << t->getTreeDescription() << "\n";
-	
+		
 	figTOut << "  tree t" << gen << " = ";
 	figTOut << t->getFigTreeDescription() << "\n";
 	
@@ -278,11 +301,11 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 	}
 	if(treePr == 7){
 		nodeOut << t->getCalBDSSNodeInfoIndicatorList();
+		nodeOut << "\t" << t->getSumIndicatorV();
 	}
 	nodeOut << "\n";
 	
 	if(gen == numCycles){
-		//treeOut << "end;\n";
 		figTOut << "end;\n";
 		figTOut << "\nbegin figtree;\n";
 		figTOut << "    set appearance.branchColorAttribute=\"rate_cat\";\n";

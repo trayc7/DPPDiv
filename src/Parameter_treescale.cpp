@@ -55,15 +55,16 @@ Treescale::Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, i
 	
 	tOrigExpHPRate = 1.0 / (sv * 0.5);
 	treeOriginTime = ranPtr->exponentialRv(tOrigExpHPRate) + sv;
-
+	
+	if (treeTimePrior > 5)
+		tsPriorD = 3;
+	
 	
 	tuning = sv * 0.1;
 	if(tsPriorD == 1){
 		exponHPCalib = false;
 		if(yngBound > 0.0 && oldBound > 0.0){
 			isBounded = true;
-			// TAH: This might be stupid, but trying to get the window size to be 
-			//		at least 15% smaller than the calibration bounds
 			if(yngBound != oldBound){
 				tuning = ((oldBound + yngBound) * 0.5) * 0.1;
 				double windowSize = 2 * tuning;
@@ -75,12 +76,6 @@ Treescale::Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, i
 				cout << "Calib window = " << calibSize << "  Tuning window = " << windowSize << endl;
 			}
 		}
-		if(0){ //yngBound == 0.0 && oldBound >= 1000000.0){
-			retune = true;
-			//cout << "retune = true" << endl;
-			//getchar();
-		}
-		//else isBounded = false;
 	}
 	else if(tsPriorD == 2){
 		isBounded = true;
@@ -91,19 +86,17 @@ Treescale::Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, i
 			expoRate = 1.0 / (yngBound * 200.0);
 			exponHPCalib = false;
 		}
-		oldBound = 1000000.0;
+		oldBound = 100000.0;
 		tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.1;
 		double windowSize = 2 * tuning;
 		cout << "Exponential rate = " << expoRate << "  E[TS] = " << (1 / expoRate) + yngBound
 			<< "  offset = " << yngBound << "  Tuning window = " << windowSize << endl;
 	}
-	else if(tsPriorD > 2 && treeTimePrior > 5){ // This is a uniform prior on the age of the root
+	else if(tsPriorD > 2 && treeTimePrior > 5){ 
 		isBounded = true;
 		tsPriorD = 1;
-		
-
 		oldBound = 100000.0;
-		tuning = ((yngBound + (sv * 2.0)) * 0.5) * 0.1;
+		tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.1;
 		double windowSize = 2.0 * tuning;
 		double calibSize = oldBound - yngBound;
 		
@@ -150,7 +143,7 @@ double Treescale::update(double &oldLnL) {
 		lppr = updateTreeOrigTime(oldLnL);
 	}
 	else{
-		lppr = updateTreeScale(oldLnL);
+		lppr = updateTreeScalePropSE(oldLnL); 
 	}
 	return lppr;
 }
@@ -159,14 +152,9 @@ double Treescale::updateTreeScale(double &oldLnL) {
 	
 	Tree *t = modelPtr->getActiveTree();
 	Node *rt = t->getRoot();
-	
-	
-	
-	
-	// for birth-death prior
+
 	double oldtreeprob = getLnTreeProb(t);
 	
-	// window
 	if(retune && tuning > scaleVal)
 		tuning = scaleVal * 0.5;
 		
@@ -191,7 +179,6 @@ double Treescale::updateTreeScale(double &oldLnL) {
 	double oldRH, newRH;
 	oldRH = scaleVal;
 		
-	// get new value with reflection
 	double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
 	newRH = oldRH + u;
 	while(newRH < lowBound || newRH > hiBound){
@@ -201,12 +188,10 @@ double Treescale::updateTreeScale(double &oldLnL) {
 			newRH = (2 * hiBound) - newRH;
 	}
 		
-	// scale all node height proportional to root height
 	double scaleRatio = oldRH / newRH;
 	int numNodes = t->getNumNodes();
 	for(int i=0; i<numNodes; i++){
 		Node *p = t->getNodeByIndex(i);
-		//if(p->getIsLeaf() == false && p != rt){
 		if(p != rt){
 			if(p->getIsLeaf() && p->getIsCalibratedDepth() == false){
 				p->setNodeDepth(0.0);
@@ -216,7 +201,7 @@ double Treescale::updateTreeScale(double &oldLnL) {
 				double newP = oldP * scaleRatio;
 				p->setNodeDepth(newP);
 				p->setFossAttchTime(0.0);
-				if(false){ //(treeTimePrior == 6 && p->getIsCalibratedDepth()){
+				if(false){
 					double oldPhi = p->getFossAttchTime();
 					double fA = p->getNodeYngTime();
 					double newPhi = oldPhi * scaleRatio;
@@ -233,7 +218,7 @@ double Treescale::updateTreeScale(double &oldLnL) {
 	}
 	scaleVal = newRH;
 	t->setTreeScale(scaleVal);
-	t->treeScaleUpdateFossilAttchTimes(scaleRatio);
+	t->treeScaleUpdateFossilAttchTimes(scaleRatio, oldRH, newRH);
 	t->treeUpdateNodeOldestBoundsAttchTimes();
 	t->setAllNodeBranchTimes();
 		
@@ -245,15 +230,12 @@ double Treescale::updateTreeScale(double &oldLnL) {
 			expoRate = t->getRootCalibExpRate();
 		lnPriorRatio += lnExponentialTSPriorRatio(newRH, oldRH);
 	}
-	// TAH: it's uniform 
-	double lnProposalRatio = 0.0; 
+	double lnProposalRatio = 0.0;
 	
-	// |J| is only for uniform prior on node times
 	double jacobian = 0.0;
 	if(treeTimePrior < 2)
 		jacobian = (log(oldRH) - log(newRH)) * (t->getNumTaxa() - 2);
-	
-	
+
 
 	t->flipAllCls();
 	t->flipAllTis();
@@ -265,11 +247,97 @@ double Treescale::updateTreeScale(double &oldLnL) {
 	return lnPriorRatio + lnProposalRatio + jacobian;
 }
 
+double Treescale::updateTreeScalePropSE(double &oldLnL) {
+	
+	Tree *t = modelPtr->getActiveTree();
+	Node *rt = t->getRoot();
+	
+	double oldtreeprob = getLnTreeProb(t);
+		
+	double rtLB = t->getNodeLowerBoundTime(rt) * scaleVal;
+	double lowBound = rtLB;
+	
+	double hiBound = 100000.0;
+	if(treeTimePrior == 4){
+		if(hiBound > treeOriginTime)
+			hiBound = treeOriginTime;
+	}
+	
+	if(isBounded){
+		if(lowBound < yngBound)
+			lowBound = yngBound;
+		if(hiBound > oldBound)
+			hiBound = oldBound;
+	}
+	
+	double oldRH, newRH;
+	oldRH = scaleVal;
+	
+	double rv = ranPtr->uniformRv();
+	double tv = log(2.0);
+	double c = tv * (rv - 0.5);
+	newRH = oldRH * exp(c);
+	bool validV = false;
+	do{
+		if(newRH < lowBound)
+			newRH = lowBound * lowBound / newRH;
+		else if(newRH > hiBound)
+			newRH = hiBound * hiBound / newRH;
+		else
+			validV = true;
+	} while(!validV);
+	
+	double scaleRatio = oldRH / newRH;
+	int numNodes = t->getNumNodes();
+	for(int i=0; i<numNodes; i++){
+		Node *p = t->getNodeByIndex(i);
+		if(p != rt){
+			if(p->getIsLeaf() && p->getIsCalibratedDepth() == false){
+				p->setNodeDepth(0.0);
+			}
+			else{
+				double oldP = p->getNodeDepth();
+				double newP = oldP * scaleRatio;
+				p->setNodeDepth(newP);
+				p->setFossAttchTime(0.0);
+			}
+		}
+	}
+	scaleVal = newRH;
+	t->setTreeScale(scaleVal);
+	t->treeScaleUpdateFossilAttchTimes(scaleRatio, oldRH, newRH);
+	t->treeUpdateNodeOldestBoundsAttchTimes();
+	t->setAllNodeBranchTimes();
+	
+	double lnPriorRatio = 0.0;
+	double newtreeprob = getLnTreeProb(t);
+	lnPriorRatio += (newtreeprob - oldtreeprob);
+	if(tsPriorD == 2){
+		if(exponHPCalib)
+			expoRate = t->getRootCalibExpRate();
+		lnPriorRatio += lnExponentialTSPriorRatio(newRH, oldRH);
+	}
+	double lnProposalRatio = c;
+	
+	double jacobian = 0.0; 
+	if(treeTimePrior < 2)
+		jacobian = (log(oldRH) - log(newRH)) * (t->getNumTaxa() - 2);
+	
+	t->flipAllCls();
+	t->flipAllTis();
+	t->upDateAllCls();
+	t->upDateAllTis();
+	modelPtr->setTiProb();
+	
+	
+	return lnPriorRatio + lnProposalRatio + jacobian;
+}
+
+
 double Treescale::updateTreeOrigTime(double &oldLnL) {
 	
 	Tree *t = modelPtr->getActiveTree();
 	
-	// for birth-death prior
 	double oldtreeprob = getLnTreeProb(t);
 	
 	
@@ -278,12 +346,9 @@ double Treescale::updateTreeOrigTime(double &oldLnL) {
 	double lowBound = scaleVal;
 	double hiBound = limO;
 
-	
-	
 	double oldTO, newTO;
 	oldTO = treeOriginTime;
 	
-	// get new value with reflection
 	double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
 	newTO = oldTO + u;
 	while(newTO < lowBound || newTO > hiBound){
@@ -292,16 +357,12 @@ double Treescale::updateTreeOrigTime(double &oldLnL) {
 		if(newTO > hiBound)
 			newTO = (2 * hiBound) - newTO;
 	}
-	
-	// scale all node height proportional to root height
-	
+		
 	treeOriginTime = newTO;
 	
 	double lnPriorRatio = 0.0; 
 	double newtreeprob = getLnTreeProb(t);
-	//cout << lnPriorRatio << endl;
 	lnPriorRatio += (newtreeprob - oldtreeprob);
-	lnPriorRatio += lnExponentialTreeOrigPriorRatio(newTO, oldTO);
 	
 	double lnProposalRatio = 0.0; 
 	
@@ -363,7 +424,6 @@ double Treescale::getLnTreeProb(Tree *t) {
 		return nps;
 	}
 	else if(treeTimePrior == 6){
-		// calibrated birth death
 		Speciation *s = modelPtr->getActiveSpeciation();
 		s->setAllBDFossParams();
 		double nps = t->getTreeCalBDSSTreeNodePriorProb(s->getBDSSSpeciationRateLambda(), 
@@ -373,7 +433,6 @@ double Treescale::getLnTreeProb(Tree *t) {
 		return nps;
 	}
 	else if(treeTimePrior == 7){
-		// calibrated birth death
 		Speciation *s = modelPtr->getActiveSpeciation();
 		s->setAllBDFossParams();
 		double nps = t->getTreeAncCalBDSSTreeNodePriorProb(s->getBDSSSpeciationRateLambda(), 

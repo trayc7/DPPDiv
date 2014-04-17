@@ -45,7 +45,7 @@ class Tree;
 class Speciation : public Parameter {
 	
 	public:
-							Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double initRH);
+							Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH);
 							~Speciation(void);
 		Speciation			&operator=(const Speciation &c);
 		void				clone(const Speciation &c);
@@ -76,8 +76,11 @@ class Speciation : public Parameter {
 		double				deathRate;  // mu
 		double				fossilRate; // psi
 		double				extantSampleRate; // rho = 1
-		double				fossilStratSampleProb; // 
+		double				fossilStratSampleProb; // omega = ? This is for later
 		double				probSpeciationS;  // \psi / (\mu + \psi) // Need hyperprior
+		
+		double				getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv);
+		double				getNewValSWindoMv(double ov, double vmin, double vmax, double tv);
 
 
 		
@@ -85,7 +88,12 @@ class Speciation : public Parameter {
 		double				updateNetDivRate();
 		double				updateBDSSFossilProbS();
 		double				updateBDSSSampleProbRho();
-		
+
+		double				updateRelDeathRt(Tree *t);
+		double				updateNetDivRate(Tree *t);
+		double				updateBDSSFossilProbS(Tree *t);
+		double				updatePsiRate(Tree *t);
+
 };
 
 

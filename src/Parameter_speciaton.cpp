@@ -40,18 +40,25 @@
 
 using namespace std;
 
-Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double initRH) : Parameter(rp, mp) {
+Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH) : Parameter(rp, mp) {
 	
+	// Based on BEAST implementation of the birth-death model described in Gernhard (2008)
+	// Note: the beast implementation doesn't allow for lambda=mu
 	
 	maxdivV = 30000.0;
 	name = "SP";
-	relativeDeath = bda;
-	netDiversificaton = bdr;
+	relativeDeath = ranPtr->uniformRv(); 
+	netDiversificaton = ranPtr->uniformRv();
 	probSpeciationS = ranPtr->uniformRv();
-	extantSampleRate = ranPtr->betaRv(1.0,1.0);
-	setAllBDFossParams();	
+	extantSampleRate = 1.0; 
 	treeTimePrior = modelPtr->getTreeTimePriorNum(); 
 	
+	if(mp->getFixTestRun()){
+		relativeDeath = bda;
+		netDiversificaton = bdr;
+		probSpeciationS = bds;
+	}
+	setAllBDFossParams();	
 	
 	if(relativeDeath < 0.0 && netDiversificaton < 0.0){
 		relativeDeath = ranPtr->uniformRv();
@@ -122,7 +129,8 @@ double Speciation::update(double &oldLnL) {
 	
 	Tree *t = modelPtr->getActiveTree();
 	double oldtreeprob = getLnTreeProb(t); 
-	double lnProposalRatio = 0.0;	
+	double lnProposalRatio = 0.0;
+	
 	
 	if(treeTimePrior == 2){
 		lnProposalRatio += updateNetDivRate();
@@ -135,22 +143,15 @@ double Speciation::update(double &oldLnL) {
 			lnProposalRatio += updateNetDivRate();
 	}
 	else if(treeTimePrior > 3){ 
-		double *probMove = new double[4];
-		probMove[0] = 0.2;
-		probMove[1] = 0.3;
-		probMove[2] = 0.3;
-		probMove[3] = 0.2;
-		int mvType = ranPtr->categoricalRv(probMove,4);
-		if(mvType == 0)
-			lnProposalRatio += updateRelDeathRt();
-		else if(mvType == 1)
-			lnProposalRatio += updateNetDivRate();
-		else if(mvType == 2)
-			lnProposalRatio += updateBDSSFossilProbS();
-		else if(mvType == 3)
-			lnProposalRatio += updateBDSSSampleProbRho();
-		delete [] probMove;
-		setAllBDFossParams();
+		
+		updateRelDeathRt(t);
+		updateNetDivRate(t);
+		updateBDSSFossilProbS(t);
+		modelPtr->setLnLGood(true);
+		modelPtr->setMyCurrLnl(oldLnL);
+		return 0.0;
+		
+		
 	}
 	double newtreeprob = getLnTreeProb(t); 
 	double lnPriorRatio = (newtreeprob - oldtreeprob);
@@ -165,26 +166,67 @@ double Speciation::updateRelDeathRt(void) {
 	
 	double rdwindow = 0.2;
 	double oldRD = relativeDeath;
-	double u;
-	double newRD;
-	u = ranPtr->uniformRv(-0.5,0.5) * (rdwindow);
-	newRD = oldRD + u;
+	double newRD = getNewValSWindoMv(oldRD, 0.0, 0.99999, rdwindow);
+	relativeDeath = newRD;
+	return 0.0;
+	
+}
+
+double Speciation::updateRelDeathRt(Tree *t) {
+	
+	double oldtreeprob = getLnTreeProb(t);
+	double lnPropR = 0.0;
+	double rdwindow = 0.2;
+	double oldRD = relativeDeath;
+	double newRD = getNewValSWindoMv(oldRD, 0.0, 0.99999, rdwindow);
+	relativeDeath = newRD;
+	double newtreeprob = getLnTreeProb(t); 
+	double lnPriorRatio = (newtreeprob - oldtreeprob);
+	double lnR = lnPriorRatio + lnPropR;
+	double r = modelPtr->safeExponentiation(lnR);
+	if(ranPtr->uniformRv() < r){
+		setAllBDFossParams();
+	}
+	else{
+		relativeDeath = oldRD;
+		setAllBDFossParams();
+	}
+	return 0.0;
+	
+}
+
+double Speciation::getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv){
+	
+	double rv = ranPtr->uniformRv();
+	double c = tv * (rv - 0.5);
+	double newcv = ov * exp(c);
 	bool validV = false;
 	do{
-		if(newRD < 0.0)
-			newRD = 0.0 - newRD;
-		else if(newRD > 0.9999)
-			newRD = (2 * 0.9999) - newRD;
+		if(newcv < vmin)
+			newcv = vmin * vmin / newcv;
+		else if(newcv > vmax)
+			newcv = vmax * vmax / newcv;
+		else
+			validV = true;
+	} while(!validV);
+	nv = newcv;
+	return c;
+}
+
+double Speciation::getNewValSWindoMv(double ov, double vmin, double vmax, double tv){
+	double nv = 0.0;
+	double u = ranPtr->uniformRv(-0.5,0.5) * (tv);
+	nv = ov + u;
+	bool validV = false;
+	do{
+		if(nv < vmin)
+			nv = 2.0 * vmin - nv;
+		else if(nv > vmax)
+			nv = (2.0 * vmax) - nv;
 		else
 			validV = true;
 	}while(!validV);
-	relativeDeath = newRD;
-	
-	double betA = 1.0;
-	double betB = 1.0;
-	double nv = ranPtr->lnBetaPdf(betA, betB, newRD);
-	double dv = ranPtr->lnBetaPdf(betA, betB, oldRD);
-	return nv - dv; //0.0;
+	return nv;
 }
 
 double Speciation::updateNetDivRate(void) {
@@ -193,26 +235,36 @@ double Speciation::updateNetDivRate(void) {
 	double oldND = netDiversificaton;
 	double newND;	
 	double tuning = log(2.0);
-	double rv = ranPtr->uniformRv();
-	double c = tuning * (rv - 0.5);
-	double exr = 10.0;
-	newND = oldND * exp(c);
 	double minV = 0.0001;
-	double maxV = maxdivV;
-	bool validV = false;
-	do{
-		if(newND < minV)
-			newND = minV * minV / newND;
-		else if(newND > maxV)
-			newND = maxV * maxV / newND;
-		else
-			validV = true;
-	} while(!validV);
+	double c = getNewValScaleMv(newND, oldND, minV, maxdivV, tuning);
 	netDiversificaton = newND;
 	lpr = c; 
-	double num = ranPtr->lnExponentialPdf(exr, newND);
-	double dem = ranPtr->lnExponentialPdf(exr, oldND);
-	return lpr + (num - dem);
+	return lpr;
+}
+
+double Speciation::updateNetDivRate(Tree *t) {
+	
+	double oldtreeprob = getLnTreeProb(t);
+	double lpr = 0.0;
+	double oldND = netDiversificaton;
+	double newND;	
+	double tuning = log(2.0);
+	double minV = 0.0001;
+	double c = getNewValScaleMv(newND, oldND, minV, maxdivV, tuning);
+	netDiversificaton = newND;
+	lpr = c; 
+	double newtreeprob = getLnTreeProb(t); 
+	double lnPriorRatio = (newtreeprob - oldtreeprob);
+	double lnR = lnPriorRatio + lpr;
+	double r = modelPtr->safeExponentiation(lnR);
+	if(ranPtr->uniformRv() < r){
+		setAllBDFossParams();
+	}
+	else{
+		netDiversificaton = oldND;
+		setAllBDFossParams();
+	}
+	return 0.0;
 }
 
 double Speciation::updateBDSSSampleProbRho(void) {
@@ -233,11 +285,7 @@ double Speciation::updateBDSSSampleProbRho(void) {
 			validV = true;
 	}while(!validV);
 	extantSampleRate = newSP;
-	double betA = 1.0;
-	double betB = 1.0;
-	double nv = ranPtr->lnBetaPdf(betA, betB, newSP);
-	double dv = ranPtr->lnBetaPdf(betA, betB, oldSP);
-	return nv - dv; //0.0;
+	return 0.0;
 }
 
 double Speciation::updateBDSSFossilProbS(void) {
@@ -258,12 +306,71 @@ double Speciation::updateBDSSFossilProbS(void) {
 			validV = true;
 	}while(!validV);
 	probSpeciationS = newS;
-	double betA = 1.0;
-	double betB = 1.0;
-	double nv = ranPtr->lnBetaPdf(betA, betB, newS);
-	double dv = ranPtr->lnBetaPdf(betA, betB, oldS);
-	return nv - dv; //0.0;
+	return 0.0;
 }
+
+double Speciation::updateBDSSFossilProbS(Tree *t) {
+	
+	
+	double oldtreeprob = getLnTreeProb(t);
+	double lnPropR = 0.0;
+	double swindow = 0.2;
+	double oldS = probSpeciationS;
+	double newS = getNewValSWindoMv(oldS, 0.0, 0.99999, swindow);
+	probSpeciationS = newS;
+	double newtreeprob = getLnTreeProb(t); 
+	double lnPriorRatio = (newtreeprob - oldtreeprob);
+	double lnR = lnPriorRatio + lnPropR;
+	double r = modelPtr->safeExponentiation(lnR);
+	if(ranPtr->uniformRv() < r){
+		setAllBDFossParams();
+	}
+	else{
+		probSpeciationS = oldS;
+		setAllBDFossParams();
+	}
+	return 0.0;
+
+}
+
+double Speciation::updatePsiRate(Tree *t) {
+	
+	double lpr = 0.0;
+	double oldtreeprob = getLnTreeProb(t);
+	double oldPsi = fossilRate;
+	double newPsi;	
+	double tuning = log(2.0);
+	double rv = ranPtr->uniformRv();
+	double c = tuning * (rv - 0.5);
+	newPsi = oldPsi * exp(c);
+	double minV = 0.0001;
+	double maxV = 100.00;
+	bool validV = false;
+	do{
+		if(newPsi < minV)
+			newPsi = minV * minV / newPsi;
+		else if(newPsi > maxV)
+			newPsi = newPsi * maxV / newPsi;
+		else
+			validV = true;
+	} while(!validV);
+	fossilRate = newPsi;
+	probSpeciationS = newPsi / (deathRate + newPsi) ;
+	lpr = c;
+	double newtreeprob = getLnTreeProb(t); 
+	double lnPriorRatio = (newtreeprob - oldtreeprob);
+	double lnR = lnPriorRatio + lpr;
+	double r = modelPtr->safeExponentiation(lnR);
+	if(ranPtr->uniformRv() < r){
+		setAllBDFossParams();
+	}
+	else{
+		fossilRate = oldPsi;
+		setAllBDFossParams();
+	}
+	return 0.0;
+}
+
 
 
 
@@ -325,5 +432,4 @@ void Speciation::setAllBDFossParams(){
 	fossilRate = (probSpeciationS / (1-probSpeciationS)) * ((relativeDeath * netDiversificaton) / (1 - relativeDeath));
 	birthRate = netDiversificaton / (1.0 - relativeDeath); 
 	deathRate = (relativeDeath * netDiversificaton) / (1 - relativeDeath);
-
 }

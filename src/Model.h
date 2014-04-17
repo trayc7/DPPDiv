@@ -63,9 +63,9 @@ class Model {
 										Model(MbRandom *rp, Alignment *ap, std::string ts, double pm, 
 											  double ra, double rb, double hal, double hbe, bool ubl, 
 											  bool alnm, int offmv, bool rndNo, std::string clfn, int nodpr, 
-											  double bdr, double bda, double fxclkrt, bool roofix,
+											  double bdr, double bda, double bds, double fxclkrt, bool roofix,
 											  bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod,
-											  bool fxmod, bool ihp, std::string tipdfn); 
+											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr); 
 										~Model(void);
 		double							lnLikelihood(void);
 		double							getPriorMeanV(void) { return priorMeanN; }
@@ -100,6 +100,9 @@ class Model {
 		bool							getExponCalibHyperParm() { return exponCalibHyperParm; }
 		bool							getExponDPMCalibHyperParm() { return exponDPMCalibHyperParm; }
 		void							setUpdateProbabilities(bool initial);
+		void							setEstAbsRates(bool b) { estAbsRts = b; }
+		void							setFixTestRun(bool b) { fixTestRun = b; }
+		bool							getFixTestRun(void) { return fixTestRun; }
 		
 	private:
 		void							initializeConditionalLikelihoods(void);
@@ -151,6 +154,8 @@ class Model {
 		bool							fixSomeModParams;
 		bool							cpfix;
 		bool							runIndCalHP;
+		bool							estAbsRts;
+		bool							fixTestRun;
 };
 
 #endif

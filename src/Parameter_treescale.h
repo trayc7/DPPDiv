@@ -67,9 +67,15 @@ class Treescale : public Parameter {
 		bool				exponHPCalib;
 		double				treeOriginTime;
 		double				tOrigExpHPRate;
+		double				numAccepted;
+		double				numTried;
 		
 		double				updateTreeScale(double &oldLnL);
+		double				updateTreeScalePropSE(double &oldLnL);
+
 		double				updateTreeOrigTime(double &oldLnL);
+				
+	
 };
 
 #endif

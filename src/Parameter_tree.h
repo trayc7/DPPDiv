@@ -199,6 +199,7 @@ class Tree : public Parameter {
 		double							update(double &oldLnL);
 		double							updateOneNode();
 		double							updateAllNodes(double &oldLnL);
+		double							updateAllTGSNodes(double &oldLnL);
 		double							updateAllNodesRnd(double &oldLnL);
 		double							lnPrior();
 		double							lnPriorRatio(double snh, double soh);
@@ -255,7 +256,7 @@ class Tree : public Parameter {
 		std::string						getCalBDSSNodeInfoIndicatorList(void);
 		int								countDecLinsTimeIntersect(Node *p, double t, double ancAge);
 		double							updateFossilBDSSAttachmentTimePhi(void);
-		void							treeScaleUpdateFossilAttchTimes(double sr);
+		void							treeScaleUpdateFossilAttchTimes(double sr, double ort, double nrt);
 		void							treeUpdateNodeOldestBoundsAttchTimes(void);
 		double							getNodeLowerBoundTime(Node *p);
 		double							getNodeUpperBoundTime(Node *p);
@@ -263,6 +264,8 @@ class Tree : public Parameter {
 		double							updateRJMoveAddDelEdge(void);
 		void							doAddEdgeMove(void);
 		void							doDeleteEdgeMove(void);
+	
+		int								getSumIndicatorV(void);
 
 							
 	private:
@@ -271,6 +274,7 @@ class Tree : public Parameter {
 		void							initializeTipNodeDepthsFromUserBL(void);
 		void							initializeNodeDepths(void);
 		void							initializeCalibratedNodeDepths(void);
+		void							initializeTGSCalibratedNodeDepths(void);
 		double							getUBLTreeScaleDepths(void);
 		double							getNodePathDepth(Node *t);
 		std::vector<double>				recursiveNodeDepthInitialization(Node *p, int &nCont, double maxD);
@@ -299,13 +303,14 @@ class Tree : public Parameter {
 		
 		double							bdssQFxn(double b, double d, double psi, double rho, double t); // on log scale
 		double							bdssP0Fxn(double b, double d, double psi, double rho, double t);
+		double							bdssP0HatFxn(double b, double d, double rho, double t);
 
 		void							initializeTGSCalibVariables(void);
 		
 		void							setUPTGSCalibrationFossils();
 		void							initializeFossilSpecVariables();
 		void							initializeFossilAncestorSpecVariables();
-		void							recountFossilAttachNums();
+		int								recountFossilAttachNums();
 		int								getFossilLinAttachNumsForFoss(int fID);
 		
 		int								getDecendantFossilAttachBranches(Node *p, double t, int fID);
@@ -313,8 +318,17 @@ class Tree : public Parameter {
 		void							setNodeOldestAttchBranchTime(Node *p);
 		int								pickRandAncestorFossil(void);
 		int								pickRandTipFossil(void);
-
-
+		double							getSumLogAllAttachNums(void);
+		double							doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv);
+		double							doAWindoMove(double &nv, double cv, double tv, double lb, double hb, double rv);
+		int								getNumDecFossils(Node *p);
+		
+		void							checkNodeInit(void);
+		
+		void							recountFromNodeFossilAttchNums(Node *p);
+		int								recursivCreateTempFossVec(std::vector<Fossil *> &v, Node *p);
+		
+		
 		Alignment						*alignmentPtr;
 		int								numTaxa;
 		int								numNodes;
@@ -335,9 +349,14 @@ class Tree : public Parameter {
 		bool							softBounds;
 		bool							expHyperPrCal;
 		bool							isTipCals;
+		int								nodeProposal;
 		
 		std::vector<Node *>				calibNodes;
 		std::vector<Fossil *>			fossSpecimens;
+		
+		double							tuningVal;
+		int								numMoves;
+		bool							autotune;
 		
 		
 };

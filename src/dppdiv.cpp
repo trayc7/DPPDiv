@@ -125,8 +125,9 @@ int main (int argc, char * const argv[]) {
 	double rateSc       = 4.0;		// scale param for gamma dist on rates
 	double hyperSh		= -1.0;		// scale hyperparam for gamma dist on concentration param
 	double hyperSc		= -1.0;		// scale hyperparam for gamma dist on concentration param
-	double netDiv		= 1.0;		// initial diversificaton rate (lambda - mu)
-	double relDeath		= 0.5;		// initial relative death rate (mu / lambda)
+	double netDiv		= -1.0;		// initial diversificaton rate (lambda - mu)
+	double relDeath		= -1.0;		// initial relative death rate (mu / lambda)
+	double ssbdPrS		= -1.0;
 	double fixclokrt	= -1.0;		// fix the clock rate to this
 	int offmove			= 0;		// used to turn off one particular move
 	int printFreq		= 100;
@@ -153,6 +154,8 @@ int main (int argc, char * const argv[]) {
 	int modelType		= 1;		// 1 = DPP, 2 = strict clock, 3 = uncorrelated-gamma
 	bool fixClockToR    = false;
 	bool indHP			= false;
+	bool doAbsRts		= false;
+	bool fixTest		= false;
 	
 	if(argc > 1){  
 		for (int i = 1; i < argc; i++){
@@ -210,14 +213,18 @@ int main (int argc, char * const argv[]) {
 					tipDateFN = argv[i+1];
 				else if(!strcmp(curArg, "-npr"))
 					treeNodePrior = atoi(argv[i+1]);
-				else if(!strcmp(curArg, "-tgs"))		
+				else if(!strcmp(curArg, "-tgs"))		// set treeNodePrior to do calibrated birth-death
 					treeNodePrior = 6;
-				else if(!strcmp(curArg, "-tga"))		
+				else if(!strcmp(curArg, "-tga")){		// set treeNodePrior to do calibrated birth-death with ancestor fossils
 					treeNodePrior = 7;
+					doAbsRts = true;
+				}
 				else if(!strcmp(curArg, "-bdr"))	// (lambda - mu)
 					netDiv = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-bda"))	// (mu / lambda)
 					relDeath = atof(argv[i+1]);
+				else if(!strcmp(curArg, "-bds"))	// (mu / lambda)
+					ssbdPrS = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-fix")){	// fix clock
 					fixclokrt = atof(argv[i+1]);
 					fixClockToR = true;
@@ -249,6 +256,13 @@ int main (int argc, char * const argv[]) {
 					fixModelPs = true;
 				else if(!strcmp(curArg, "-ihp"))
 					indHP = true;
+				else if(!strcmp(curArg, "-abs")){
+					doAbsRts = true;
+					rateSh = 1.0;
+				}
+				else if(!strcmp(curArg, "-fxtr")){
+					fixTest = true;
+				}
 				else if(!strcmp(curArg, "-h")){
 					printHelp(false);
 					return 0;
@@ -297,10 +311,13 @@ int main (int argc, char * const argv[]) {
 	MbRandom myRandom;
 	myRandom.setSeed(s1, s2);
 	
+	// set up the model
 	Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc, 
 				  hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN, 
-				  treeNodePrior, netDiv, relDeath, fixclokrt, rootfix, softbnd, calibHyP,
-				  dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN);
+				  treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
+				  dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest);
+	if(doAbsRts)
+		myModel.setEstAbsRates(true);
 	if(runPrior)
 		myModel.setRunUnderPrior(true);
 	if(justTree){
@@ -311,5 +328,4 @@ int main (int argc, char * const argv[]) {
 	
     return 0;
 }
-
 

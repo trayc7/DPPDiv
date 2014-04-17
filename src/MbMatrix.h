@@ -40,6 +40,7 @@
 #include <iomanip> 
 #include <cstdlib> 
 #include <cstring>
+#include <string.h>
  
 
 /*! 

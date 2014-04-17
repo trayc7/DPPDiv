@@ -386,7 +386,7 @@ inline double MbRandom::normalPdf(double mu, double sigma, double x) {
  */
 inline double MbRandom::lnNormalPdf(double mu, double sigma, double x) {
 
-	return -0.5 * std::log(2.0 * PI * sigma) - 0.5 * (x - mu) * (x - mu) / (sigma * sigma);
+	return -0.5 * std::log(2.0 * PI * sigma * sigma) - 0.5 * (x - mu) * (x - mu) / (sigma * sigma);
 	
 }
 
