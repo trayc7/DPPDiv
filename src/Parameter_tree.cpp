@@ -102,9 +102,9 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	isTipCals = false; 
 	expHyperPrCal = exhpc;
 	buildTreeFromNewickDescription(ts); 
-	buildTreeFromNewickDescription(ts);
 	
-	
+	tuningVal = log(8.0);
+
 	nodeProposal = 2; // proposal type 1=window, 2=scale, 3=slide
 	
 
@@ -213,8 +213,10 @@ void Tree::buildTreeFromNewickDescription(string ts) {
 		}
 		else{
 			string s = "";
-			while ( isValidChar(ts[i]) )
+			while ( isValidChar(ts[i]) ){
+//				cout << ts[i] << " ";
 				s += ts[i++];
+			}
 			i--;
 			if (readingBrlen == false){
 				if ( alignmentPtr->isTaxonPresent(s) == false ){
