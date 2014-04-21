@@ -2,6 +2,8 @@ DPPDiv is a program for estimating divergence times on a fixed, rooted tree topo
 
 Details about this program are available in the following papers:
 
+*Heath, Huelsenbeck, Stadler. 2013. The fossilized birth-death process: A coherent model of fossil calibration for divergence time estimation. arXiv preprint arXiv:1310.2968.
+
 *Heath, Holder, Huelsenbeck. 2012. A Dirichlet process prior for estimating lineage-specific substitution rates. Molecular Biology and Evolution 29:939-955.
 
 *Heath. 2012. A hierarchical Bayesian model for calibrating estimates of species divergence times. Systematic Biology, 61:793-809.
