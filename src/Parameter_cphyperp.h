@@ -36,7 +36,7 @@ class Cphyperp : public Parameter {
 
 	public:
 							Cphyperp(MbRandom *rp, Model *mp, double ga, double gb, int nn, 
-									 int pm, bool fixcp);
+									 double pm, bool fixcp);
 							~Cphyperp(void);
 		Cphyperp			&operator=(const Cphyperp &c);
 		void				clone(const Cphyperp &c);

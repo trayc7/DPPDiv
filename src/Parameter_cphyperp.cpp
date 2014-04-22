@@ -41,7 +41,7 @@
 using namespace std;
 
 
-Cphyperp::Cphyperp(MbRandom *rp, Model *mp, double ga, double gb, int nn, int pm, bool fixcp) : Parameter(rp, mp) {
+Cphyperp::Cphyperp(MbRandom *rp, Model *mp, double ga, double gb, int nn, double pm, bool fixcp) : Parameter(rp, mp) {
 	
 #	if ASSIGN_ROOT
 	numNodes = nn;
