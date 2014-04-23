@@ -242,7 +242,7 @@ double NodeRate::updateDPM(double &oldLnL) {
 			}
 						
 			normalizeVector(lnProb);
-	
+			
 			unsigned whichTable = ranPtr->categoricalRv(&lnProb[0], lnProb.size());
 			
 			RateGroup *newGroup = NULL;

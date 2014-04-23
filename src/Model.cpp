@@ -120,7 +120,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		cerr << "ERROR: the prior on the mean number of tables cannot exceed the number of nodes in the tree!" << endl;
 		exit(1);
 	}
-	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, pm, cpfix);
+	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, priorMeanN, cpfix);
 	ExpCalib *excal = new ExpCalib(ranPtr, this, dphpc, dphpng, initRootH, gamhp, runIndCalHP);
 	NodeRate *nr = new NodeRate(ranPtr, this, nn, ra, rb, conp->getCurrentCP(), fxclkrt, rmod);
 	for (int i=0; i<2; i++){ 

@@ -94,11 +94,10 @@ double Basefreq::update(double &oldLnL) {
 	MbVector<double> oldFreqs(numStates);
 	MbVector<double> newFreqs(numStates);
 	
-	for (int i=0; i<numStates; i++)
-		{
+	for (int i=0; i<numStates; i++){
 		oldFreqs[i] = freqs[i];
 		aForward[i] = freqs[i] * alpha0;
-		}
+	}
 		
 	ranPtr->dirichletRv(aForward, newFreqs);
 	
@@ -118,7 +117,7 @@ double Basefreq::update(double &oldLnL) {
 		aReverse[i] = newFreqs[i] * alpha0;
 	
 	double lnProposalRatio = ranPtr->lnDirichletPdf(aReverse, oldFreqs) - ranPtr->lnDirichletPdf(aForward, newFreqs);
-	
+		
 	Tree *t = modelPtr->getActiveTree();
 	t->flipAllCls();
 	t->flipAllTis();

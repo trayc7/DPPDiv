@@ -82,11 +82,10 @@ double Exchangeability::update(double &oldLnL) {
 	MbVector<double> oldRates(6);
 	MbVector<double> newRates(6);
 	
-	for (int i=0; i<6; i++)
-		{
+	for (int i=0; i<6; i++){
 		oldRates[i] = rates[i];
 		aForward[i] = rates[i] * alpha0;
-		}
+	}
 		
 	ranPtr->dirichletRv(aForward, newRates);
 	double sum = 0.0;
