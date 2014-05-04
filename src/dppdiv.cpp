@@ -70,7 +70,7 @@ void printHelp(bool files)
 		cout << "*****\n";
 	}
 	else{
-		cout << "\n\texample:      \n\n\t$ diriclok -in datafile.in -out file -tre tree.phy -n 10000 -sf 10\n\n";
+		cout << "\n\texample:      \n\n\t$ dppdiv -in datafile.in -out file -tre tree.phy -n 10000 -sf 10\n\n";
 		cout << "\tHere are the available options that you can change (default values are in []):\n";
 		cout << "\t\t-h    : print this menu **\n";
 		cout << "\t\t-hf   : display example file formats **\n";

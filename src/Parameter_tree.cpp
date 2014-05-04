@@ -103,9 +103,12 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	expHyperPrCal = exhpc;
 	buildTreeFromNewickDescription(ts); 
 	
-	tuningVal = log(8.0);
-
 	nodeProposal = 2; // proposal type 1=window, 2=scale, 3=slide
+	tuningVal = log(8.0);
+	//cout << "input root height " << rth << endl;
+	if(rth < 5.0)
+		nodeProposal = 1;
+	
 	
 
 	if(numCalibNds > 0 && treeTimePrior < 6){

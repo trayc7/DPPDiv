@@ -137,10 +137,12 @@ double Speciation::update(double &oldLnL) {
 		relativeDeath = 0.0;
 	}
 	else if(treeTimePrior == 3){
-		if(ranPtr->uniformRv() < 0.5)
-			lnProposalRatio += updateRelDeathRt();
-		else
-			lnProposalRatio += updateNetDivRate();
+		updateRelDeathRt(t);
+		updateNetDivRate(t);
+		modelPtr->setLnLGood(true);
+		modelPtr->setMyCurrLnl(oldLnL);
+		
+		return 0.0;
 	}
 	else if(treeTimePrior > 3){ 
 		
