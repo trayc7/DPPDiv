@@ -215,10 +215,8 @@ int main (int argc, char * const argv[]) {
 					treeNodePrior = atoi(argv[i+1]);
 				else if(!strcmp(curArg, "-tgs"))		// set treeNodePrior to do calibrated birth-death
 					treeNodePrior = 6;
-				else if(!strcmp(curArg, "-tga")){		// set treeNodePrior to do calibrated birth-death with ancestor fossils
+				else if(!strcmp(curArg, "-tga"))		// set treeNodePrior to do calibrated birth-death with ancestor fossils
 					treeNodePrior = 7;
-					doAbsRts = true;
-				}
 				else if(!strcmp(curArg, "-bdr"))	// (lambda - mu)
 					netDiv = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-bda"))	// (mu / lambda)

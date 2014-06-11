@@ -216,7 +216,8 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 	
 	if(gen == 1){
 		paraOut << "Gen\tlnLikelihood\tf(A)\tf(C)\tf(G)\tf(T)";
-		paraOut << "\tr(AC)\tr(AG)\tr(AT)\tr(CG)\tr(CT)\tr(GT)\tshape\tave rate\tnum rate groups\tconc param\n";
+//		paraOut << "\tr(AC)\tr(AG)\tr(AT)\tr(CG)\tr(CT)\tr(GT)\tshape\tave rate\tnum rate groups\tconc param\n";
+		paraOut << "\tr(AC)\tr(AG)\tr(AT)\tr(CG)\tr(CT)\tr(GT)\tshape\n";
 		figTOut << "#NEXUS\nbegin trees;\n";
 		nodeOut << "Gen\tlnL";
 		nodeOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)";
@@ -242,7 +243,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 			nodeOut << t->getCalBDSSNodeInfoParamNames();
 		}
 		if(treePr == 7){
-			nodeOut << t->getCalBDSSNodeInfoIndicatorNames();
+//			nodeOut << t->getCalBDSSNodeInfoIndicatorNames();
 			nodeOut << "\tnum.tips";
 		}
 		
@@ -255,9 +256,9 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 	for(int i=0; i<6; i++)
 		paraOut << "\t" << e->getRate(i);
 	paraOut << "\t" << sh->getAlphaSh();
-	paraOut << "\t" << nr->getAverageRate();
-	paraOut << "\t" << nr->getNumRateGroups();
-	paraOut << "\t" << nr->getConcenParam();
+//	paraOut << "\t" << nr->getAverageRate();
+//	paraOut << "\t" << nr->getNumRateGroups();
+//	paraOut << "\t" << nr->getConcenParam();
 	paraOut << "\n";
 		
 	figTOut << "  tree t" << gen << " = ";
@@ -300,7 +301,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		nodeOut << t->getCalBDSSNodeInfoParamList();
 	}
 	if(treePr == 7){
-		nodeOut << t->getCalBDSSNodeInfoIndicatorList();
+//		nodeOut << t->getCalBDSSNodeInfoIndicatorList();
 		nodeOut << "\t" << t->getSumIndicatorV();
 	}
 	nodeOut << "\n";

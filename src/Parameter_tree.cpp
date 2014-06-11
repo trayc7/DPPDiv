@@ -1823,15 +1823,15 @@ string Tree::getCalBDSSNodeInfoParamNames(void){
 	
 	stringstream ss;
 	Fossil *f = NULL;
-	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
-		int idx = (*v)->getIdx();
-		ss << "\tcalib.time(N" << idx << ")";
-	}
-	for(int i=0; i<fossSpecimens.size(); i++){
-		f = fossSpecimens[i];
-		int nID = f->getFossilMRCANodeID();
-		ss << "\tcal.dist(C" << i << ".nd" << nID << ")";
-	}
+//	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
+//		int idx = (*v)->getIdx();
+//		ss << "\tcalib.time(N" << idx << ")";
+//	}
+//	for(int i=0; i<fossSpecimens.size(); i++){
+//		f = fossSpecimens[i];
+//		int nID = f->getFossilMRCANodeID();
+//		ss << "\tcal.dist(C" << i << ".nd" << nID << ")";
+//	}
 	for(int i=0; i<fossSpecimens.size(); i++){
 		f = fossSpecimens[i];
 		int nID = f->getFossilMRCANodeID();
@@ -1851,15 +1851,15 @@ string Tree::getCalBDSSNodeInfoParamList(void){
 	
 	stringstream ss;
 	Fossil *f = NULL;
-	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
-		setNodeOldestAttchBranchTime((*v));
-		double t = (*v)->getFossAttchTime() * treeScale;
-		ss << "\t" << t;
-	}
-	for(int i=0; i<fossSpecimens.size(); i++){
-		f = fossSpecimens[i];
-		ss << "\t" << f->getCalibrationDistance();
-	}
+//	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
+//		setNodeOldestAttchBranchTime((*v));
+//		double t = (*v)->getFossAttchTime() * treeScale;
+//		ss << "\t" << t;
+//	}
+//	for(int i=0; i<fossSpecimens.size(); i++){
+//		f = fossSpecimens[i];
+//		ss << "\t" << f->getCalibrationDistance();
+//	}
 	for(int i=0; i<fossSpecimens.size(); i++){
 		f = fossSpecimens[i];
 		if(1) 
