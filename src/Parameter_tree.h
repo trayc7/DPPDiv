@@ -249,6 +249,7 @@ class Tree : public Parameter {
 		
 		double							getTreeCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate);
 		double							getTreeAncCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate);
+		double							getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate);
 
 		std::string						getCalBDSSNodeInfoParamNames(void);
 		std::string						getCalBDSSNodeInfoParamList(void);
@@ -304,6 +305,7 @@ class Tree : public Parameter {
 		double							bdssQFxn(double b, double d, double psi, double rho, double t); // on log scale
 		double							bdssP0Fxn(double b, double d, double psi, double rho, double t);
 		double							bdssP0HatFxn(double b, double d, double rho, double t);
+		double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
 
 		void							initializeTGSCalibVariables(void);
 		

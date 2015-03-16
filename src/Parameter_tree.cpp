@@ -1417,6 +1417,7 @@ double Tree::bdssQFxn(double b, double d, double psi, double rho, double t){
 	
 	double vX = c1Val * t + 2.0 * log(exp(-c1Val * t) * (1.0 - c2Val) + (1.0 + c2Val));
 	
+	// returns log(q)
 	return vX;
 }
 
@@ -1434,6 +1435,13 @@ double Tree::bdssP0Fxn(double b, double d, double psi, double rho, double t){
 double Tree::bdssP0HatFxn(double b, double d, double rho, double t){
 	
 	double v = 1.0 - ((rho * (b - d)) / ((b*rho) + (((b * (1-rho)) - d) * exp(-(b-d)*t))));
+	return v;
+}
+
+double Tree::fbdQHatFxn(double b, double d, double psi, double rho, double t){
+
+	double v = log(4.0 * rho);
+	v -= bdssQFxn(b,d,psi,rho,t);
 	return v;
 }
 
@@ -2308,6 +2316,35 @@ double Tree::getTreeAncCalBDSSTreeNodePriorProb(double lambda, double mu, double
 		}
 	}
 	
+	return nprb;
+}
+
+
+double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate) {
+	double ot = 500.0; // place-holder for the origin time
+
+	double nprb = 1.0 - (log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, ot)));
+	
+	for(int i=0; i<numNodes; i++){
+		Node *p = &nodes[i];
+		if(!p->getIsLeaf()){
+			double myAge = p->getNodeDepth() * treeScale;
+			nprb += log(lambda) + fbdQHatFxn(lambda, mu, fossRate, sppSampRate, myAge);
+		}
+	}
+	
+	for(int i=0; i<fossSpecimens.size(); i++){
+		Fossil *f = fossSpecimens[i];
+		nprb += log(fossRate * f->getFossilFossBrGamma() );
+		if(f->getFossilIndicatorVar()){
+			double fossAge = f->getFossilAge();
+			double fossPhi = f->getFossilSppTime() * treeScale;
+			double fossPr = log(2.0 * lambda) + log( bdssP0Fxn(lambda, mu, fossRate, sppSampRate, fossAge) );
+			fossPr += fbdQHatFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
+			fossPr -= fbdQHatFxn(lambda, mu, fossRate, sppSampRate, fossAge);
+			nprb += fossPr;
+		}
+	}
 	return nprb;
 }
 
