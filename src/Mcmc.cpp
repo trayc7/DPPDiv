@@ -94,7 +94,7 @@ void Mcmc::runChain(void) {
 		printAllModelParams(dOut);
 	}
 	
-	int timeSt = time(NULL);
+	int timeSt = (int)time(NULL);
 	bool testLnL = false;
 	int modifyUProbsGen = (int)numCycles * 0.5;
 	for (int n=1; n<=numCycles; n++){

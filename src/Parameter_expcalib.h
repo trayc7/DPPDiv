@@ -48,7 +48,7 @@ class LambdaTable {
 		double				getTableLambda(void) const { return lambda; }
 		bool				getIsDinerSeated(int idx) const { return diners.find(idx) != diners.end(); }
 		void				setTableLambda(double x) { lambda = x; }
-		int					getNumDiners(void) const { return diners.size(); }
+		int					getNumDiners(void) const { return (int)diners.size(); }
 		void				print(std::ostream &ss) const;
 		std::set<int>		getDinerList() { return diners; }
 		
