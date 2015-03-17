@@ -156,7 +156,6 @@ int main (int argc, char * const argv[]) {
 	bool indHP			= false;
 	bool doAbsRts		= false;
 	bool fixTest		= false;
-    bool condOrigin     = false;
 	
 	if(argc > 1){  
 		for (int i = 1; i < argc; i++){
@@ -196,8 +195,6 @@ int main (int argc, char * const argv[]) {
 					moveAllN = false;
 				else if(!strcmp(curArg, "-rdn"))
 					rndNdMv = true;
-                else if(!strcmp(curArg, "-fbds")) // condition fbd on the age of the stem
-                    condOrigin = true;
 				else if(!strcmp(curArg, "-vb"))
 					writeDataFile = true;
 				else if(!strcmp(curArg, "-offm"))
@@ -220,6 +217,8 @@ int main (int argc, char * const argv[]) {
 					treeNodePrior = 6;
 				else if(!strcmp(curArg, "-tga"))		// set treeNodePrior to do calibrated birth-death with ancestor fossils
 					treeNodePrior = 7;
+                else if(!strcmp(curArg, "-fbds")) // condition fbd on the age of the stem
+                    treeNodePrior = 8;
 				else if(!strcmp(curArg, "-bdr"))	// (lambda - mu)
 					netDiv = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-bda"))	// (mu / lambda)
@@ -316,7 +315,7 @@ int main (int argc, char * const argv[]) {
 	Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc, 
 				  hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN, 
 				  treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
-				  dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, condOrigin);
+				  dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest);
 	if(doAbsRts)
 		myModel.setEstAbsRates(true);
 	if(runPrior)

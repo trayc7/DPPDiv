@@ -36,6 +36,7 @@
 #include "Parameter_basefreq.h"
 #include "Parameter_exchangeability.h"
 #include "Parameter_expcalib.h"
+#include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_shape.h"
 #include "Parameter_speciaton.h"
@@ -55,7 +56,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr, bool coo) {
+			 bool ihp, string tipdfn, bool fxtr) {
 
 	// remember pointers to important objects...
 	ranPtr       = rp;
@@ -77,7 +78,8 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixSomeModParams = fxmod;
 	fixTestRun = fxtr;
 	estAbsRts = false;
-    conditionOnOrigin = coo;
+    if(treeTimePrior == 8)
+        conditionOnOrigin = true; // some redundancy for now
 	double initRootH = 1.0;
 	runIndCalHP = ihp;
 	rHtY = 0.0;
@@ -135,6 +137,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, ehpc) ); // the tree scale prior
 		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH) );												// hyper prior on diversification for cBDP speciation
 		parms[i].push_back( excal );											// hyper prior exponential node calibration parameters
+        parms[i].push_back( new OriginTime(ranPtr, this, initRootH, rHtY, 100000.0) ); // the origin time parameters
 	}
 	numParms = (int)parms[0].size();
 	activeParm = 0;
@@ -275,6 +278,17 @@ ExpCalib* Model::getActiveExpCalib(void) {
 			return derivedPtr;
 	}
 	return NULL;
+}
+
+OriginTime* Model::getActiveOriginTime(void) {
+    
+    for (int i=0; i<numParms; i++){
+        Parameter *p = parms[activeParm][i];
+        OriginTime *derivedPtr = dynamic_cast<OriginTime *>(p);
+        if ( derivedPtr != 0 )
+            return derivedPtr;
+    }
+    return NULL;
 }
 
 
@@ -577,6 +591,7 @@ double Model::readCalibFile(void) {
 	double initTScale = 1.0;
 	double yb = 0.0;
 	double ob = 0.0;
+    // Put initialization of the origin time here
 	if(rootIs){
 		if(rooCal->getPriorDistributionType() == 1){
 			yb = rooCal->getYngTime();
@@ -680,7 +695,7 @@ Calibration* Model::getRootCalibration(void) {
 
 void Model::setUpdateProbabilities(bool initial) {
 
-	double bfp, srp, shp, ntp, dpp, cpa, tsp, spp, ehp, fcp;
+	double bfp, srp, shp, ntp, dpp, cpa, tsp, spp, ehp, fcp, otp;
 	if(initial){
 		bfp = 0.3;
 		srp = 0.3;
@@ -692,6 +707,7 @@ void Model::setUpdateProbabilities(bool initial) {
 		spp = 0.4;
 		ehp = 0.0;
 		fcp = 0.0;
+        otp = 0.0;
 	}
 	else{
 		bfp = 0.2;
@@ -703,6 +719,7 @@ void Model::setUpdateProbabilities(bool initial) {
 		tsp = 0.4;
 		spp = 0.4;
 		ehp = 0.0;
+        otp = 0.0;
 	}
 	if(turnedOffMove == 1)
 		bfp = 0.0;

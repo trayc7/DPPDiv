@@ -50,6 +50,7 @@ class Tree;
 class Treescale;
 class Cphyperp;
 class ExpCalib;
+class OriginTime;
 class Model {
 
 	enum TreeDirection 
@@ -65,7 +66,7 @@ class Model {
 											  bool alnm, int offmv, bool rndNo, std::string clfn, int nodpr, 
 											  double bdr, double bda, double bds, double fxclkrt, bool roofix,
 											  bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod,
-											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr, bool coo);
+											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr);
 										~Model(void);
 		double							lnLikelihood(void);
 		double							getPriorMeanV(void) { return priorMeanN; }
@@ -77,7 +78,8 @@ class Model {
 		NodeRate*						getActiveNodeRate(void);
 		Speciation*						getActiveSpeciation(void);
 		Cphyperp*						getActiveCphyperp(void);
-		ExpCalib*						getActiveExpCalib(void);
+        ExpCalib*						getActiveExpCalib(void);
+        OriginTime*						getActiveOriginTime(void);
 		Parameter*						pickParmToUpdate(void);
 		void							printTis(std::ostream &) const;
 		void							setTiProb(void);
@@ -148,6 +150,7 @@ class Model {
 		bool							zeroNodeTimeMove;
 		double							rHtY;
 		double							rHtO;
+        double                          initOT;
 		double							rootNExpRate;
 		bool							exponCalibHyperParm;
 		bool							exponDPMCalibHyperParm;

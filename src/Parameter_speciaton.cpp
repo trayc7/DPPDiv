@@ -421,11 +421,16 @@ double Speciation::getLnTreeProb(Tree *t) {
 		double nps = t->getTreeCalBDSSTreeNodePriorProb(birthRate, deathRate, fossilRate, extantSampleRate);
 		return nps;
 	}
-	else if(treeTimePrior == 7){
+	else if(treeTimePrior == 7){ // FBD conditioned on the root
 		setAllBDFossParams();
 		double nps = t->getTreeAncCalBDSSTreeNodePriorProb(birthRate, deathRate, fossilRate, extantSampleRate);
 		return nps;
 	}
+    else if(treeTimePrior == 8){ // FBD conditioned on the origin time
+        setAllBDFossParams();
+        double nps = t->getTreeStemAncCalBDSSTreeNodePriorProb(birthRate, deathRate, fossilRate, extantSampleRate);
+        return nps;
+    }
 	return 0.0;
 }
 

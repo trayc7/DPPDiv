@@ -37,7 +37,7 @@ class Tree;
 class OriginTime : public Parameter {
     
 public:
-    OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob, int dt, bool calib);
+    OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob);
     ~OriginTime(void);
     OriginTime			&operator=(const OriginTime &c);
     void				clone(const OriginTime &c);

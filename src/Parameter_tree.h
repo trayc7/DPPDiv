@@ -346,6 +346,8 @@ class Tree : public Parameter {
 		int								numExtinctTips;
 		int								numAncFossilsk; // for -tgs, this is the number of fossils that are ancestors
 		double							treeScale;
+        double                          originTime;
+        bool                            conditionOnOrigin;
 		bool							isCalibTree;
 		int								treeTimePrior;
 		bool							softBounds;

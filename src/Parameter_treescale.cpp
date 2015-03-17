@@ -29,6 +29,7 @@
 
 #include "Parameter.h"
 #include "Parameter_expcalib.h"
+#include "Parameter_origin.h"
 #include "Parameter_speciaton.h"
 #include "Parameter_treescale.h"
 #include "Parameter_tree.h"
@@ -138,6 +139,9 @@ void Treescale::print(std::ostream & o) const {
 
 double Treescale::update(double &oldLnL) {
 	
+    if(modelPtr->getOriginCondition()){ // refine this at some point
+        oldBound = modelPtr->getActiveOriginTime()->getOriginTime();
+    }
 	double lppr = 0.0;
 	if(treeTimePrior == 4 && ranPtr->uniformRv() < 0.3){
 		lppr = updateTreeOrigTime(oldLnL);
@@ -432,7 +436,7 @@ double Treescale::getLnTreeProb(Tree *t) {
 														s->getBDSSSppSampRateRho());
 		return nps;
 	}
-	else if(treeTimePrior == 7){
+	else if(treeTimePrior == 7){ // FBD conditioned on the root
 		Speciation *s = modelPtr->getActiveSpeciation();
 		s->setAllBDFossParams();
 		double nps = t->getTreeAncCalBDSSTreeNodePriorProb(s->getBDSSSpeciationRateLambda(), 
@@ -441,6 +445,15 @@ double Treescale::getLnTreeProb(Tree *t) {
 														s->getBDSSSppSampRateRho());
 		return nps;
 	}
+    else if(treeTimePrior == 8){ // FBD conditioned on the origin time
+        Speciation *s = modelPtr->getActiveSpeciation();
+        s->setAllBDFossParams();
+        double nps = t->getTreeStemAncCalBDSSTreeNodePriorProb(s->getBDSSSpeciationRateLambda(),
+                                                           s->getBDSSExtinctionRateMu(),
+                                                           s->getBDSSFossilSampRatePsi(),
+                                                           s->getBDSSSppSampRateRho());
+        return nps;
+    }
 	return 0.0;
 }
 

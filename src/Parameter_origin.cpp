@@ -42,10 +42,10 @@
 
 using namespace std;
 
-OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob, int dt, bool calib) : Parameter(rp, mp) {
+OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob) : Parameter(rp, mp) {
     oldBound = ob;
     yngBound = yb;
-    originTime = 4000.0;
+    originTime = 100000.0 - 1.0; // placeholder for now
     name = "OT";
 }
 

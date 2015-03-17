@@ -34,6 +34,7 @@
 #include "Model.h"
 #include "Parameter.h"
 #include "Parameter_expcalib.h"
+#include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_speciaton.h"
 #include "Parameter_treescale.h"
@@ -94,7 +95,9 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	numAncFossilsk = 0;
 	datedTips = tdt;
 	treeScale = rth;
+    originTime = 3500.0;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
+    conditionOnOrigin = modelPtr->getOriginCondition(); // TAH: some redundancy for now
 	name = "TR";
 	randShufNdMv = rndNods;
 	softBounds = sb;
@@ -301,6 +304,7 @@ void Tree::clone(const Tree &t) {
 		pTo->setFossAttchTime( pFrom->getFossAttchTime() );
 		pTo->setNumFossAttchLins( pFrom->getNumFossAttchLins() );
 		
+        // add originTime at some point
 		
 		pTo->setNumFCalibratingFossils( pFrom->getNumCalibratingFossils() );
 		
@@ -336,6 +340,10 @@ void Tree::clone(const Tree &t) {
 	root = &nodes[t.root->getIdx()];
 	treeScale = t.treeScale;
 	treeTimePrior = t.treeTimePrior;
+    
+    // TAH: double check this (more bookkeeping is probably needed, for now this is a placeholder)
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+    originTime = ot->getOriginTime();
 		
 	for (int i=0; i<numNodes; i++)
 		downPassSequence[i] = &nodes[ t.downPassSequence[i]->getIdx() ];
@@ -744,6 +752,7 @@ bool Tree::isValidChar(char c) {
 
 void Tree::passDown(Node *p, int *x) {
 
+    
 	if ( p != NULL )
 		{
 		passDown(p->getLft(), x);
@@ -760,7 +769,9 @@ void Tree::print(std::ostream & o) const {
 
 double Tree::update(double &oldLnL) {
 	
-	
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+    originTime = ot->getOriginTime();
+
 	double lppr = 0.0;
 	double probCalMove = 0.5;
 	if(treeTimePrior == 6){
@@ -2128,7 +2139,7 @@ double Tree::getTreeCBDNodePriorProb() {
 		nprb = getTreeCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
 		return nprb;
 	}
-	else if(treeTimePrior == 7){
+	else if(treeTimePrior == 7){ // FBD conditioned on the root
 		Speciation *s = modelPtr->getActiveSpeciation();
 		s->setAllBDFossParams();
 		double lambda = s->getBDSSSpeciationRateLambda();	
@@ -2138,7 +2149,16 @@ double Tree::getTreeCBDNodePriorProb() {
 		nprb = getTreeAncCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
 		return nprb;
 	}
-	
+    else if(treeTimePrior == 8){ // FBD conditioned on the origin time
+        Speciation *s = modelPtr->getActiveSpeciation();
+        s->setAllBDFossParams();
+        double lambda = s->getBDSSSpeciationRateLambda();
+        double mu = s->getBDSSExtinctionRateMu();
+        double fossRate = s->getBDSSFossilSampRatePsi();
+        double sppSampRate = s->getBDSSSppSampRateRho();
+        nprb = getTreeStemAncCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
+        return nprb;
+    }
 	return 0.0;
 }
 
@@ -2200,16 +2220,26 @@ double Tree::getTreeCBDNodePriorProb(double netDiv, double relDeath) {
 		nprb = getTreeCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
 		return nprb;
 	}
-	else if(treeTimePrior == 7){
-		Speciation *s = modelPtr->getActiveSpeciation();
-		s->setAllBDFossParams();
-		double lambda = s->getBDSSSpeciationRateLambda();	
-		double mu = s->getBDSSExtinctionRateMu();
-		double fossRate = s->getBDSSFossilSampRatePsi();
-		double sppSampRate = s->getBDSSSppSampRateRho();
-		nprb = getTreeAncCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
-		return nprb;
-	}
+    else if(treeTimePrior == 7){ // FBD conditioned on the root
+        Speciation *s = modelPtr->getActiveSpeciation();
+        s->setAllBDFossParams();
+        double lambda = s->getBDSSSpeciationRateLambda();
+        double mu = s->getBDSSExtinctionRateMu();
+        double fossRate = s->getBDSSFossilSampRatePsi();
+        double sppSampRate = s->getBDSSSppSampRateRho();
+        nprb = getTreeAncCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
+        return nprb;
+    }
+    else if(treeTimePrior == 8){ // FBD conditioned on the origin time
+        Speciation *s = modelPtr->getActiveSpeciation();
+        s->setAllBDFossParams();
+        double lambda = s->getBDSSSpeciationRateLambda();
+        double mu = s->getBDSSExtinctionRateMu();
+        double fossRate = s->getBDSSFossilSampRatePsi();
+        double sppSampRate = s->getBDSSSppSampRateRho();
+        nprb = getTreeStemAncCalBDSSTreeNodePriorProb(lambda, mu, fossRate, sppSampRate);
+        return nprb;
+    }
 	return 0.0;
 }
 
@@ -2321,9 +2351,10 @@ double Tree::getTreeAncCalBDSSTreeNodePriorProb(double lambda, double mu, double
 
 
 double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate) {
-	double ot = 500.0; // place-holder for the origin time
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+    originTime = ot->getOriginTime();
 
-	double nprb = 1.0 - (log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, ot)));
+	double nprb = 1.0 - (log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, originTime)));
 	
 	for(int i=0; i<numNodes; i++){
 		Node *p = &nodes[i];
