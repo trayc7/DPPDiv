@@ -65,7 +65,7 @@ class Model {
 											  bool alnm, int offmv, bool rndNo, std::string clfn, int nodpr, 
 											  double bdr, double bda, double bds, double fxclkrt, bool roofix,
 											  bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod,
-											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr); 
+											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr, bool coo);
 										~Model(void);
 		double							lnLikelihood(void);
 		double							getPriorMeanV(void) { return priorMeanN; }
@@ -103,7 +103,7 @@ class Model {
 		void							setEstAbsRates(bool b) { estAbsRts = b; }
 		void							setFixTestRun(bool b) { fixTestRun = b; }
 		bool							getFixTestRun(void) { return fixTestRun; }
-		
+		bool							getOriginCondition(void) { return conditionOnOrigin; }
 	private:
 		void							initializeConditionalLikelihoods(void);
 		void							initializeTransitionProbabilityMatrices(void);
@@ -156,6 +156,7 @@ class Model {
 		bool							runIndCalHP;
 		bool							estAbsRts;
 		bool							fixTestRun;
+        bool                            conditionOnOrigin;
 };
 
 #endif

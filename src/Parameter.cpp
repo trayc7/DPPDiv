@@ -37,6 +37,7 @@
 #include "Parameter_cphyperp.h"
 #include "Parameter_treescale.h"
 #include "Parameter_speciaton.h"
+#include "Parameter_origin.h"
 
 using namespace std;
 
@@ -133,6 +134,14 @@ Parameter& Parameter::operator=(Parameter &p) {
 				goto exitOperator;
 			}
 		}
+        {
+            OriginTime *thatDerivedPtr = dynamic_cast<OriginTime *>(&p);
+            OriginTime *thisDerivedPtr = dynamic_cast<OriginTime *>(this);
+            if ( thatDerivedPtr != 0 && thisDerivedPtr != 0 ){
+                thisDerivedPtr->clone( *thatDerivedPtr );
+                goto exitOperator;
+            }
+        }
 		
 		exitOperator:
 			;

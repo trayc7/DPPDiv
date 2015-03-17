@@ -156,6 +156,7 @@ int main (int argc, char * const argv[]) {
 	bool indHP			= false;
 	bool doAbsRts		= false;
 	bool fixTest		= false;
+    bool condOrigin     = false;
 	
 	if(argc > 1){  
 		for (int i = 1; i < argc; i++){
@@ -195,6 +196,8 @@ int main (int argc, char * const argv[]) {
 					moveAllN = false;
 				else if(!strcmp(curArg, "-rdn"))
 					rndNdMv = true;
+                else if(!strcmp(curArg, "-fbds")) // condition fbd on the age of the stem
+                    condOrigin = true;
 				else if(!strcmp(curArg, "-vb"))
 					writeDataFile = true;
 				else if(!strcmp(curArg, "-offm"))
@@ -313,7 +316,7 @@ int main (int argc, char * const argv[]) {
 	Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc, 
 				  hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN, 
 				  treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
-				  dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest);
+				  dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, condOrigin);
 	if(doAbsRts)
 		myModel.setEstAbsRates(true);
 	if(runPrior)

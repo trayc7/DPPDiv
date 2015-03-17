@@ -55,7 +55,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr) {
+			 bool ihp, string tipdfn, bool fxtr, bool coo) {
 
 	// remember pointers to important objects...
 	ranPtr       = rp;
@@ -77,6 +77,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixSomeModParams = fxmod;
 	fixTestRun = fxtr;
 	estAbsRts = false;
+    conditionOnOrigin = coo;
 	double initRootH = 1.0;
 	runIndCalHP = ihp;
 	rHtY = 0.0;
