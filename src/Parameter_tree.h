@@ -101,6 +101,10 @@ class Node {
 		void			setNumFCalibratingFossils(int i) { numCalFossils = i; }
 		void			insertFossilID(int i) { calibFossilIDs.push_back(i); }
 		int				getIthFossiID(int i) { return calibFossilIDs[i]; }
+        std::vector<int>    getCalibFossilIDs(void) { return calibFossilIDs; }
+        std::vector<int>    getTGFossilIDs(void) { return tgFossilIDs; }
+        void			insertTGFossilID(int i) { tgFossilIDs.push_back(i); }
+
 		
 
 	private:
@@ -134,6 +138,7 @@ class Node {
 		int				numFossAttachLins;  // xi_i
 		int				numCalFossils;
 		std::vector<int> calibFossilIDs;
+    std::vector<int>    tgFossilIDs;
 };
 
 class Fossil {
@@ -150,14 +155,16 @@ class Fossil {
 		int								getFossilFossBrGamma(void) { return fossilBrGamma; }
 		int								getFossilIndicatorVar(void) { return ancFossIndicator; }
 		double							getCalibrationDistance(void) { return nodeAge - age; }
+        bool                            getIsTotalGroupFossil(void) {return isTotalGroupFossil; }
 		
-		void							setFossilIndex(int i) { indx = i; } 
+		void							setFossilIndex(int i) { indx = i; }
 		void							setFossilAge(double d) { age = d; }
 		void							setFossilSppTime(double d) { phi = d; }
 		void							setFossilMRCANodeID(int i) { nodeID = i; }
 		void							setFossilMRCANodeAge(double d) { nodeAge = d; } 
 		void							setFossilFossBrGamma(int i) { fossilBrGamma = i; }
 		void							setFossilIndicatorVar(int i) { ancFossIndicator = i; }
+        void							setIsTotalGroupFossil(bool b) { isTotalGroupFossil = b; }
 
 		
 		
@@ -170,6 +177,7 @@ class Fossil {
 		double							nodeAge;
 		int								fossilBrGamma;
 		int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
+        bool                            isTotalGroupFossil;
 		
 	
 	
@@ -313,6 +321,7 @@ class Tree : public Parameter {
 		void							initializeFossilSpecVariables();
 		void							initializeFossilAncestorSpecVariables();
 		int								recountFossilAttachNums();
+        int                             getGammaValueForTGFossil(Fossil *f);
 		int								getFossilLinAttachNumsForFoss(int fID);
 		
 		int								getDecendantFossilAttachBranches(Node *p, double t, int fID);

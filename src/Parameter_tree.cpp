@@ -2725,7 +2725,7 @@ double Tree::getNodeUpperBoundTime(Node *p){
 	return t;
 }
 
-void Tree::setUPTGSCalibrationFossils() {
+void Tree::setUPTGSCalibrationFossils() { // definitely have to change for FBDS
 	
 	int calID = 0;
 	for(vector<Calibration *>::iterator v = calibNds.begin(); v != calibNds.end(); v++){
@@ -2737,6 +2737,8 @@ void Tree::setUPTGSCalibrationFossils() {
 		fossSpecimens.push_back(f);
 		int nPFoss = p->getNumCalibratingFossils();
 		p->setNumFCalibratingFossils(nPFoss + 1);
+        bool sf = (*v)->getIsStemFossil();
+        f->setIsTotalGroupFossil(sf);
 		
 		if(nPFoss > 0){
 			if(p->getNodeYngTime() < fAge)
@@ -2747,7 +2749,8 @@ void Tree::setUPTGSCalibrationFossils() {
 		p->setNodeExpCalRate((*v)->getCalExponRate());
 		
 		(*v)->setNodeIndex(calbNo);
-		p->insertFossilID(calID);
+        p->insertFossilID(calID);
+        p->insertTGFossilID(calID);
 		cout << calbNo << " --- " << p->getNodeYngTime() << endl;
 		calID += 1;
 	}
@@ -2795,9 +2798,23 @@ int Tree::recountFossilAttachNums(){
 	for(int i=0; i<fossSpecimens.size(); i++){
 		Fossil *fi = fossSpecimens[i];
 		int fgammCur = fi->getFossilFossBrGamma();
-		double fiPhi = fi->getFossilSppTime();
+		double fiPhi = fi->getFossilSppTime(); // z_f
 		Node *p = &nodes[fi->getFossilMRCANodeID()];
-		int fiGamma = getDecendantFossilAttachBranches(p, fiPhi, i);
+        double xi = p->getNodeDepth() * treeScale;
+        int fiGamma = 0;
+        if(fi->getIsTotalGroupFossil()){
+            if(fiPhi > xi)
+                fiGamma = 1;
+            else fiGamma = getDecendantFossilAttachBranches(p, fiPhi, i);
+            fiGamma += getGammaValueForTGFossil(fi);
+            
+        }
+        else if (fiPhi < xi)
+            fiGamma = getDecendantFossilAttachBranches(p, fiPhi, i);
+        else{
+            cerr << "Error: z_i > x_i for a crown fossil." << endl;
+            exit(1);
+        }
 		if(fiGamma != fgammCur)
 			numChanged += 1;
 		fi->setFossilFossBrGamma(fiGamma);
@@ -2806,36 +2823,44 @@ int Tree::recountFossilAttachNums(){
 	return numChanged;
 }
 
-void Tree::recountFromNodeFossilAttchNums(Node *p){
-	
-	vector<Fossil *> tempFoss;
-	recursivCreateTempFossVec(tempFoss, p);
-	
-	for(int i=0; i<tempFoss.size(); i++){
-		Fossil *fi = tempFoss[i];
-		int fgammCur = fi->getFossilFossBrGamma();
-		double fiPhi = fi->getFossilSppTime();
-		Node *p = &nodes[fi->getFossilMRCANodeID()];
-		int fiGamma = getDecendantFossilAttachBranches(p, fiPhi, i);
-		fi->setFossilFossBrGamma(fiGamma);
-		fi->setFossilMRCANodeAge(p->getNodeDepth() * treeScale);
-	}
-}
-
-int Tree::recursivCreateTempFossVec(vector<Fossil *> &v, Node *p){
-	
-	if(p->getIsLeaf())
-		return 0;
-	else{
-		for(int i=0; i<p->getNumCalibratingFossils(); i++){
-			int idx = p->getIthFossiID(i);
-			Fossil *f = fossSpecimens[idx];
-			v.push_back(f);
-		}
-		recursivCreateTempFossVec(v, p->getLft());
-		recursivCreateTempFossVec(v, p->getRht());
-		return 0;
-	}
+int Tree::getGammaValueForTGFossil(Fossil *f){
+    
+    Node *p = &nodes[f->getFossilMRCANodeID()];
+    double xi = p->getNodeDepth() * treeScale;
+    double zf = f->getFossilSppTime();
+    int sumGamma = 0;
+    vector<int> myTGFossils = p->getTGFossilIDs();
+    // for tg fossils of xi
+    for (int i = 0; i < myTGFossils.size(); i++){
+        Fossil *tGFossilI = fossSpecimens[i];
+        if (tGFossilI != f) {
+            double ztgf = tGFossilI->getFossilSppTime();
+            double ytgf = tGFossilI->getFossilAge();
+            if(ztgf > xi) {
+                if(ztgf > zf && ytgf < zf){
+                    sumGamma += 1;
+                }
+            }
+        }
+    }
+    // for fossils of xpi and attached to the stem of xi
+    if(p != root){
+        Node *xAnc = p->getAnc();
+        double ancAge = xAnc->getNodeDepth() * treeScale;
+        vector<int> ancFossils = xAnc->getCalibFossilIDs();
+        for (int i = 0; i < ancFossils.size(); i++){
+            Fossil *ancFossI = fossSpecimens[i];
+            double zAncF = ancFossI->getFossilSppTime();
+            if (zAncF > xi && zAncF < ancAge){
+                double yAncF = ancFossI->getFossilAge();
+                if(zAncF > zf && yAncF < zf){
+                    sumGamma += 1;
+                }
+            }
+        }
+    }
+    
+    return sumGamma;
 }
 
 double Tree::getSumLogAllAttachNums(){

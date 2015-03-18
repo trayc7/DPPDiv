@@ -61,8 +61,12 @@ void Calibration::initializeNodeCalibration(string calstr){
 			prDistType = 1;
 		else if(tmp[1] == 'E' || tmp[1] == 'e')
 			prDistType = 2;
-		else if(tmp[1] == 'T' || tmp[1] == 't')
+		else if(tmp[1] == 'T' || tmp[1] == 't') // fossil belongs to crown group
 			prDistType = 3;
+        else if(tmp[1] == 'S' || tmp[1] == 's') { // fossil belongs to total group (stem or crown)
+            prDistType = 4;
+            isStem=true;
+        }
 		else{
 			cerr << "ERROR: There's a problem with the calibration file " << endl;
 			exit(1);
@@ -74,6 +78,8 @@ void Calibration::initializeNodeCalibration(string calstr){
 		else { 
 			isRootCal = true;
 			txn2 = "root";
+            if(prDistType == 4)
+                isOrigin = true;
 		}
 		ss >> tmp;
 		if(prDistType == 1){

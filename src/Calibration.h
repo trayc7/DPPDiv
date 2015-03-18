@@ -42,6 +42,8 @@ class Calibration {
 		bool			isRootCal;
 		int				prDistType; // 1 = Uniform, 2 = offset Exp, 3 = TGS
 		double			exponRate, exponMean;
+        bool            isStem;
+        bool            isOrigin;
 		
 		
 		
@@ -58,6 +60,10 @@ class Calibration {
 		int				getPriorDistributionType() { return prDistType; }
 		double			getCalExponRate() { return exponRate; }
 		double			getCalExponMean() { return exponMean; }
+        void			setIsStemFossil(bool b) { isStem = b; }
+        bool			getIsStemFossil() { return isStem; }
+        void			setIsOriginFossil(bool b) { isOrigin = b; }
+        bool			setIsOriginFossil() { return isOrigin; }
 		
 		void			initializeNodeCalibration(std::string calstr);
 		void			initialzeTipCalibration(std::string calstr);
