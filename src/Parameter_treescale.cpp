@@ -261,11 +261,11 @@ double Treescale::updateTreeScalePropSE(double &oldLnL) {
 	double rtLB = t->getNodeLowerBoundTime(rt) * scaleVal;
 	double lowBound = rtLB;
 	
-	double hiBound = 100000.0;
-	if(treeTimePrior == 4){
-		if(hiBound > treeOriginTime)
-			hiBound = treeOriginTime;
-	}
+	double hiBound = oldBound;
+//	if(treeTimePrior == 4){
+//		if(hiBound > treeOriginTime)
+//			hiBound = treeOriginTime;
+//	}
 	
 	if(isBounded){
 		if(lowBound < yngBound)

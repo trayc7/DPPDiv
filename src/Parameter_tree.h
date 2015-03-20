@@ -194,7 +194,7 @@ class Tree : public Parameter {
 	public:
 										Tree(MbRandom *rp, Model *mp, Alignment *ap, std::string ts, 
 											 bool ubl, bool allnm, bool rndNods, std::vector<Calibration *> clb, 
-											 double rth, bool sb, bool exhpc, ExpCalib *ec, std::vector<Calibration *> tdt);
+											 double rth, double iot, bool sb, bool exhpc, ExpCalib *ec, std::vector<Calibration *> tdt);
 										~Tree(void); 
 		Tree							&operator=(const Tree &t);
 		void							clone(const Tree &t);

@@ -52,6 +52,7 @@ void Calibration::initializeNodeCalibration(string calstr){
 	prDistType = 1;
 	exponRate = -1.0;
 	exponMean = -1.0;
+    isStem = false;
 	stringstream ss;
 	string tmp = "";
 	ss << calstr;
@@ -117,12 +118,18 @@ void Calibration::initializeNodeCalibration(string calstr){
 			cout << "   Offset-exponential calibration on MRCA[" << txn1 << ", " << txn2 << "] --> (offset="
 			<< youngtime << ", lambda=" << exponRate << ", mean=" << exponMean + youngtime << ")" << endl;
 		}
-		else if(prDistType == 3){
-			youngtime = atof(tmp.c_str());
-			ss >> tmp;
-			cout << "   Calibrate Birth-Death Prior on MRCA[" << txn1 << ", " << txn2 << "] --> (offset="
-			<< youngtime << ")" << endl;
-		}
+        else if(prDistType == 3){
+            youngtime = atof(tmp.c_str());
+            ss >> tmp;
+            cout << "   Calibrate Birth-Death Prior on MRCA[" << txn1 << ", " << txn2 << "] --> (offset="
+            << youngtime << ")" << endl;
+        }
+        else if(prDistType == 4){
+            youngtime = atof(tmp.c_str());
+            ss >> tmp;
+            cout << "   Calibrate Birth-Death Prior on MRCA[" << txn1 << ", " << txn2 << "] --> (offset="
+            << youngtime << ")" << endl;
+        }
 	}
 	else{
 		txn1 = tmp;

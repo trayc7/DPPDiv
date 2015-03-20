@@ -89,6 +89,8 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	bool rtCalib = false;
 	if(calibfilen.empty() == false){
 		initRootH = readCalibFile();
+        initRootH = 100.0; // TAH: DEBUG
+        initOT = 150.0;
 		Calibration *rCal = getRootCalibration();
 		if(rCal != NULL && fixRootHeight == false){
 			rHtY = rCal->getYngTime();
@@ -103,6 +105,8 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			tsPrDist = 2;
 		}
 	}
+    if(conditionOnOrigin)
+        rHtO = initOT;
 	
 	cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
 	
@@ -131,13 +135,13 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
 		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fxmod) );		// gamma shape parameter for rate variation across sites
 		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, ts, ubl, alnm, rndNo, 
-									 calibrs, initRootH, sfb, ehpc, excal, tipDates) );    // rooted phylogenetic tree
+									 calibrs, initRootH, initOT, sfb, ehpc, excal, tipDates) );    // rooted phylogenetic tree
 		parms[i].push_back( nr );												// restaurant containing node rates
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, ehpc) ); // the tree scale prior
 		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH) );												// hyper prior on diversification for cBDP speciation
 		parms[i].push_back( excal );											// hyper prior exponential node calibration parameters
-        parms[i].push_back( new OriginTime(ranPtr, this, initRootH, rHtY, 100000.0) ); // the origin time parameters
+        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, 100000.0) ); // the origin time parameters
 	}
 	numParms = (int)parms[0].size();
 	activeParm = 0;
@@ -591,6 +595,7 @@ double Model::readCalibFile(void) {
 	double initTScale = 1.0;
 	double yb = 0.0;
 	double ob = 0.0;
+    double originMax = 100000.0;
     // Put initialization of the origin time here
 	if(rootIs){
 		if(rooCal->getPriorDistributionType() == 1){
@@ -631,6 +636,7 @@ double Model::readCalibFile(void) {
 		initTScale = tsc;
 		rHtY = yb;
 		rHtO = ob;
+        initOT = tsc + (ranPtr->uniformRv() * (originMax - tsc));
 	}
 	
 	if(nlins == nnodes){
@@ -781,6 +787,12 @@ void Model::setUpdateProbabilities(bool initial) {
 		//tsp = 0.0;
 		//ntp = 0.0;
 	}
+    
+    if(true){ // TAH: fixing for test
+        ntp = 0.5;
+        tsp = 0.5;
+        spp = 0.5;
+    }
 	
 	updateProb.clear();
 	updateProb.push_back(bfp); // 1 basefreq

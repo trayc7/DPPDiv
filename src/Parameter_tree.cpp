@@ -62,7 +62,7 @@ Node::Node(void) {
 	nodeDepth = 0.0;
 	isLeaf = false;
 	isCalib = false;
-	youngt = -1.0;
+	youngt = 0.0;
 	oldt = -1.0;
 	branchTime = 0.0;
 	rateGVal = 0.0;
@@ -79,7 +79,7 @@ Node::Node(void) {
 }
 
 Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool allnm, 
-		   bool rndNods, vector<Calibration *> clb, double rth, bool sb, bool exhpc,
+		   bool rndNods, vector<Calibration *> clb, double rth, double iot, bool sb, bool exhpc,
 		   ExpCalib *ec, vector<Calibration *> tdt) : Parameter(rp, mp) {
 
 	alignmentPtr = ap;
@@ -95,7 +95,7 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	numAncFossilsk = 0;
 	datedTips = tdt;
 	treeScale = rth;
-    originTime = 3500.0;
+    originTime = iot;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
     conditionOnOrigin = modelPtr->getOriginCondition(); // TAH: some redundancy for now
 	name = "TR";
@@ -797,7 +797,7 @@ double Tree::update(double &oldLnL) {
 		}
 		recountFossilAttachNums();
 	}
-	else if(treeTimePrior == 7){ 
+	else if(treeTimePrior >= 7){
 		
 		Treescale *ts = modelPtr->getActiveTreeScale();
 		setTreeScale(ts->getScaleValue());
@@ -805,12 +805,14 @@ double Tree::update(double &oldLnL) {
 		updateAllTGSNodes(oldLnL);
 		
 		updateFossilBDSSAttachmentTimePhi();
+        treeUpdateNodeOldestBoundsAttchTimes();
 		modelPtr->setLnLGood(true);
 		modelPtr->setMyCurrLnl(oldLnL);
 		modelPtr->setTiProb();
 
 		for(int i=0; i<5; i++){
 			updateRJMoveAddDelEdge();
+            treeUpdateNodeOldestBoundsAttchTimes();
 			modelPtr->setLnLGood(true);
 			modelPtr->setMyCurrLnl(oldLnL);
 			modelPtr->setTiProb();
@@ -844,10 +846,18 @@ double Tree::updateFossilBDSSAttachmentTimePhi() {
 		Fossil *f = fossSpecimens[(*it)];
 		if(f->getFossilIndicatorVar()){
 			
-			
 			Node *p = &nodes[f->getFossilMRCANodeID()];
 			double nodeDepth = p->getNodeDepth() * treeScale;
-			double fossDepth = f->getFossilAge(); 
+            if(f->getIsTotalGroupFossil()){
+                if(p != root){
+                    nodeDepth = p->getAnc()->getNodeDepth()*treeScale;
+                }
+                else {
+                    OriginTime *ot = modelPtr->getActiveOriginTime();
+                    nodeDepth = ot->getOriginTime();
+                }
+            }
+			double fossDepth = f->getFossilAge();
 			
 			double oldPhi = f->getFossilSppTime() * treeScale;
 			double oldSumLogGammas = getSumLogAllAttachNums();
@@ -938,6 +948,15 @@ void Tree::doAddEdgeMove(){
 		alA = 0.5;
 		
 	double cf = p->getNodeDepth() * treeScale;
+    if(f->getIsTotalGroupFossil()){
+        if(p != root){
+            cf = p->getAnc()->getNodeDepth() * treeScale;
+        }
+        else {
+            OriginTime *ot = modelPtr->getActiveOriginTime();
+            cf = ot->getOriginTime();
+        }
+    }
 	double yf = f->getFossilAge();
 	double nu = ranPtr->uniformRv() * (cf - yf);
 	lnHastings = log(alA) + (log(k) - log(m - k + 1.0)); 
@@ -2376,6 +2395,7 @@ double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, do
 			nprb += fossPr;
 		}
 	}
+    //cout << "FBDS prob = " << nprb << endl;
 	return nprb;
 }
 
@@ -2693,11 +2713,11 @@ int Tree::countDecLinsTimeIntersect(Node *p, double t, double ancAge){
 
 double Tree::getNodeLowerBoundTime(Node *p){
 	
-	bool q = p->getIsCalibratedDepth();
+//	bool q = p->getIsCalibratedDepth();
 	double t = p->getLft()->getNodeDepth();
 	if (p->getRht()->getNodeDepth() > t)
 		t = p->getRht()->getNodeDepth();
-	if(q && softBounds == false){
+	if(softBounds == false){
 		double fA = p->getNodeYngTime() / treeScale;
 		if(fA > t)
 			t = fA;
@@ -2740,7 +2760,7 @@ void Tree::setUPTGSCalibrationFossils() { // definitely have to change for FBDS
         bool sf = (*v)->getIsStemFossil();
         f->setIsTotalGroupFossil(sf);
 		
-		if(nPFoss > 0){
+		if(nPFoss > 0 && sf == false){
 			if(p->getNodeYngTime() < fAge)
 				p->setNodeYngTime(fAge);				
 		}
@@ -2764,17 +2784,43 @@ void Tree::initializeFossilSpecVariables(){
 		int nID = f->getFossilMRCANodeID();
 		Node *p = &nodes[nID];
 		double fA = f->getFossilAge() / treeScale;
-		double currDepth = p->getNodeDepth();
+        double currDepth = p->getNodeDepth();
+        bool isTGFossil = f->getIsTotalGroupFossil();
+        if(isTGFossil){
+            if(p != root){
+                currDepth = p->getAnc()->getNodeDepth();
+            }
+            else{
+                currDepth = originTime/treeScale;
+            }
+        }
 		double prTip = 1.0;
-		if(treeTimePrior == 7)
-			prTip = 0.5;
+		if(treeTimePrior >= 7)
+            prTip = 0.5;
 		if(ranPtr->uniformRv() < prTip){
 			double phi = fA + ranPtr->uniformRv()*(currDepth-fA);
-			f->setFossilSppTime(phi);
+			f->setFossilSppTime(phi); // initialises the attachment times
 			f->setFossilIndicatorVar(1);
-			double nodeBound = p->getFossAttchTime();
-			if(phi > nodeBound)
-				p->setFossAttchTime(phi);
+//            if(fA == 45/treeScale)
+//                f->setFossilSppTime(80.0/treeScale);
+//            else if(fA == 17.0/treeScale)
+//                f->setFossilSppTime(25.0/treeScale);
+//            else if(fA == 70.0/treeScale)
+//                f->setFossilSppTime(85.0/treeScale);
+//            else if(fA == 60.0/treeScale)
+//                f->setFossilSppTime(75.0/treeScale);
+//            else if(fA == 27.0/treeScale)
+//                f->setFossilSppTime(55.0/treeScale);
+//            else if(fA == 30.0/treeScale)
+//                f->setFossilSppTime(40.0/treeScale);
+//            else if(fA == 26.0/treeScale)
+//                f->setFossilSppTime(33.0/treeScale);
+//            
+           cout << f->getFossilAge() << "  --  " << f->getFossilSppTime()*treeScale << "  cd = " << currDepth << endl;
+
+//			double nodeBound = p->getFossAttchTime();
+//			if(phi > nodeBound)
+//				p->setFossAttchTime(phi);
 		}
 		else{
 			numAncFossilsk += 1;
@@ -2787,7 +2833,14 @@ void Tree::initializeFossilSpecVariables(){
 
 		}
 	}
-	recountFossilAttachNums();
+    treeUpdateNodeOldestBoundsAttchTimes();
+//	recountFossilAttachNums();
+//    for(int i=0; i<fossSpecimens.size(); i++){
+//        Fossil *f = fossSpecimens[i];
+//        cout << f->getFossilAge() << " -- g_f = " << f->getFossilFossBrGamma() << " -- z_f = " << f->getFossilSppTime() << endl;
+//    }
+//    recountFossilAttachNums();
+
 }
 
 
@@ -2886,18 +2939,18 @@ int Tree::getSumIndicatorV(){
 }
 
 
-int Tree::getFossilLinAttachNumsForFoss(int fID){ // TAH: this is never called
-	
-	Fossil *fi = fossSpecimens[fID];
-	double fiPhi = fi->getFossilSppTime();
-	Node *p = &nodes[fi->getFossilMRCANodeID()];
-	int g = 0;
-	if(fi->getFossilIndicatorVar())
-		g = getDecendantFossilAttachBranches(p, fiPhi, fID);
-	
-	return g;
-	
-}
+//int Tree::getFossilLinAttachNumsForFoss(int fID){ // TAH: this is never called
+//	
+//	Fossil *fi = fossSpecimens[fID];
+//	double fiPhi = fi->getFossilSppTime();
+//	Node *p = &nodes[fi->getFossilMRCANodeID()];
+//	int g = 0;
+//	if(fi->getFossilIndicatorVar())
+//		g = getDecendantFossilAttachBranches(p, fiPhi, fID);
+//	
+//	return g;
+//	
+//}
 
 int Tree::getDecendantFossilAttachBranches(Node *p, double t, int fID){
 	
@@ -2964,14 +3017,21 @@ void Tree::treeScaleUpdateFossilAttchTimes(double sr, double ort, double nrt){
 
 void Tree::treeUpdateNodeOldestBoundsAttchTimes(){
 	
-	
-	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
-		setNodeOldestAttchBranchTime((*v));
-	}
+	// make this for all nodes, until ready to optimize computation
+//	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
+//		setNodeOldestAttchBranchTime((*v));
+//	}
+    for(int i; i<numNodes; i++){
+        Node *p = &nodes[i];
+        if(!p->getIsLeaf())
+            setNodeOldestAttchBranchTime(p);
+    }
+
 }
 
 void Tree::setNodeOldestAttchBranchTime(Node *p){
 	
+    // add query to daughter nodes for stem fossils
 	double t = 0.0;
 	for(int i=0; i<p->getNumCalibratingFossils(); i++){
 		int idx = p->getIthFossiID(i);
@@ -2980,7 +3040,30 @@ void Tree::setNodeOldestAttchBranchTime(Node *p){
 		if(phi > t)
 			t = phi;
 	}
+    Node *ld = p->getLft();
+    Node *rd = p->getRht();
+    for(int i=0; i<ld->getNumCalibratingFossils(); i++){
+        int idx = ld->getIthFossiID(i);
+        Fossil *f = fossSpecimens[idx];
+        if(f->getIsTotalGroupFossil()){
+            double phi = f->getFossilSppTime();
+            if(phi > t)
+                t = phi;
+        }
+    }
+    for(int i=0; i<rd->getNumCalibratingFossils(); i++){
+        int idx = rd->getIthFossiID(i);
+        Fossil *f = fossSpecimens[idx];
+        if(f->getIsTotalGroupFossil()){
+            double phi = f->getFossilSppTime();
+            if(phi > t)
+                t = phi;
+        }
+    }
+    
+
 	p->setFossAttchTime(t);
+    
 }
 
 int Tree::pickRandAncestorFossil(){
