@@ -78,6 +78,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixSomeModParams = fxmod;
 	fixTestRun = fxtr;
 	estAbsRts = false;
+    originMax = 100000.0;
     if(treeTimePrior == 8)
         conditionOnOrigin = true; // some redundancy for now
 	double initRootH = 1.0;
@@ -89,8 +90,8 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	bool rtCalib = false;
 	if(calibfilen.empty() == false){
 		initRootH = readCalibFile();
-        initRootH = 100.0; // TAH: DEBUG
-        initOT = 150.0;
+//        initRootH = 100.0; // TAH: DEBUG
+//        initOT = 150.0;
 		Calibration *rCal = getRootCalibration();
 		if(rCal != NULL && fixRootHeight == false){
 			rHtY = rCal->getYngTime();
@@ -107,6 +108,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	}
     if(conditionOnOrigin)
         rHtO = initOT;
+    else rHtO = originMax;
 	
 	cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
 	
@@ -141,7 +143,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, ehpc) ); // the tree scale prior
 		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH) );												// hyper prior on diversification for cBDP speciation
 		parms[i].push_back( excal );											// hyper prior exponential node calibration parameters
-        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, 100000.0) ); // the origin time parameters
+        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) ); // the origin time parameters
 	}
 	numParms = (int)parms[0].size();
 	activeParm = 0;
@@ -595,7 +597,6 @@ double Model::readCalibFile(void) {
 	double initTScale = 1.0;
 	double yb = 0.0;
 	double ob = 0.0;
-    double originMax = 100000.0;
     // Put initialization of the origin time here
 	if(rootIs){
 		if(rooCal->getPriorDistributionType() == 1){
@@ -636,7 +637,7 @@ double Model::readCalibFile(void) {
 		initTScale = tsc;
 		rHtY = yb;
 		rHtO = ob;
-        initOT = tsc + (ranPtr->uniformRv() * (originMax - tsc));
+        initOT = tsc * 2.0;
 	}
 	
 	if(nlins == nnodes){
@@ -792,6 +793,7 @@ void Model::setUpdateProbabilities(bool initial) {
         ntp = 0.5;
         tsp = 0.5;
         spp = 0.5;
+        otp = 0.5;
     }
 	
 	updateProb.clear();
@@ -804,6 +806,7 @@ void Model::setUpdateProbabilities(bool initial) {
 	updateProb.push_back(tsp); // 7 tree scale parameter
 	updateProb.push_back(spp); // 8 speciation parameters
 	updateProb.push_back(ehp); // 9 exponential calibration hyper priors
+    updateProb.push_back(otp); // 10 origin time parameter
 	double sum = 0.0;
 	for (unsigned i=0; i<updateProb.size(); i++)
 		sum += updateProb[i];

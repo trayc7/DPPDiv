@@ -35,6 +35,7 @@
 #include "Parameter_basefreq.h"
 #include "Parameter_exchangeability.h"
 #include "Parameter_expcalib.h"
+#include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_tree.h"
 #include "Parameter_shape.h"
@@ -206,6 +207,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 	Shape *sh = modelPtr->getActiveShape();
 	Speciation *sp = modelPtr->getActiveSpeciation();
 	Treescale *ts = modelPtr->getActiveTreeScale();
+    OriginTime *ot = modelPtr->getActiveOriginTime();
 	ExpCalib *hpex;
 	sp->setAllBDFossParams();
 	bool expHPCal = modelPtr->getExponCalibHyperParm();
@@ -222,11 +224,13 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		nodeOut << "Gen\tlnL";
 		nodeOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)";
 		if(treePr > 3)
-			nodeOut << "\tbdss.psi\tbdss.rho";
+			nodeOut << "\tFBD.psi\tFBD.rho";
 		if(treePr == 4)
 			nodeOut << "\tbdss.torig";
 		if(treePr > 5)
-			nodeOut << "\tbdss.lambda\tbdss.mu\tbdss.prsp";
+			nodeOut << "\tFBD.lambda\tFBD.mu\tFBD.prsp";
+        if(treePr == 8)
+            nodeOut << "\tFBD.OriginTime";
 		nodeOut << "\tPr(speciation)\tave.subrate\tnum.DPMgroups\tDPM.conc";
 		if(expHPCal){
 			if(dpmHPCal)
@@ -242,9 +246,9 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		if(treePr > 5){
 			nodeOut << t->getCalBDSSNodeInfoParamNames();
 		}
-		if(treePr == 7){
+		if(treePr >= 7){
 //			nodeOut << t->getCalBDSSNodeInfoIndicatorNames();
-			nodeOut << "\tnum.tips";
+			nodeOut << "\tnum.tip_fossils";
 		}
 		
 		nodeOut << "\n";
@@ -278,6 +282,8 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		nodeOut << "\t" << sp->getBDSSExtinctionRateMu();
 		nodeOut << "\t" << sp->getBDSSFossilSampProbS();
 	}
+    if(treePr == 8)
+        nodeOut << "\t" << ot->getOriginTime();
 	nodeOut << "\t" << t->getTreeSpeciationProbability();
 	nodeOut << "\t" << nr->getAverageRate();
 	nodeOut << "\t" << nr->getNumRateGroups();
@@ -300,7 +306,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 	if(treePr > 5){
 		nodeOut << t->getCalBDSSNodeInfoParamList();
 	}
-	if(treePr == 7){
+	if(treePr >= 7){
 //		nodeOut << t->getCalBDSSNodeInfoIndicatorList();
 		nodeOut << "\t" << t->getSumIndicatorV();
 	}

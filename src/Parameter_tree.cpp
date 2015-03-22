@@ -1873,12 +1873,12 @@ string Tree::getCalBDSSNodeInfoParamNames(void){
 	for(int i=0; i<fossSpecimens.size(); i++){
 		f = fossSpecimens[i];
 		int nID = f->getFossilMRCANodeID();
-		ss << "\tphi(C" << i << ".nd" << nID << ")";
+		ss << "\tz_f(C" << i << ".nd" << nID << ")";
 	}
 	for(int i=0; i<fossSpecimens.size(); i++){
 		f = fossSpecimens[i];
 		int nID = f->getFossilMRCANodeID();
-		ss << "\tgamma(C" << i << ".nd" << nID << ")";
+		ss << "\tgamma_f(C" << i << ".nd" << nID << ")";
 	}
 	string ni = ss.str();
 	return ni;
@@ -2834,7 +2834,7 @@ void Tree::initializeFossilSpecVariables(){
 		}
 	}
     treeUpdateNodeOldestBoundsAttchTimes();
-//	recountFossilAttachNums();
+	recountFossilAttachNums();
 //    for(int i=0; i<fossSpecimens.size(); i++){
 //        Fossil *f = fossSpecimens[i];
 //        cout << f->getFossilAge() << " -- g_f = " << f->getFossilFossBrGamma() << " -- z_f = " << f->getFossilSppTime() << endl;
@@ -3088,6 +3088,23 @@ int Tree::pickRandTipFossil(){
 	}
 	int v = (int)(ranPtr->uniformRv()*af.size());
 	return af[v];
+}
+
+double Tree::getOldestTreeSpeciationTime(){
+    
+    double oldestTime = treeScale;
+    
+    if(root->getNumCalibratingFossils() > 0){
+        vector<int> tgFossils = root->getTGFossilIDs();
+        for(int i =0; i<tgFossils.size(); i++){
+            Fossil *f = fossSpecimens[tgFossils[i]];
+            double zf = f->getFossilSppTime()*treeScale;
+            if(zf > oldestTime)
+                oldestTime = zf;
+        }
+    }
+    
+    return oldestTime;
 }
 
 

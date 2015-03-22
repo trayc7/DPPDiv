@@ -28,7 +28,6 @@
  */
 
 #include "Parameter.h"
-#include "Parameter_expcalib.h"
 #include "Parameter_speciaton.h"
 #include "Parameter_treescale.h"
 #include "Parameter_origin.h"
@@ -45,7 +44,8 @@ using namespace std;
 OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob) : Parameter(rp, mp) {
     oldBound = ob;
     yngBound = yb;
-    originTime = 100000.0 - 1.0; // placeholder for now
+    originTime = sv;
+    tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.2;
     name = "OT";
 }
 
@@ -79,9 +79,83 @@ void OriginTime::print(std::ostream & o) const {
 
 double OriginTime::update(double &oldLnL) {
     
-    double lppr = 0.0;
+    Treescale *ts = modelPtr->getActiveTreeScale();
     
-    return lppr;
+    Speciation *s = modelPtr->getActiveSpeciation();
+    
+    Tree *t = modelPtr->getActiveTree();
+    
+    double oldOT = originTime;
+//    cout << "OT1 " << originTime << endl;
+    
+    double oldOTProb = getFBDProbOriginTime(t, s);
+    
+    double minAge = t->getOldestTreeSpeciationTime();
+    double maxAge = oldBound;
+    
+    double limO = oldOT + tuning;
+    double limY = oldOT - tuning;
+    
+    
+    double newOT;
+    
+    double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
+    newOT = oldOT + u;
+    while(newOT < minAge || newOT > maxAge){
+        if(newOT < minAge)
+            newOT = (2 * minAge) - newOT;
+        if(newOT > maxAge)
+            newOT = (2 * maxAge) - newOT;
+    }
+    originTime = newOT;
+//    cout << "OT2 " << originTime << endl;
+    double newOTProb = getFBDProbOriginTime(t, s);
+    
+//    cout << "old: OT = " << oldOT << ", old Prob = " << oldOTProb << endl;
+//    cout << "new: OT = " << newOT << ", new Prob = " << newOTProb << endl;
+    
+    // Need to double check this
+
+    modelPtr->setLnLGood(true);
+    modelPtr->setMyCurrLnl(oldLnL);
+    double myPrR = oldOTProb-newOTProb;
+    
+    return myPrR;
+    
+}
+
+//double OriginTime::doAScaleMove(double currentV, double lb, double hb, double rv){
+//    
+//    double tuningV =
+//    double c = tv * (rv - 0.5);
+//    double newcv = cv * exp(c);
+//    bool validV = false;
+//    do{
+//        if(newcv < lb)
+//            newcv = lb * lb / newcv;
+//        else if(newcv > hb)
+//            newcv = hb * hb / newcv;
+//        else
+//            validV = true;
+//    } while(!validV);
+//    nv = newcv;
+//    return c;
+//}
+
+
+double OriginTime::getFBDProbOriginTime(Tree *t, Speciation *s){
+    
+    // this returns log[ 1 / ((lambda*(1-Phat(x_0))) ]
+    s->setAllBDFossParams();
+    
+    double lambda = s->getBDSSSpeciationRateLambda();
+    double mu = s->getBDSSExtinctionRateMu();
+    double rho = s->getBDSSSppSampRateRho();
+    
+    double phat = t->bdssP0HatFxn(lambda, mu, rho, originTime);
+
+    double otPrb = log(lambda) + log(1-phat);
+    return otPrb;
 }
 
 double OriginTime::lnPrior(void) {

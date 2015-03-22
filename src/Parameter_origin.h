@@ -34,6 +34,7 @@ class MbRandom;
 class Model;
 class ExpCalib;
 class Tree;
+class Speciation;
 class OriginTime : public Parameter {
     
 public:
@@ -42,6 +43,7 @@ public:
     OriginTime			&operator=(const OriginTime &c);
     void				clone(const OriginTime &c);
     double				update(double &oldLnL);
+    double              getFBDProbOriginTime(Tree *t, Speciation *s);
     void				print(std::ostream & o) const;
     double				lnPrior(void);
     std::string			writeParam(void);

@@ -151,6 +151,7 @@ class Model {
 		double							rHtY;
 		double							rHtO;
         double                          initOT;
+        double                          originMax;
 		double							rootNExpRate;
 		bool							exponCalibHyperParm;
 		bool							exponDPMCalibHyperParm;

@@ -275,8 +275,17 @@ class Tree : public Parameter {
 		void							doDeleteEdgeMove(void);
 	
 		int								getSumIndicatorV(void);
+        double							bdssC1Fxn(double b, double d, double psi);
+        double							bdssC2Fxn(double b, double d, double psi,double rho);
+        
+        double							bdssQFxn(double b, double d, double psi, double rho, double t); // on log scale
+        double							bdssP0Fxn(double b, double d, double psi, double rho, double t);
+        double							bdssP0HatFxn(double b, double d, double rho, double t);
+        double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
+    
+        double                          getOldestTreeSpeciationTime(void);
 
-							
+    
 	private:
 		void							buildTreeFromNewickDescription(std::string ts);
 		void							initializeNodeDepthsFromUserBL(void);
@@ -307,13 +316,6 @@ class Tree : public Parameter {
 		
 		void							setTipDateAges(void);
 		
-		double							bdssC1Fxn(double b, double d, double psi);
-		double							bdssC2Fxn(double b, double d, double psi,double rho);
-		
-		double							bdssQFxn(double b, double d, double psi, double rho, double t); // on log scale
-		double							bdssP0Fxn(double b, double d, double psi, double rho, double t);
-		double							bdssP0HatFxn(double b, double d, double rho, double t);
-		double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
 
 		void							initializeTGSCalibVariables(void);
 		

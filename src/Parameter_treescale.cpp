@@ -96,7 +96,7 @@ Treescale::Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, i
 	else if(tsPriorD > 2 && treeTimePrior > 5){ 
 		isBounded = true;
 		tsPriorD = 1;
-		oldBound = 100000.0;
+		//oldBound = 100000.0;
 		tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.1;
 		double windowSize = 2.0 * tuning;
 		double calibSize = oldBound - yngBound;
@@ -139,7 +139,7 @@ void Treescale::print(std::ostream & o) const {
 
 double Treescale::update(double &oldLnL) {
 	
-    if(modelPtr->getOriginCondition()){ // refine this at some point
+    if(treeTimePrior == 8){ // refine this at some point
         oldBound = modelPtr->getActiveOriginTime()->getOriginTime();
     }
 	double lppr = 0.0;
