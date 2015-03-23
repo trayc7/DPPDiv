@@ -586,7 +586,7 @@ double Model::readCalibFile(void) {
 	string *calList = new string[nlins];
 	for(int i=0; i<nlins; i++){
 		calList[i] = getLineFromFile(calibfilen, i+2);
-        if (ln.find(tg) == string::npos) {
+        if (calList[i].find(tg) != string::npos) {
             if (treeTimePrior != 8) { //RW
                 cerr << "ERROR: Total group fossils (-s) cannot be included with the -tga option!\nTry using -fbds." << endl;
                 exit(1);

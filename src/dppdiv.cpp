@@ -158,7 +158,7 @@ int main (int argc, char * const argv[]) {
 	bool fixTest		= false;
     bool printOrigin    = false;    //RW: print origin to log file
 	
-	if(argc > 1){  
+	if(argc > 1){
 		for (int i = 1; i < argc; i++){
 			char *curArg = argv[i];
 			if(strlen(curArg) > 1 && curArg[0] == '-'){
