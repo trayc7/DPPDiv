@@ -156,6 +156,7 @@ int main (int argc, char * const argv[]) {
 	bool indHP			= false;
 	bool doAbsRts		= false;
 	bool fixTest		= false;
+    bool printOrigin    = false;    //RW: print origin to log file
 	
 	if(argc > 1){  
 		for (int i = 1; i < argc; i++){
@@ -217,7 +218,7 @@ int main (int argc, char * const argv[]) {
 					treeNodePrior = 6;
 				else if(!strcmp(curArg, "-tga"))		// set treeNodePrior to do calibrated birth-death with ancestor fossils
 					treeNodePrior = 7;
-                else if(!strcmp(curArg, "-fbds")) // condition fbd on the age of the stem
+                else if(!strcmp(curArg, "-fbds")) // condition fbd on the age of the origin
                     treeNodePrior = 8;
 				else if(!strcmp(curArg, "-bdr"))	// (lambda - mu)
 					netDiv = atof(argv[i+1]);
@@ -271,6 +272,9 @@ int main (int argc, char * const argv[]) {
 					printHelp(true);
 					return 0;
 				}
+                else if(!strcmp(curArg, "-po")){//RW
+                    printOrigin = true;
+                }
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -324,7 +328,7 @@ int main (int argc, char * const argv[]) {
 		myModel.writeUnifTreetoFile();
 		return 0;
 	}
-	Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs);
+	Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin); //RW:
 	
     return 0;
 }

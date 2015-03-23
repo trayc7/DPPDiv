@@ -40,7 +40,7 @@ class Mcmc {
 
 	public:
 						Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, 
-							 std::string ofp, bool wdf, bool modUpP);
+                             std::string ofp, bool wdf, bool modUpP, bool po); //RW
 							
 	private:
 		void			runChain(void);
@@ -59,6 +59,7 @@ class Mcmc {
 		bool			writeInfoFile;
 		bool			printratef;
 		bool			modUpdateProbs;
+        bool            printOrigin; //RW
 };
 
 #endif

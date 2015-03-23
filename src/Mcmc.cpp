@@ -51,7 +51,7 @@
 
 using namespace std;
 
-Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf, bool modUpP) {
+Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf, bool modUpP, bool po) {//RW:
 
 	ranPtr          = rp;
 	modelPtr        = mp;
@@ -62,6 +62,7 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
 	writeInfoFile   = wdf;
 	printratef		= false;
 	modUpdateProbs  = modUpP;
+    printOrigin     = po;
 	runChain();
 }
 
@@ -229,8 +230,10 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 			nodeOut << "\tbdss.torig";
 		if(treePr > 5)
 			nodeOut << "\tFBD.lambda\tFBD.mu\tFBD.prsp";
-        if(treePr == 8)
+        if(treePr == 8){
+            if(printOrigin)//RW
             nodeOut << "\tFBD.OriginTime";
+        }
 		nodeOut << "\tPr(speciation)\tave.subrate\tnum.DPMgroups\tDPM.conc";
 		if(expHPCal){
 			if(dpmHPCal)
@@ -282,8 +285,10 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		nodeOut << "\t" << sp->getBDSSExtinctionRateMu();
 		nodeOut << "\t" << sp->getBDSSFossilSampProbS();
 	}
-    if(treePr == 8)
+    if(treePr == 8){
+        if(printOrigin)//RW
         nodeOut << "\t" << ot->getOriginTime();
+    }
 	nodeOut << "\t" << t->getTreeSpeciationProbability();
 	nodeOut << "\t" << nr->getAverageRate();
 	nodeOut << "\t" << nr->getNumRateGroups();

@@ -580,11 +580,18 @@ double Model::readCalibFile(void) {
 	bool rootIs = false;
 	Calibration *rooCal;
 	string ln = getLineFromFile(calibfilen, 1);
-	int nlins = atoi(ln.c_str());
+    string tg = "-s"; //RW total group fossil indicator
+    int nlins = atoi(ln.c_str());
 	int nnodes = alignmentPtr->getNumTaxa() - 1;
 	string *calList = new string[nlins];
 	for(int i=0; i<nlins; i++){
 		calList[i] = getLineFromFile(calibfilen, i+2);
+        if (ln.find(tg) == string::npos) {
+            if (treeTimePrior != 8) { //RW
+                cerr << "ERROR: Total group fossils (-s) cannot be included with the -tga option!\nTry using -fbds." << endl;
+                exit(1);
+            }
+        }
 		Calibration *cal = new Calibration(calList[i], 0);
 		calibrs.push_back(cal);
 		if(cal->getIsRootCalib()){
