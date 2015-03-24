@@ -52,6 +52,7 @@ Basefreq::Basefreq(MbRandom *rp, Model *mp, int ns, bool fx) : Parameter(rp, mp)
 		for (int i=0; i<numStates; i++)
 			freqs[i] = 0.25;
 	}
+    cout << "BF initialized\n";
 }
 
 Basefreq::~Basefreq(void) {

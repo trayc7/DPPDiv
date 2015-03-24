@@ -129,7 +129,9 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	else if(treeTimePrior > 5){ 
 		isCalibTree = true;
 		setUPTGSCalibrationFossils();
+        cout << "setUPTGSCalibrationFossils\n"; // This is debugging code, leave in for now. [Some odd behavior with initialization (check into this)]
 		initializeCalibratedNodeDepths();
+        cout << "initializeCalibratedNodeDepths\n";
 		while(checkTreeForCalibrationCompatibility() > 0){
 			zeroNodeRedFlags();
 			initializeCalibratedNodeDepths();
@@ -151,6 +153,7 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	if(isCalibTree)
 		calibNodes = getListOfCalibratedNodes();
 	
+    cout << "TREE initialized\n";
 }
 
 Tree::~Tree(void) {
@@ -334,7 +337,8 @@ void Tree::clone(const Tree &t) {
 		fTo->setFossilMRCANodeID(fFrom->getFossilMRCANodeID());
 		fTo->setFossilMRCANodeAge(fFrom->getFossilMRCANodeAge());
 		fTo->setFossilFossBrGamma(fFrom->getFossilFossBrGamma());
-		fTo->setFossilIndicatorVar(fFrom->getFossilIndicatorVar());
+        fTo->setFossilIndicatorVar(fFrom->getFossilIndicatorVar());
+        fTo->setIsTotalGroupFossil(fFrom->getIsTotalGroupFossil());
 	}
 	numAncFossilsk = t.numAncFossilsk;
 	root = &nodes[t.root->getIdx()];

@@ -109,6 +109,7 @@ ExpCalib::ExpCalib(MbRandom *rp, Model *mp, bool dphplc, int dphpng,
 	else
 		cout << "Contamination model fossil calibration lambda parameters: lambda1 = " << majorityExpParm << ", lambda2 = " << outlieExpParm << endl;
 	
+    cout << "EXPHP initialized\n";
 }
 
 ExpCalib::~ExpCalib(void){

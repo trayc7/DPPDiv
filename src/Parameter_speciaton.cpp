@@ -82,9 +82,10 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 		netDiversificaton = maxdivV * maxdivV / netDiversificaton;
 		
 	if(treeTimePrior > 5){
-		cout << "Speciaton parameters are fixed to: d = " << netDiversificaton << " , r = " << relativeDeath<< " , s = " << probSpeciationS << endl;
+		cout << "Speciaton parameters are initialized with: d = " << netDiversificaton << " , r = " << relativeDeath<< " , s = " << probSpeciationS << endl;
 		cout << "                                   l = " << birthRate << " , m = " << deathRate<< " , psi = " << fossilRate << endl;
 	}
+    cout << "BD initialized\n";
 	
 }
 

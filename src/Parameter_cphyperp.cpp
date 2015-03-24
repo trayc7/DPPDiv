@@ -68,6 +68,7 @@ Cphyperp::Cphyperp(MbRandom *rp, Model *mp, double ga, double gb, int nn, double
 	if(fixcp) cout << "fixed" << endl;
 	
 	name = "CP";
+    cout << "CP initialized\n";
 }
 
 Cphyperp::~Cphyperp(void) {

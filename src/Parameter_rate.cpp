@@ -145,6 +145,7 @@ NodeRate::NodeRate(MbRandom *rp, Model *mp, int nn, double a, double b,
 	}
 	labelTables();
 	print(std::cout);
+    cout << "DPP initialized\n";
 }
 
 NodeRate::~NodeRate(void) {

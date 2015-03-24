@@ -49,6 +49,7 @@ Shape::Shape(MbRandom *rp, Model *mp, int nc, double lam, bool fx) : Parameter(r
 	if(fx){
 		alpha = 1.0;
 	}
+    cout << "SH initialized\n";
 }
 
 Shape::~Shape(void) {

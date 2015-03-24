@@ -47,6 +47,8 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob)
     originTime = sv;
     tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.2;
     name = "OT";
+//    cout << "OT initialized" << originTime << endl;
+
 }
 
 OriginTime::~OriginTime(void) {

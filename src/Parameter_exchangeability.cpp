@@ -48,6 +48,7 @@ Exchangeability::Exchangeability(MbRandom *rp, Model *mp) : Parameter(rp, mp) {
 	ranPtr->dirichletRv(alpha, rates);
 	alpha0 = 800.0;
 	name = "RM";
+    cout << "RM initialized\n";
 }
 
 Exchangeability::~Exchangeability(void) {

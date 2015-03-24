@@ -103,7 +103,8 @@ Treescale::Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, i
 		
 		cout << "Root min = " << yngBound << " window size = " << calibSize << "  Tuning window = " << windowSize << endl;
 	}
-	
+    cout << "Root initialized\n";
+
 
 }
 
