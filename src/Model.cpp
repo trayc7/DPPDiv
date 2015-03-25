@@ -800,7 +800,7 @@ void Model::setUpdateProbabilities(bool initial) {
         ntp = 0.5;
         tsp = 0.5;
         spp = 0.5;
-        otp = 0.5;
+        otp = 0.5; // set to 0.0 to fix origin to initOT
     }
 	
 	updateProb.clear();
