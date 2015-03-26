@@ -39,6 +39,7 @@ class Calibration;
 class Alignment;
 class Basefreq;
 class Exchangeability;
+class FossilGraph;
 class MbRandom;
 class MbTransitionMatrix;
 class Node;
@@ -67,6 +68,7 @@ class Model {
 											  double bdr, double bda, double bds, double fxclkrt, bool roofix,
 											  bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod,
 											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr);
+                                        Model(MbRandom *rp, std::string clfn, int nodpr); // model overload constructor for fofbd
 										~Model(void);
 		double							lnLikelihood(void);
 		double							getPriorMeanV(void) { return priorMeanN; }

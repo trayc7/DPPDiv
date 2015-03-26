@@ -36,6 +36,7 @@
 #include "Parameter_basefreq.h"
 #include "Parameter_exchangeability.h"
 #include "Parameter_expcalib.h"
+#include "Parameter_fossilgraph.h"
 #include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_shape.h"
@@ -175,15 +176,20 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 
 }
 
-Model::~Model(void) {
+Model::Model(MbRandom *rp, std::string clfn, int nodpr){
+    treeTimePrior = nodpr;
+}
 
-	delete [] cls;
-	delete tiCalculator;
-	for (int i=0; i<2; i++){
-		delete [] clPtr[i];
-		delete [] tis[i][0];
-		delete [] tis[i];
-	}
+Model::~Model(void) {
+    if(treeTimePrior !=9){
+        delete [] cls;
+        delete tiCalculator;
+        for (int i=0; i<2; i++){
+            delete [] clPtr[i];
+            delete [] tis[i][0];
+            delete [] tis[i];
+        }
+    }
 }
 
 Basefreq* Model::getActiveBasefreq(void) {

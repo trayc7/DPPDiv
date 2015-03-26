@@ -35,6 +35,7 @@
 #include "Parameter_basefreq.h"
 #include "Parameter_exchangeability.h"
 #include "Parameter_expcalib.h"
+#include "Parameter_fossilgraph.h"
 #include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_tree.h"

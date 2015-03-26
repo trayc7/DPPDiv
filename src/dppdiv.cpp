@@ -220,6 +220,8 @@ int main (int argc, char * const argv[]) {
 					treeNodePrior = 7;
                 else if(!strcmp(curArg, "-fbds")) // condition fbd on the age of the origin
                     treeNodePrior = 8;
+                else if(!strcmp(curArg, "-fofbd")) // fossil only fossilised birth death process
+                    treeNodePrior = 9;
 				else if(!strcmp(curArg, "-bdr"))	// (lambda - mu)
 					netDiv = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-bda"))	// (mu / lambda)
@@ -294,41 +296,49 @@ int main (int argc, char * const argv[]) {
 		return 0;
 	}
 	
-	if(dataFileName.empty() || treeFileName.empty()){
-		cout << "\n############################ !!! ###########################\n";
-		cout << "\n\n\tPlease specify data and tree files, here are the \n\tavailable options:\n";
-		printHelp(false);
-		cout << "\n############################ !!! ###########################\n";
-		return 0;
-	}
+    //rw: suppress tree requirement
+    if(treeNodePrior != 9) {
+        if(dataFileName.empty() || treeFileName.empty()){
+            cout << "\n############################ !!! ###########################\n";
+            cout << "\n\n\tPlease specify data and tree files, here are the \n\tavailable options:\n";
+            printHelp(false);
+            cout << "\n############################ !!! ###########################\n";
+            return 0;
+        }
+    }
+    
+    MbRandom myRandom;
+    myRandom.setSeed(s1, s2);
 	
-		
-	cout << "Reading data from file -- " << dataFileName << endl;
-	Alignment myAlignment( dataFileName );
-	myAlignment.compress();
-	if(printalign)
-		myAlignment.print(std::cout);
-	cout << "   Number of Site Patterns = " << myAlignment.getNumPatterns() << endl;
-	
-	string treeStr = getLineFromFile(treeFileName, 1);
-	
-	MbRandom myRandom;
-	myRandom.setSeed(s1, s2);
-	
-	// set up the model
-	Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc, 
-				  hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN, 
-				  treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
-				  dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest);
-	if(doAbsRts)
-		myModel.setEstAbsRates(true);
-	if(runPrior)
-		myModel.setRunUnderPrior(true);
-	if(justTree){
-		myModel.writeUnifTreetoFile();
-		return 0;
-	}
-	Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin); //RW:
+    if(treeNodePrior == 9){
+        Model myModel(&myRandom, calibFN, treeNodePrior);
+        cout << "\nFossil only FBD not yet implemented!\n";
+        return 0;
+    }
+    else {
+        // set up the model
+        Alignment myAlignment( dataFileName );
+        cout << "Reading data from file -- " << dataFileName << endl;
+        myAlignment.compress();
+        if(printalign)
+            myAlignment.print(std::cout);
+        cout << "   Number of Site Patterns = " << myAlignment.getNumPatterns() << endl;
+        string treeStr = getLineFromFile(treeFileName, 1);
+
+        Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc,
+                      hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN,
+                      treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
+                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest);
+        if(doAbsRts)
+            myModel.setEstAbsRates(true);
+        if(runPrior)
+            myModel.setRunUnderPrior(true);
+        if(justTree){
+            myModel.writeUnifTreetoFile();
+            return 0;
+        }
+        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin); //RW:
+    }
 	
     return 0;
 }

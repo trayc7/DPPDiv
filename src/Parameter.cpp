@@ -31,6 +31,7 @@
 #include "Parameter_basefreq.h"
 #include "Parameter_exchangeability.h"
 #include "Parameter_expcalib.h"
+#include "Parameter_fossilgraph.h"
 #include "Parameter_rate.h"
 #include "Parameter_shape.h"
 #include "Parameter_tree.h"
@@ -137,6 +138,14 @@ Parameter& Parameter::operator=(Parameter &p) {
         {
             OriginTime *thatDerivedPtr = dynamic_cast<OriginTime *>(&p);
             OriginTime *thisDerivedPtr = dynamic_cast<OriginTime *>(this);
+            if ( thatDerivedPtr != 0 && thisDerivedPtr != 0 ){
+                thisDerivedPtr->clone( *thatDerivedPtr );
+                goto exitOperator;
+            }
+        }
+        {
+            FossilGraph *thatDerivedPtr = dynamic_cast<FossilGraph *>(&p);
+            FossilGraph *thisDerivedPtr = dynamic_cast<FossilGraph *>(this);
             if ( thatDerivedPtr != 0 && thisDerivedPtr != 0 ){
                 thisDerivedPtr->clone( *thatDerivedPtr );
                 goto exitOperator;
