@@ -40,6 +40,7 @@
 using namespace std;
 
 FossilGraph::FossilGraph(MbRandom *rp, Model *mp, int nf) : Parameter(rp, mp){
+
     name = "FG";
     numFossils = nf;
 }
@@ -61,10 +62,12 @@ void FossilGraph::clone(const FossilGraph &t){
 }
 
 double FossilGraph::update(double &oldLnL){
+
     return 0;
 }
 
 double FossilGraph::lnPrior(){
+
     return 0;
 }
 
@@ -73,6 +76,7 @@ void FossilGraph::print(ostream & o) const {
 }
 
 string FossilGraph::writeParam(void){
+
     string s="";
     return s;
 }
