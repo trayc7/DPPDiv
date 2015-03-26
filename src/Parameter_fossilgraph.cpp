@@ -39,9 +39,9 @@
 
 using namespace std;
 
-FossilGraph::FossilGraph(MbRandom *rp, Model *mp) : Parameter(rp, mp){
+FossilGraph::FossilGraph(MbRandom *rp, Model *mp, int nf) : Parameter(rp, mp){
     name = "FG";
-    numFossils=2;
+    numFossils = nf;
 }
 
 FossilGraph::~FossilGraph(void){
@@ -56,7 +56,8 @@ FossilGraph& FossilGraph::operator=(const FossilGraph &t) {
 }
 
 void FossilGraph::clone(const FossilGraph &t){
-    numFossils = t.getNumFossils();
+
+    numFossils = t.numFossils;
 }
 
 double FossilGraph::update(double &oldLnL){

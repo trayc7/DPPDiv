@@ -71,9 +71,9 @@ class Model;
 class FossilGraph : Parameter {
     
 public:
-    FossilGraph(MbRandom *rp, Model *mp);
+									FossilGraph(MbRandom *rp, Model *mp, int nf);
     
-    ~FossilGraph(void);
+									~FossilGraph(void);
     
     FossilGraph						&operator=(const FossilGraph &t);
     void							clone(const FossilGraph &t);
