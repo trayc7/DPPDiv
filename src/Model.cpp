@@ -182,6 +182,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr){
 }
 
 Model::~Model(void) {
+
     if(treeTimePrior !=9){
         delete [] cls;
         delete tiCalculator;
