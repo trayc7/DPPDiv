@@ -177,6 +177,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 }
 
 Model::Model(MbRandom *rp, std::string clfn, int nodpr){
+
     treeTimePrior = nodpr;
 }
 
