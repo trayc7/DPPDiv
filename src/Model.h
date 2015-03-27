@@ -39,7 +39,6 @@ class Calibration;
 class Alignment;
 class Basefreq;
 class Exchangeability;
-class FossilGraph;
 class MbRandom;
 class MbTransitionMatrix;
 class Node;
@@ -52,6 +51,7 @@ class Treescale;
 class Cphyperp;
 class ExpCalib;
 class OriginTime;
+class FossilGraph;
 class Model {
 
 	enum TreeDirection 
@@ -82,6 +82,7 @@ class Model {
 		Cphyperp*						getActiveCphyperp(void);
         ExpCalib*						getActiveExpCalib(void);
         OriginTime*						getActiveOriginTime(void);
+        FossilGraph*                    getActiveFossilGraph(void);
 		Parameter*						pickParmToUpdate(void);
 		void							printTis(std::ostream &) const;
 		void							setTiProb(void);
@@ -149,6 +150,7 @@ class Model {
 		std::vector<Calibration*>		tipDates;
 		bool							fixRootHeight;
 		int								treeTimePrior;
+        int                             numFossils;
 		bool							zeroNodeTimeMove;
 		double							rHtY;
 		double							rHtO;

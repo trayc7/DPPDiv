@@ -27,8 +27,10 @@
  *
  */
 
+#include "Calibration.h"
 #include "Parameter.h"
 #include "Parameter_fossilgraph.h"
+#include "Parameter_origin.h"
 #include "MbRandom.h"
 #include "Model.h"
 #include "util.h"
@@ -39,10 +41,13 @@
 
 using namespace std;
 
-FossilGraph::FossilGraph(MbRandom *rp, Model *mp, int nf) : Parameter(rp, mp){
+FossilGraph::FossilGraph(MbRandom *rp, Model *mp, int nf, double initOrigTime, vector<Calibration *> clb) : Parameter(rp, mp){
 
     name = "FG";
     numFossils = nf;
+    originTime = initOrigTime;
+    //createOccurrenceVector(clb);
+    
 }
 
 FossilGraph::~FossilGraph(void){
@@ -79,6 +84,138 @@ string FossilGraph::writeParam(void){
 
     string s="";
     return s;
+}
+
+
+void FossilGraph::createOccurrenceVector(vector<Calibration *> clb){
+    
+    double et = originTime;
+    for(int c = 0; c < clb.size(); c++){
+        Calibration *p = clb[c];
+        double yf = p->getYngTime();
+        Occurrence *o = new Occurrence(yf);
+        occurrenceSpecimens.push_back(o);
+        if( yf < et)
+            et = yf;
+    }
+    terminalTime = et;
+    for(int c = 0; c < numFossils; c++){
+        Occurrence *o = occurrenceSpecimens[c];
+        if( o->getFossilAge() == terminalTime){
+            o->setIsTerminal(true);
+            break; // currently no two youngest occurrences can have the same age
+        }
+    }
+}
+
+
+void FossilGraph::initializeOccurrenceSpecVariables(){
+    
+    for(int f = 0; f < numFossils; f++){
+        Occurrence *o = occurrenceSpecimens[f];
+        if(o->getIsTerminal()){
+            o->setFossilSppTime(o->getFossilAge());
+            o->setFossilIndicatorVar(0);
+        }
+        else{
+            double u = ranPtr->uniformRv();
+            if(u < 0.5){
+                o->setFossilSppTime(o->getFossilAge());
+                o->setFossilIndicatorVar(0);
+            }
+            else {
+                double yf = o->getFossilAge();
+                double zf = ranPtr->uniformRv(yf,originTime);
+                o->setFossilFossBrGamma(zf);
+                o->setFossilIndicatorVar(1);
+            }
+        }
+    }
+    recountOccurrenceAttachNums();
+}
+
+void FossilGraph::recountOccurrenceAttachNums(){
+    
+    for(int f = 0; f < numFossils; f++){
+        Occurrence *o = occurrenceSpecimens[f];
+        double zf = o->getFossilSppTime();
+        int g = 0;
+        for(int j = 0; j < numFossils; j++){
+            if(f != j){
+                Occurrence *p = occurrenceSpecimens[j];
+                double zj = p->getFossilSppTime();
+                double yj = p->getFossilAge();
+                if(zj > zf && zf > yj)
+                    g++;
+            }
+        }
+        o->setFossilFossBrGamma(g);
+    }
+}
+
+
+double FossilGraph::getFossilGraphProb(double lambda, double mu, double fossRate, double sppSampRate) {
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+    originTime = ot->getOriginTime(); // active origin?
+    
+    // the following needs changed
+    double nprb = 1.0 - (log(2*lambda) + log(1.0 - bdssP0Fxn(lambda, mu, fossRate, sppSampRate, originTime)));
+    
+    for(int f=0; f < occurrenceSpecimens.size(); f++){
+        Occurrence *o = occurrenceSpecimens[f];
+        nprb += log(fossRate * o->getFossilFossBrGamma() );
+        if(o->getFossilIndicatorVar()){
+            double fossAge = o->getFossilAge();
+            double fossPhi = o->getFossilSppTime(); // n.b. treescale removed from this part of the equation
+            double fossPr = log(2.0 * lambda) + log( bdssP0Fxn(lambda, mu, fossRate, sppSampRate, fossAge) );
+            fossPr += fbdQHatFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
+            fossPr -= fbdQHatFxn(lambda, mu, fossRate, sppSampRate, fossAge);
+            nprb += fossPr;
+        }
+    }
+    //cout << "FBDS prob = " << nprb << endl;
+    return nprb;
+}
+
+double FossilGraph::bdssP0Fxn(double b, double d, double psi, double rho, double t){
+    
+    double c1Val = bdssC1Fxn(b,d,psi);
+    double c2Val = bdssC2Fxn(b,d,psi,rho);
+    
+    double eCfrac = (exp(-c1Val * t) * (1.0 - c2Val) - (1.0 + c2Val)) / (exp(-c1Val * t) * (1.0 - c2Val) + (1.0 + c2Val));
+    double v = 1.0 + ((-(b - d - psi)) + (c1Val * eCfrac)) / (2.0 * b);
+    
+    return v;
+}
+
+double FossilGraph::fbdQHatFxn(double b, double d, double psi, double rho, double t){
+    
+    double v = log(4.0 * rho);
+    v -= bdssQFxn(b,d,psi,rho,t);
+    return v;
+}
+
+double FossilGraph::bdssQFxn(double b, double d, double psi, double rho, double t){
+    
+    double c1Val = bdssC1Fxn(b,d,psi);
+    double c2Val = bdssC2Fxn(b,d,psi,rho);
+    
+    double vX = c1Val * t + 2.0 * log(exp(-c1Val * t) * (1.0 - c2Val) + (1.0 + c2Val));
+    
+    // returns log(q)
+    return vX;
+}
+
+double FossilGraph::bdssC1Fxn(double b, double d, double psi){
+    
+    double v = abs( sqrt( ( (b-d-psi) * (b-d-psi) ) + 4*b*psi) );
+    return v;
+}
+
+double FossilGraph::bdssC2Fxn(double b, double d, double psi, double rho){
+    
+    double v = -( ( b-d-(2*b*rho)-psi ) / (bdssC1Fxn(b,d,psi)) );
+    return v;
 }
 
 

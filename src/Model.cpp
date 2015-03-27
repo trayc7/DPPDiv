@@ -58,7 +58,6 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
 			 bool ihp, string tipdfn, bool fxtr) {
-
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -177,8 +176,50 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 }
 
 Model::Model(MbRandom *rp, std::string clfn, int nodpr){
-
+    
+    ranPtr = rp;
     treeTimePrior = nodpr;
+    calibfilen = clfn;
+    
+    // RW initialization stuff ******
+    //if(calibfilen.empty() == false){
+        // write readOccurrence() --> this function will read the file, create a Calibration obj for each one, and initialize initOT
+    //}
+
+    originMax = 100000.0;
+    
+    // the following variables will all come from the initialisation above
+    initOT = 150.0;
+    rHtY = 5.0; // retrieve youngest fossil age = terminal time
+    numFossils = 10;
+    //calibrs = vector of calibrations // also from initialization
+    // RW initialization stuff ******
+    
+    for (int i=0; i<2; i++){
+        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) );
+        parms[i].push_back( new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0) );
+        parms[i].push_back( new FossilGraph(ranPtr, this, numFossils, initOT, calibrs) );
+        
+    }
+    numParms = (int)parms[0].size();
+    activeParm = 0;
+    for (int i=0; i<numParms; i++)
+        *parms[0][i] = *parms[1][i];
+    
+    for (int i=0; i<numParms; i++)
+        parms[0][i]->print(std::cout);
+    
+    updateProb.clear();
+    updateProb.push_back(0.5); // 1 origin time
+    updateProb.push_back(0.5); // 2 speciation
+    updateProb.push_back(0.5); // 3 fossil graph
+    double sum = 0.0;
+    for (unsigned i=0; i<updateProb.size(); i++)
+        sum += updateProb[i];
+    for (unsigned i=0; i<updateProb.size(); i++)
+        updateProb[i] /= sum;
+    myCurLnL = -1254697.0; // this->getActiveFossilGraph()->getPublicFossilGraphProb();
+    cout << "lnL = " << myCurLnL << endl;
 }
 
 Model::~Model(void) {
@@ -299,6 +340,17 @@ OriginTime* Model::getActiveOriginTime(void) {
     for (int i=0; i<numParms; i++){
         Parameter *p = parms[activeParm][i];
         OriginTime *derivedPtr = dynamic_cast<OriginTime *>(p);
+        if ( derivedPtr != 0 )
+            return derivedPtr;
+    }
+    return NULL;
+}
+
+FossilGraph* Model::getActiveFossilGraph(void) {
+    
+    for (int i=0; i<numParms; i++){
+        Parameter *p = parms[activeParm][i];
+        FossilGraph *derivedPtr = dynamic_cast<FossilGraph *>(p);
         if ( derivedPtr != 0 )
             return derivedPtr;
     }

@@ -312,6 +312,8 @@ int main (int argc, char * const argv[]) {
 	
     if(treeNodePrior == 9){
         Model myModel(&myRandom, calibFN, treeNodePrior);
+        // overload mcmc
+        // Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs)
         cout << "\nFossil only FBD not yet implemented!\n";
         return 0;
     }

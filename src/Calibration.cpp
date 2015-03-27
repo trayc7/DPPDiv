@@ -42,6 +42,8 @@ Calibration::Calibration(string calstr, int tip){
 		initializeNodeCalibration(calstr);
 	else if(tip == 1)
 		initialzeTipCalibration(calstr);
+    //else if (tip==2){
+        // initializeOccurrence();
 }
 
 
@@ -151,6 +153,7 @@ void Calibration::initializeNodeCalibration(string calstr){
 }
 
 void Calibration::initialzeTipCalibration(string calstr){
+
 	stringstream ss;
 	string tmp = "";
 	ss << calstr;

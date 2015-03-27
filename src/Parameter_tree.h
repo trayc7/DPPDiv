@@ -216,7 +216,7 @@ class Tree : public Parameter {
 		double							lnExpCalibPriorRatio(double nh, double oh, double offSt, double expRate);
 		void							print(std::ostream & o) const;
 		void							flipAllCls(void);
-		void							flipAllTis(void);
+		void							flipAllTis(void); // ??
 		void							upDateAllCls(void);
 		void							upDateAllTis(void);
 		void							flipToRootClsTis(Node *p);
@@ -264,9 +264,9 @@ class Tree : public Parameter {
 		std::string						getCalBDSSNodeInfoIndicatorNames(void);
 		std::string						getCalBDSSNodeInfoIndicatorList(void);
 		int								countDecLinsTimeIntersect(Node *p, double t, double ancAge);
-		double							updateFossilBDSSAttachmentTimePhi(void);
-		void							treeScaleUpdateFossilAttchTimes(double sr, double ort, double nrt);
-		void							treeUpdateNodeOldestBoundsAttchTimes(void);
+		double							updateFossilBDSSAttachmentTimePhi(void); //?
+		void							treeScaleUpdateFossilAttchTimes(double sr, double ort, double nrt); //?
+		void							treeUpdateNodeOldestBoundsAttchTimes(void); //?
 		double							getNodeLowerBoundTime(Node *p);
 		double							getNodeUpperBoundTime(Node *p);
 		
@@ -274,7 +274,7 @@ class Tree : public Parameter {
 		void							doAddEdgeMove(void);
 		void							doDeleteEdgeMove(void);
 	
-		int								getSumIndicatorV(void);
+		int								getSumIndicatorV(void); //?
         double							bdssC1Fxn(double b, double d, double psi);
         double							bdssC2Fxn(double b, double d, double psi,double rho);
         
@@ -296,9 +296,9 @@ class Tree : public Parameter {
 		double							getUBLTreeScaleDepths(void);
 		double							getNodePathDepth(Node *t);
 		std::vector<double>				recursiveNodeDepthInitialization(Node *p, int &nCont, double maxD);
-		int								setNodesNumberDecendantTaxa(Node *p);
-		static int						dex(const Node *p);
-		bool							isValidChar(char c);
+		int								setNodesNumberDecendantTaxa(Node *p); //?
+        static int						dex(const Node *p);
+		bool							isValidChar(char c); //?
 		void							passDown(Node *p, int *x);
 		void							showNodes(Node *p, int indent, std::ostream &ss) const;
 		void							writeTree(Node *p, std::stringstream &ss);
@@ -317,7 +317,7 @@ class Tree : public Parameter {
 		void							setTipDateAges(void);
 		
 
-		void							initializeTGSCalibVariables(void);
+		void							initializeTGSCalibVariables(void); //?
 		
 		void							setUPTGSCalibrationFossils();
 		void							initializeFossilSpecVariables();

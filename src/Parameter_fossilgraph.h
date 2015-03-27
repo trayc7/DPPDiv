@@ -38,21 +38,21 @@
 class Occurrence {
     
 public:
-    Occurrence(double fa) :age(fa), fossilBrGamma(0), ancFossIndicator(1) {}
+    Occurrence(double fa) :age(fa), fossilBrGamma(0), ancFossIndicator(1), isTerminal(false) {}
     
     int								getFossilIndex(void) { return indx; }
     double							getFossilAge(void) { return age; }
     double							getFossilSppTime(void) { return phi; }
     int								getFossilFossBrGamma(void) { return fossilBrGamma; }
     int								getFossilIndicatorVar(void) { return ancFossIndicator; }
+    bool                            getIsTerminal(void) { return isTerminal; }
     
     void							setFossilIndex(int i) { indx = i; }
     void							setFossilAge(double d) { age = d; }
     void							setFossilSppTime(double d) { phi = d; }
     void							setFossilFossBrGamma(int i) { fossilBrGamma = i; }
     void							setFossilIndicatorVar(int i) { ancFossIndicator = i; }
-    
-    
+    void                            setIsTerminal(bool b) { isTerminal = b; }
     
 private:
     int								indx;
@@ -62,16 +62,18 @@ private:
     double							nodeAge;
     int								fossilBrGamma;
     int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
+    bool                            isTerminal;
     
 };
 
 class MbRandom;
 class Model;
+class Calibration;
 
-class FossilGraph : Parameter {
+class FossilGraph : public Parameter {
     
 public:
-									FossilGraph(MbRandom *rp, Model *mp, int nf);
+                                    FossilGraph(MbRandom *rp, Model *mp, int nf, double initOrigTime, std::vector<Calibration *> clb);
     
 									~FossilGraph(void);
     
@@ -83,8 +85,34 @@ public:
     std::string						writeParam(void);
     int                             getNumFossils(void) { return numFossils; }
     
+    double                          getFGFBDLogProbability(void);
+    
+    // maybe neccessary
+    
+    double							getFossilGraphProb(double lambda, double mu, double fossRate, double sppSampRate); // cf getTreeAncCalBDSSTreeNodePriorProb
+    
+    double							bdssC1Fxn(double b, double d, double psi);
+    double							bdssC2Fxn(double b, double d, double psi,double rho);
+    
+    double							bdssQFxn(double b, double d, double psi, double rho, double t); // on log scale
+    double							bdssP0Fxn(double b, double d, double psi, double rho, double t);
+//    double							bdssP0HatFxn(double b, double d, double rho, double t); // not required for the fofbd
+    double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
+    
 private:
+ 
+    void                            createOccurrenceVector(std::vector<Calibration *> clb);
+    void							initializeOccurrenceSpecVariables(); // cf initializeFossilSpecVariables
+    void							recountOccurrenceAttachNums(); // cf recountFossilAttachNums();
+    
+    
     int                             numFossils;
+    double                          originTime;
+    double                          terminalTime;
+    int								treeTimePrior; // this will always be > 9, but this class might also be used for other options 10+
+    std::vector<Occurrence *>		occurrenceSpecimens;
+    double							tuningVal;
+    
     
 };
 

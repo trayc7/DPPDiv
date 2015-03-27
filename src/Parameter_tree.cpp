@@ -808,16 +808,16 @@ double Tree::update(double &oldLnL) {
 
 		updateAllTGSNodes(oldLnL);
 		
-		updateFossilBDSSAttachmentTimePhi();
+		updateFossilBDSSAttachmentTimePhi(); //rw:** might be very similar
         treeUpdateNodeOldestBoundsAttchTimes();
 		modelPtr->setLnLGood(true);
 		modelPtr->setMyCurrLnl(oldLnL);
 		modelPtr->setTiProb();
 
-		for(int i=0; i<5; i++){
-			updateRJMoveAddDelEdge();
-            treeUpdateNodeOldestBoundsAttchTimes();
-			modelPtr->setLnLGood(true);
+		for(int i=0; i<5; i++){//rw:** for each numfossils
+			updateRJMoveAddDelEdge();//rw:**
+            treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
+			modelPtr->setLnLGood(true);//rw:** none of this needed (hopefully)
 			modelPtr->setMyCurrLnl(oldLnL);
 			modelPtr->setTiProb();
 		}
