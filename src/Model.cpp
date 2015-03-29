@@ -109,10 +109,11 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
     if(conditionOnOrigin)
         rHtO = initOT;
     else rHtO = originMax;
-	
+    
 	cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
 	
 	// ...and initialize some important variables
+    
 	numGammaCats = 4;
 	numPatterns  = alignmentPtr->getNumChar();
 	
@@ -178,22 +179,26 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 Model::Model(MbRandom *rp, std::string clfn, int nodpr){
     
     ranPtr = rp;
+    ranPtr->getSeed(startS1, startS2);
     treeTimePrior = nodpr;
     calibfilen = clfn;
+    numFossils = 0;
     
     // RW initialization stuff ******
-    //if(calibfilen.empty() == false){
-        // write readOccurrence() --> this function will read the file, create a Calibration obj for each one, and initialize initOT
-    //}
+    if(calibfilen.empty() == false){
+        initOT = readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
+    }
 
     originMax = 100000.0;
     
     // the following variables will all come from the initialisation above
-    initOT = 150.0;
-    rHtY = 5.0; // retrieve youngest fossil age = terminal time
-    numFossils = 10;
-    //calibrs = vector of calibrations // also from initialization
+    //initOT = 150.0;
+    //rHtY = 5.0; // retrieve youngest fossil age = terminal time
+    //numFossils = 10;
+    //calibrs = vector of calibrations
     // RW initialization stuff ******
+    
+    cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
     for (int i=0; i<2; i++){
         parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) );
@@ -218,8 +223,11 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr){
         sum += updateProb[i];
     for (unsigned i=0; i<updateProb.size(); i++)
         updateProb[i] /= sum;
-    myCurLnL = -1254697.0; // this->getActiveFossilGraph()->getPublicFossilGraphProb();
+    
+    //myCurLnL = -1254697.0; // this->getActiveFossilGraph()->getPublicFossilGraphProb();
+    myCurLnL = this->getActiveFossilGraph()->getActiveFossilGraphProb();
     cout << "lnL = " << myCurLnL << endl;
+    
 }
 
 Model::~Model(void) {
@@ -752,8 +760,65 @@ void Model::readTipDateFile(void){
 		Calibration *cal = new Calibration(calList[i], 1);
 		tipDates.push_back(cal);
 	}
+    
 	delete [] calList;
 
+}
+
+double Model::readOccurrenceFile(void){
+    
+    /*
+	    3
+     20.4
+     40.1
+     90.0
+     */
+    
+    // initialize occurrences
+    cout << "\nOccurrences:" << endl;
+    string ln = getLineFromFile(calibfilen, 1);
+    int nlins = atoi(ln.c_str());
+    string *calList = new string[nlins];
+    for(int i=0; i<nlins; i++){
+        numFossils++;
+        calList[i] = getLineFromFile(calibfilen, i+2);
+        Calibration *cal = new Calibration(calList[i], 2);
+        calibrs.push_back(cal);
+    }
+    delete [] calList;
+    
+    // initialize origin time
+    double yb = 0.0;
+    double ob = 0.0;
+    
+    for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
+        double tmpv;
+        tmpv = (*v)->getYngTime() * 1.1;
+        if(tmpv > yb)
+            yb = tmpv;
+    }
+    ob = yb + (yb * 2);
+    double tsc = yb + (ranPtr->uniformRv() * (ob - yb));
+    rHtY = yb;
+    rHtO = ob; // i don't think we need this
+//    initTScale = tsc; // i don't think we need this
+//    initOT = tsc * 2.0; // applies to options < 9
+    initOT =  tsc;
+    
+    // initialize terminal time
+    for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
+        double yt;
+        yt = (*v)->getYngTime();
+        if(yt < yb)
+            yb = yt;
+    }
+    rHtY = yb;
+    
+    cout << "\nTotal number of occurrences: " << numFossils << endl;
+    cout << "\nInitial origin time: " << initOT <<  " [" << yb << ", " << ob << "]" << endl;
+    cout << "\nTerminal time: " << rHtY << endl;
+    
+    return initOT;
 }
 
 

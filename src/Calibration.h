@@ -67,6 +67,7 @@ class Calibration {
 		
 		void			initializeNodeCalibration(std::string calstr);
 		void			initialzeTipCalibration(std::string calstr);
+        void            initializeOccurrence(std::string calstr);
 };
 
 

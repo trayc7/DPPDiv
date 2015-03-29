@@ -31,6 +31,7 @@
 #include "Parameter.h"
 #include "Parameter_fossilgraph.h"
 #include "Parameter_origin.h"
+#include "Parameter_speciaton.h"
 #include "MbRandom.h"
 #include "Model.h"
 #include "util.h"
@@ -46,8 +47,8 @@ FossilGraph::FossilGraph(MbRandom *rp, Model *mp, int nf, double initOrigTime, v
     name = "FG";
     numFossils = nf;
     originTime = initOrigTime;
-    //createOccurrenceVector(clb);
-    
+    createOccurrenceVector(clb);
+    initializeOccurrenceSpecVariables();
 }
 
 FossilGraph::~FossilGraph(void){
@@ -108,7 +109,6 @@ void FossilGraph::createOccurrenceVector(vector<Calibration *> clb){
     }
 }
 
-
 void FossilGraph::initializeOccurrenceSpecVariables(){
     
     for(int f = 0; f < numFossils; f++){
@@ -126,8 +126,9 @@ void FossilGraph::initializeOccurrenceSpecVariables(){
             else {
                 double yf = o->getFossilAge();
                 double zf = ranPtr->uniformRv(yf,originTime);
-                o->setFossilFossBrGamma(zf);
+                o->setFossilSppTime(zf);//rw: this was the problem, setFossilFossBrGamma used instead of setFossilSppTime
                 o->setFossilIndicatorVar(1);
+                o->setFossilFossBrGamma(0);
             }
         }
     }
@@ -135,7 +136,7 @@ void FossilGraph::initializeOccurrenceSpecVariables(){
 }
 
 void FossilGraph::recountOccurrenceAttachNums(){
-    
+
     for(int f = 0; f < numFossils; f++){
         Occurrence *o = occurrenceSpecimens[f];
         double zf = o->getFossilSppTime();
@@ -149,8 +150,25 @@ void FossilGraph::recountOccurrenceAttachNums(){
                     g++;
             }
         }
+        g++; // double check this is correct
+        //cout << "gamma :" << g << endl; //rw: gamma is correct
         o->setFossilFossBrGamma(g);
     }
+}
+
+double FossilGraph::getActiveFossilGraphProb(){
+    
+    double nprb = 0.0;
+    Speciation *s = modelPtr->getActiveSpeciation();
+    //OriginTime *ot = modelPtr->getActiveOriginTime(); I don't think this is needed here
+    s->setAllBDFossParams();
+    double lambda = s->getBDSSSpeciationRateLambda();
+    double mu = s->getBDSSExtinctionRateMu();
+    double fossRate = s->getBDSSFossilSampRatePsi();
+    double sppSampRate = s->getBDSSSppSampRateRho();
+    recountOccurrenceAttachNums();
+    nprb = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
+    return nprb;
 }
 
 
@@ -158,12 +176,15 @@ double FossilGraph::getFossilGraphProb(double lambda, double mu, double fossRate
     OriginTime *ot = modelPtr->getActiveOriginTime();
     originTime = ot->getOriginTime(); // active origin?
     
-    // the following needs changed
+    // the following has been modified for the fofbd
     double nprb = 1.0 - (log(2*lambda) + log(1.0 - bdssP0Fxn(lambda, mu, fossRate, sppSampRate, originTime)));
-    
+    cout << "nprb = " << nprb << endl;
     for(int f=0; f < occurrenceSpecimens.size(); f++){
         Occurrence *o = occurrenceSpecimens[f];
         nprb += log(fossRate * o->getFossilFossBrGamma() );
+        cout << "Fossil rate " << fossRate << endl;
+        cout << "Gamma " << o->getFossilFossBrGamma() << endl;
+        cout << "The problem is here. nprb = " << nprb << endl;
         if(o->getFossilIndicatorVar()){
             double fossAge = o->getFossilAge();
             double fossPhi = o->getFossilSppTime(); // n.b. treescale removed from this part of the equation

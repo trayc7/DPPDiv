@@ -47,7 +47,6 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	
 	maxdivV = 30000.0;
 	name = "SP";
-    cout << "test " << name << endl;
 	relativeDeath = ranPtr->uniformRv(); 
 	netDiversificaton = ranPtr->uniformRv();
 	probSpeciationS = ranPtr->uniformRv();

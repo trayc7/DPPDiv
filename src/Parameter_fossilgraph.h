@@ -85,11 +85,12 @@ public:
     std::string						writeParam(void);
     int                             getNumFossils(void) { return numFossils; }
     
-    double                          getFGFBDLogProbability(void);
+    double                          getFGFBDLogProbability(void); // don't think this will be used for anything
     
     // maybe neccessary
     
     double							getFossilGraphProb(double lambda, double mu, double fossRate, double sppSampRate); // cf getTreeAncCalBDSSTreeNodePriorProb
+    double							getActiveFossilGraphProb(); // cf getTreeCBDNodePriorProb
     
     double							bdssC1Fxn(double b, double d, double psi);
     double							bdssC2Fxn(double b, double d, double psi,double rho);

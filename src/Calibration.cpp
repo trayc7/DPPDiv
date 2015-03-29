@@ -42,8 +42,9 @@ Calibration::Calibration(string calstr, int tip){
 		initializeNodeCalibration(calstr);
 	else if(tip == 1)
 		initialzeTipCalibration(calstr);
-    //else if (tip==2){
-        // initializeOccurrence();
+    else if (tip==2)
+        initializeOccurrence(calstr);
+        
 }
 
 
@@ -164,6 +165,17 @@ void Calibration::initialzeTipCalibration(string calstr){
 	oldtime = youngtime;
 	cout << "   Tip calibration on " << txn1 << " --> ("
 	<< youngtime << ", " << oldtime << ")" << endl;
+}
+
+void Calibration::initializeOccurrence(string calstr){
+    
+    stringstream ss;
+    string tmp = "";
+    ss << calstr;
+    ss >> tmp;
+    youngtime = atof(tmp.c_str());
+    cout << "Occurrence age " << youngtime << endl;
+    
 }
 
 
