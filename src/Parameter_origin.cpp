@@ -28,6 +28,7 @@
  */
 
 #include "Parameter.h"
+#include "Parameter_fossilgraph.h"
 #include "Parameter_speciaton.h"
 #include "Parameter_treescale.h"
 #include "Parameter_origin.h"
@@ -47,6 +48,7 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob)
     originTime = sv;
     tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.2;
     name = "OT";
+	treeTimePrior = mp->getTreeTimePriorNum();
 //    cout << "OT initialized" << originTime << endl;
 
 }
@@ -81,7 +83,20 @@ void OriginTime::print(std::ostream & o) const {
 
 double OriginTime::update(double &oldLnL) {
     
-    Treescale *ts = modelPtr->getActiveTreeScale();
+    double myPrR = 0.0;
+	if(treeTimePrior < 9)
+		myPrR = updateDPPDiv();
+	else
+		myPrR = updateFOFBD();
+
+    modelPtr->setLnLGood(true);
+    modelPtr->setMyCurrLnl(oldLnL);
+    
+    return myPrR;
+    
+}
+
+double OriginTime::updateDPPDiv(void){
     
     Speciation *s = modelPtr->getActiveSpeciation();
     
@@ -115,15 +130,20 @@ double OriginTime::update(double &oldLnL) {
     
 //    cout << "old: OT = " << oldOT << ", old Prob = " << oldOTProb << endl;
 //    cout << "new: OT = " << newOT << ", new Prob = " << newOTProb << endl;
-    
-    // Need to double check this
+	return oldOTProb-newOTProb;
+}
 
-    modelPtr->setLnLGood(true);
-    modelPtr->setMyCurrLnl(oldLnL);
-    double myPrR = oldOTProb-newOTProb;
+double OriginTime::updateFOFBD(void){
+	
+    Speciation *s = modelPtr->getActiveSpeciation();
+	FossilGraph *fg = modelPtr->getActiveFossilGraph();
+	
+	// similar fxns required
+	//double oldOTProb = getFBDProbOriginTime(t, s);
     
-    return myPrR;
-    
+    //double minAge = fg->getOldestFossilGraphSpeciationTime();
+	
+	return 0.0;
 }
 
 //double OriginTime::doAScaleMove(double currentV, double lb, double hb, double rv){

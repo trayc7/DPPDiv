@@ -140,7 +140,7 @@ void FossilGraph::recountOccurrenceAttachNums(){
     for(int f = 0; f < numFossils; f++){
         Occurrence *o = occurrenceSpecimens[f];
         double zf = o->getFossilSppTime();
-        int g = 0;
+        int g = 1; // start at 1 because the lineage leading to OT is implicit
         for(int j = 0; j < numFossils; j++){
             if(f != j){
                 Occurrence *p = occurrenceSpecimens[j];
@@ -150,7 +150,6 @@ void FossilGraph::recountOccurrenceAttachNums(){
                     g++;
             }
         }
-        g++; // double check this is correct
         //cout << "gamma :" << g << endl; //rw: gamma is correct
         o->setFossilFossBrGamma(g);
     }

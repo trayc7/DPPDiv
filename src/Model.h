@@ -113,7 +113,7 @@ class Model {
 		void							initializeConditionalLikelihoods(void);
 		void							initializeTransitionProbabilityMatrices(void);
 		double							readCalibFile();
-        double							readOccurrenceFile();
+        void							readOccurrenceFile();
 		Calibration*					getRootCalibration();
 		
 		MbRandom						*ranPtr;
