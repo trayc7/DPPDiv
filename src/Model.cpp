@@ -186,7 +186,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr){
     
     // RW initialization stuff ******
     if(calibfilen.empty() == false){
-        initOT = readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
+        readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
     }
 
     originMax = 100000.0;
@@ -765,7 +765,7 @@ void Model::readTipDateFile(void){
 
 }
 
-double Model::readOccurrenceFile(void){
+void Model::readOccurrenceFile(void){
     
     /*
 	    3
@@ -798,12 +798,8 @@ double Model::readOccurrenceFile(void){
             yb = tmpv;
     }
     ob = yb + (yb * 2);
-    double tsc = yb + (ranPtr->uniformRv() * (ob - yb));
+    initOT = yb + (ranPtr->uniformRv() * (ob - yb));
     rHtY = yb;
-    rHtO = ob; // i don't think we need this
-//    initTScale = tsc; // i don't think we need this
-//    initOT = tsc * 2.0; // applies to options < 9
-    initOT =  tsc;
     
     // initialize terminal time
     for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
@@ -818,7 +814,6 @@ double Model::readOccurrenceFile(void){
     cout << "\nInitial origin time: " << initOT <<  " [" << yb << ", " << ob << "]" << endl;
     cout << "\nTerminal time: " << rHtY << endl;
     
-    return initOT;
 }
 
 

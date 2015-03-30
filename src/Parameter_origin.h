@@ -59,7 +59,11 @@ private:
     bool				isBounded;
     bool				retune;
     double				numAccepted;
-    double				numTried;				
+    double				numTried;
+	int					treeTimePrior;
+	
+	double				updateFOFBD(void);
+	double				updateDPPDiv(void);
     
 };
 
