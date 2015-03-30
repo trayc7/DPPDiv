@@ -178,13 +178,13 @@ double FossilGraph::getFossilGraphProb(double lambda, double mu, double fossRate
     
     // the following has been modified for the fofbd
     double nprb = 1.0 - (log(2*lambda) + log(1.0 - bdssP0Fxn(lambda, mu, fossRate, sppSampRate, originTime)));
-    cout << "nprb = " << nprb << endl;
+    //cout << "1. nprb = " << nprb << endl;
     for(int f=0; f < occurrenceSpecimens.size(); f++){
         Occurrence *o = occurrenceSpecimens[f];
         nprb += log(fossRate * o->getFossilFossBrGamma() );
-        cout << "Fossil rate " << fossRate << endl;
-        cout << "Gamma " << o->getFossilFossBrGamma() << endl;
-        cout << "The problem is here. nprb = " << nprb << endl;
+        //cout << "Fossil rate " << fossRate << endl;
+        //cout << "Gamma " << o->getFossilFossBrGamma() << endl;
+        //cout << "2. nprb = " << nprb << endl;
         if(o->getFossilIndicatorVar()){
             double fossAge = o->getFossilAge();
             double fossPhi = o->getFossilSppTime(); // n.b. treescale removed from this part of the equation
@@ -194,7 +194,7 @@ double FossilGraph::getFossilGraphProb(double lambda, double mu, double fossRate
             nprb += fossPr;
         }
     }
-    //cout << "FBDS prob = " << nprb << endl;
+    //cout << "3. FBDS prob = " << nprb << endl;
     return nprb;
 }
 
@@ -240,4 +240,133 @@ double FossilGraph::bdssC2Fxn(double b, double d, double psi, double rho){
 }
 
 
+// the following functions are to do with update moves
 
+double FossilGraph::updateOccurrenceAttachmentTimesPhi() {
+    
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+    originTime = ot->getOriginTime(); // active origin?
+    
+    Speciation *s = modelPtr->getActiveSpeciation();
+    s->setAllBDFossParams();
+    double lambda = s->getBDSSSpeciationRateLambda();
+    double mu = s->getBDSSExtinctionRateMu();
+    double fossRate = s->getBDSSFossilSampRatePsi();
+    double sppSampRate = s->getBDSSSppSampRateRho();
+    
+    vector<int> rndOccIDs;
+    for(int i=0; i<occurrenceSpecimens.size(); i++)
+        rndOccIDs.push_back(i);
+    random_shuffle(rndOccIDs.begin(), rndOccIDs.end());
+    for(vector<int>::iterator it=rndOccIDs.begin(); it!=rndOccIDs.end(); it++){
+        Occurrence *o = occurrenceSpecimens[(*it)];
+        if(o->getFossilIndicatorVar()){
+            
+            /*
+            Node *p = &nodes[f->getFossilMRCANodeID()];
+            double nodeDepth = p->getNodeDepth() * treeScale;
+            if(f->getIsTotalGroupFossil()){
+                if(p != root){
+                    nodeDepth = p->getAnc()->getNodeDepth()*treeScale;
+                }
+                else {
+                    OriginTime *ot = modelPtr->getActiveOriginTime();
+                    nodeDepth = ot->getOriginTime();
+                }
+            }
+            */
+            
+            double fossDepth = o->getFossilAge();
+            
+            double oldPhi = o->getFossilSppTime(); // * treeScale;
+            double oldSumLogGammas = getSumLogAllAttachNums(); //??
+            
+            double rv = ranPtr->uniformRv();
+            double newPhi, c;
+            
+            /*
+            if(nodeProposal == 1){ // used for options < 5
+                double delta = 5.0;
+                c = doAWindoMove(newPhi, oldPhi, delta, fossDepth, nodeDepth, rv);
+            }
+            else if(nodeProposal == 2){ // used for options > 5
+                double tv = tuningVal;
+                c = doAScaleMove(newPhi, oldPhi, tv, fossDepth, nodeDepth, rv);
+            }
+            else if(nodeProposal == 3){ // never used
+                newPhi = fossDepth + rv*(nodeDepth-fossDepth);
+                c = 0.0;
+            }
+             */
+            
+            // we should spectify the following in the FG initialization
+            int nodeProposal = 2; // proposal type 1=window, 2=scale, 3=slide
+            
+            if(nodeProposal == 2){
+                double tv = tuningVal;
+                c = doAScaleMove(newPhi, oldPhi, tv, fossDepth, originTime, rv);
+            }
+            
+            o->setFossilSppTime(newPhi);
+            
+            double newSumLogGammas = getSumLogAllAttachNums();
+            
+            double lnPriorRat = 0.0;
+            double v1 = newSumLogGammas;
+            double v2 = bdssQFxn(lambda, mu, fossRate, sppSampRate, newPhi);
+            double v3 = bdssQFxn(lambda, mu, fossRate, sppSampRate, oldPhi);
+            double v4 = oldSumLogGammas;
+            lnPriorRat = (v1 - v2) - (v4 - v3);
+            
+            
+            double r = modelPtr->safeExponentiation(lnPriorRat + c);
+            
+            if(ranPtr->uniformRv() < r){ 
+                o->setFossilSppTime(newPhi);
+                //setNodeOldestAttchBranchTime(p);
+            }
+            else{
+                o->setFossilSppTime(oldPhi);
+                //setNodeOldestAttchBranchTime(p);
+            }
+        }
+    }
+    return 0.0;
+}
+
+double FossilGraph::doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv){
+    
+    /* 
+    nv = new phi
+    cv = old phi
+    tv = tuning value
+    lb = fossil depth
+    hb = origin time (previously, node depth)
+    rv = random number
+    */
+    
+    double c = tv * (rv - 0.5);
+    double newcv = cv * exp(c);
+    bool validV = false;
+    do{
+        if(newcv < lb)
+            newcv = lb * lb / newcv;
+        else if(newcv > hb)
+            newcv = hb * hb / newcv;
+        else
+            validV = true;
+    } while(!validV);
+    nv = newcv;
+    return c;
+}
+
+double FossilGraph::getSumLogAllAttachNums(){
+    
+    double sumLog = 0.0;
+    recountOccurrenceAttachNums();
+    for(int i=0; i<occurrenceSpecimens.size(); i++){
+        Occurrence *fi = occurrenceSpecimens[i];
+        sumLog += log(fi->getFossilFossBrGamma());
+    }
+    return sumLog;
+}
