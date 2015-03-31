@@ -49,6 +49,7 @@ FossilGraph::FossilGraph(MbRandom *rp, Model *mp, int nf, double initOrigTime, v
     originTime = initOrigTime;
     createOccurrenceVector(clb);
     initializeOccurrenceSpecVariables();
+    numAncFossilsk=0;
 }
 
 FossilGraph::~FossilGraph(void){
@@ -69,6 +70,7 @@ void FossilGraph::clone(const FossilGraph &t){
 
 double FossilGraph::update(double &oldLnL){
 
+    
     return 0;
 }
 
@@ -111,6 +113,7 @@ void FossilGraph::createOccurrenceVector(vector<Calibration *> clb){
 
 void FossilGraph::initializeOccurrenceSpecVariables(){
     
+    numAncFossilsk = 0;
     for(int f = 0; f < numFossils; f++){
         Occurrence *o = occurrenceSpecimens[f];
         if(o->getIsTerminal()){
@@ -124,6 +127,7 @@ void FossilGraph::initializeOccurrenceSpecVariables(){
                 o->setFossilIndicatorVar(0);
             }
             else {
+                numAncFossilsk += 1;
                 double yf = o->getFossilAge();
                 double zf = ranPtr->uniformRv(yf,originTime);
                 o->setFossilSppTime(zf);//rw: this was the problem, setFossilFossBrGamma used instead of setFossilSppTime
@@ -133,6 +137,7 @@ void FossilGraph::initializeOccurrenceSpecVariables(){
         }
     }
     recountOccurrenceAttachNums();
+    //cout << "num anc Fossils = " << numAncFossilsk << endl;
 }
 
 void FossilGraph::recountOccurrenceAttachNums(){
@@ -153,6 +158,21 @@ void FossilGraph::recountOccurrenceAttachNums(){
         //cout << "gamma :" << g << endl; //rw: gamma is correct
         o->setFossilFossBrGamma(g);
     }
+}
+
+//rw: new fxn - double check
+double FossilGraph::getOldestFossilGraphSpeciationTime(){
+    
+    double oldestTime = 0.0;
+    
+    for(int f = 0; f < numFossils; f++){
+        Occurrence *o = occurrenceSpecimens[f];
+        double zf = o->getFossilSppTime();
+        if(zf > oldestTime)
+            oldestTime = zf;
+    }
+    
+    return oldestTime;
 }
 
 double FossilGraph::getActiveFossilGraphProb(){
@@ -261,19 +281,6 @@ double FossilGraph::updateOccurrenceAttachmentTimesPhi() {
         Occurrence *o = occurrenceSpecimens[(*it)];
         if(o->getFossilIndicatorVar()){
             
-            /*
-            Node *p = &nodes[f->getFossilMRCANodeID()];
-            double nodeDepth = p->getNodeDepth() * treeScale;
-            if(f->getIsTotalGroupFossil()){
-                if(p != root){
-                    nodeDepth = p->getAnc()->getNodeDepth()*treeScale;
-                }
-                else {
-                    OriginTime *ot = modelPtr->getActiveOriginTime();
-                    nodeDepth = ot->getOriginTime();
-                }
-            }
-            */
             
             double fossDepth = o->getFossilAge();
             
@@ -322,11 +329,9 @@ double FossilGraph::updateOccurrenceAttachmentTimesPhi() {
             
             if(ranPtr->uniformRv() < r){ 
                 o->setFossilSppTime(newPhi);
-                //setNodeOldestAttchBranchTime(p);
             }
             else{
                 o->setFossilSppTime(oldPhi);
-                //setNodeOldestAttchBranchTime(p);
             }
         }
     }
@@ -369,3 +374,197 @@ double FossilGraph::getSumLogAllAttachNums(){
     }
     return sumLog;
 }
+
+double FossilGraph::updateRJMoveAddDelEdge() {
+    
+    double gA = 0.5;
+    if(numAncFossilsk == occurrenceSpecimens.size())
+        gA = 1.0;
+    else if(numAncFossilsk == 0)
+        gA = 0.0;
+    
+    double u = ranPtr->uniformRv();
+    if(u < gA)
+        doAddEdgeMove();
+    //else
+    //    doDeleteEdgeMove();
+    
+    return 0.0;
+}
+
+//rw: new fxn - double check the maths
+void FossilGraph::doAddEdgeMove(){
+    
+    int k = numAncFossilsk;
+    int m = occurrenceSpecimens.size();
+    int kN = k-1;
+    Speciation *s = modelPtr->getActiveSpeciation();
+    s->setAllBDFossParams();
+    double lambda = s->getBDSSSpeciationRateLambda();
+    double mu = s->getBDSSExtinctionRateMu();
+    double fossRate = s->getBDSSFossilSampRatePsi();
+    double sppSampRate = s->getBDSSSppSampRateRho();
+    double lnHastings, lnJacobian, lnPriorR;
+    
+    int mvFoss = pickRandAncestorFossil(); // needs adding
+    Occurrence *o = occurrenceSpecimens[mvFoss]; // rand fossil
+    //Node *p = &nodes[f->getFossilMRCANodeID()];
+    double oldSumLogGammas = getSumLogAllAttachNums();
+    
+    double alA = 1.0;
+    if(kN == 0)
+        alA = 2.0;
+    else if(k == m)
+        alA = 0.5;
+    
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+    double cf = ot->getOriginTime();
+    
+    //double cf = p->getNodeDepth() * treeScale;
+    //if(f->getIsTotalGroupFossil()){
+    //    if(p != root){
+    //        cf = p->getAnc()->getNodeDepth() * treeScale;
+    //    }
+    //    else {
+    //        OriginTime *ot = modelPtr->getActiveOriginTime();
+    //        cf = ot->getOriginTime();
+    //    }
+    //}
+    
+    double yf = o->getFossilAge();
+    double nu = ranPtr->uniformRv() * (cf - yf);
+    lnHastings = log(alA) + (log(k) - log(m - k + 1.0));
+    lnJacobian = log(cf - yf);
+    double newPhi = yf + nu;
+    double scnewPhi = newPhi;// / treeScale;
+    o->setFossilSppTime(scnewPhi);
+    o->setFossilIndicatorVar(1);
+    
+    /* the following needs heavy checked */
+    
+    double newSumLogGammas = getSumLogAllAttachNums();
+    
+    double v1 = log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, yf));
+    double v2 = bdssQFxn(lambda, mu, fossRate, sppSampRate, yf);
+    double v3 = bdssQFxn(lambda, mu, fossRate, sppSampRate, newPhi);
+    
+    //lnPriorR = (numTaxa - 2 + numCalibNds - kN) * log(lambda);
+    //lnPriorR += (newSumLogGammas + log(2.0) + v1 + v2 - v3);
+    //lnPriorR -= (((numTaxa - 2 + numCalibNds - k) * log(lambda)) + oldSumLogGammas);
+    
+    lnPriorR = (- kN) * log(lambda);
+    lnPriorR += (newSumLogGammas + log(2.0) + v1 + v2 - v3);
+    lnPriorR -= (((- k) * log(lambda)) + oldSumLogGammas);
+    
+    double lpr = lnPriorR + lnHastings + lnJacobian;
+    double r = modelPtr->safeExponentiation(lpr);
+    /* */
+    
+    if(ranPtr->uniformRv() < r){
+        o->setFossilIndicatorVar(1);
+        o->setFossilSppTime(scnewPhi);
+        //setNodeOldestAttchBranchTime(p);
+        numAncFossilsk = kN;
+    }
+    else{
+        o->setFossilIndicatorVar(0);
+        o->setFossilSppTime(yf);
+        //f->setFossilSppTime(yf/treeScale);
+        numAncFossilsk = k;
+        //setNodeOldestAttchBranchTime(p);
+    }
+}
+
+//void FossilGraph::doDeleteEdgeMove(){
+//    
+//    int k = numAncFossilsk;
+//    int m = numCalibNds;
+//    int kN = k+1;
+//    Speciation *s = modelPtr->getActiveSpeciation();
+//    s->setAllBDFossParams();
+//    double lambda = s->getBDSSSpeciationRateLambda();
+//    double mu = s->getBDSSExtinctionRateMu();
+//    double fossRate = s->getBDSSFossilSampRatePsi();
+//    double sppSampRate = s->getBDSSSppSampRateRho();
+//    double lnHastings, lnJacobian, lnPriorR;
+//    
+//    int mvFoss = pickRandTipFossil();
+//    Fossil *f = fossSpecimens[mvFoss];
+//    Node *p = &nodes[f->getFossilMRCANodeID()];
+//    double oldSumLogGammas = getSumLogAllAttachNums();
+//    
+//    double alD = 1.0;
+//    if(k == 0)
+//        alD = 0.5;
+//    else if(kN == m)
+//        alD = 2.0;
+//    
+//    double cf = p->getNodeDepth() * treeScale;
+//    double yf = f->getFossilAge();
+//    
+//    double oldPhi = f->getFossilSppTime() * treeScale;
+//    double oldScPhi = f->getFossilSppTime();
+//    double scnewPhi = yf / treeScale;
+//    f->setFossilIndicatorVar(0);
+//    f->setFossilSppTime(scnewPhi);
+//    
+//    double newSumLogGammas = getSumLogAllAttachNums();
+//    
+//    lnHastings = log(alD) + (log(m-k) - log(k+1));
+//    lnJacobian = -(log(cf - yf));
+//    
+//    double v1 = log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, yf));
+//    double v2 = bdssQFxn(lambda, mu, fossRate, sppSampRate, yf);
+//    double v3 = bdssQFxn(lambda, mu, fossRate, sppSampRate, oldPhi);
+//    
+//    lnPriorR = ((numTaxa - 2 + numCalibNds - kN) * log(lambda)) + newSumLogGammas;
+//    lnPriorR -= (((numTaxa - 2 + numCalibNds - k) * log(lambda)) + (oldSumLogGammas + log(2.0) + v1 + v2 - v3));
+//    
+//    double lpr = lnPriorR + lnHastings + lnJacobian;
+//    double r = modelPtr->safeExponentiation(lpr);
+//    
+//    if(ranPtr->uniformRv() < r){
+//        f->setFossilIndicatorVar(0);
+//        f->setFossilSppTime(scnewPhi);
+//        setNodeOldestAttchBranchTime(p);
+//        numAncFossilsk = kN;
+//    }
+//    else{
+//        f->setFossilSppTime(oldScPhi);
+//        f->setFossilIndicatorVar(1);
+//        setNodeOldestAttchBranchTime(p);
+//    }
+//}
+
+
+int FossilGraph::pickRandAncestorFossil(){
+    
+    vector<int> af;
+    for(int i=0; i<occurrenceSpecimens.size(); i++){
+        Occurrence *f = occurrenceSpecimens[i];
+        if(f->getFossilIndicatorVar() == 0)
+            af.push_back(i);
+    }
+    int v = (int)(ranPtr->uniformRv()*af.size());
+    return af[v];
+}
+
+int FossilGraph::pickRandTipFossil(){
+    
+    vector<int> af;
+    for(int i=0; i<occurrenceSpecimens.size(); i++){
+        Occurrence *o = occurrenceSpecimens[i];
+        if(o->getFossilIndicatorVar() == 1)
+            af.push_back(i);
+    }
+    int v = (int)(ranPtr->uniformRv()*af.size());
+    return af[v];
+}
+
+
+
+
+
+
+
+// END

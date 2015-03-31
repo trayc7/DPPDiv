@@ -40,7 +40,7 @@
 
 using namespace std;
 
-Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH) : Parameter(rp, mp) {
+Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh) : Parameter(rp, mp) {//rw:
 	
 	// Based on BEAST implementation of the birth-death model described in Gernhard (2008)
 	// Note: the beast implementation doesn't allow for lambda=mu
@@ -50,8 +50,9 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	relativeDeath = ranPtr->uniformRv(); 
 	netDiversificaton = ranPtr->uniformRv();
 	probSpeciationS = ranPtr->uniformRv();
-	extantSampleRate = 1.0; 
-	treeTimePrior = modelPtr->getTreeTimePriorNum(); 
+	//extantSampleRate = 1.0;
+    extantSampleRate = rh;
+	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	
 	if(mp->getFixTestRun()){
 		relativeDeath = bda;
@@ -83,7 +84,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 		
 	if(treeTimePrior > 5){
 		cout << "Speciaton parameters are initialized with: d = " << netDiversificaton << " , r = " << relativeDeath<< " , s = " << probSpeciationS << endl;
-		cout << "                                   l = " << birthRate << " , m = " << deathRate<< " , psi = " << fossilRate << endl;
+		cout << "                                   l = " << birthRate << " , m = " << deathRate << " , psi = " << fossilRate << " , rho = " << extantSampleRate << endl; //rw:
 	}
     cout << "BD initialized\n";
 	

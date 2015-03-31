@@ -50,6 +50,7 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob)
     name = "OT";
 	treeTimePrior = mp->getTreeTimePriorNum();
 //    cout << "OT initialized" << originTime << endl;
+    cout << "ob = " << oldBound << endl;
 
 }
 
@@ -133,17 +134,43 @@ double OriginTime::updateDPPDiv(void){
 	return oldOTProb-newOTProb;
 }
 
+//rw: new fxn - double check the maths
 double OriginTime::updateFOFBD(void){
 	
     Speciation *s = modelPtr->getActiveSpeciation();
 	FossilGraph *fg = modelPtr->getActiveFossilGraph();
-	
-	// similar fxns required
-	//double oldOTProb = getFBDProbOriginTime(t, s);
     
-    //double minAge = fg->getOldestFossilGraphSpeciationTime();
-	
-	return 0.0;
+    double oldOT = originTime;
+    //    cout << "OT1 " << originTime << endl;
+
+    double oldOTProb = getFOFBDProbOriginTime(fg, s); // c.f. getFBDProbOriginTime
+    
+    double minAge = fg->getOldestFossilGraphSpeciationTime(); // getOldestTreeSpeciationTime
+
+    double maxAge = oldBound; // right now for the fofbd this is always 100000; I'm not sure how to modify this
+    
+    double limO = oldOT + tuning;
+    double limY = oldOT - tuning;
+    
+    double newOT;
+    
+    double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
+    newOT = oldOT + u;
+    while(newOT < minAge || newOT > maxAge){
+        if(newOT < minAge)
+            newOT = (2 * minAge) - newOT;
+        if(newOT > maxAge)
+            newOT = (2 * maxAge) - newOT;
+    }
+    originTime = newOT;
+    //    cout << "OT2 " << originTime << endl;
+    double newOTProb = getFOFBDProbOriginTime(fg, s);
+    
+    //    cout << "old: OT = " << oldOT << ", old Prob = " << oldOTProb << endl;
+    //    cout << "new: OT = " << newOT << ", new Prob = " << newOTProb << endl;
+    return oldOTProb-newOTProb;
+
+
 }
 
 //double OriginTime::doAScaleMove(double currentV, double lb, double hb, double rv){
@@ -176,6 +203,23 @@ double OriginTime::getFBDProbOriginTime(Tree *t, Speciation *s){
     
     double phat = t->bdssP0HatFxn(lambda, mu, rho, originTime);
 
+    double otPrb = log(lambda) + log(1-phat);
+    return otPrb;
+}
+
+//rw: new fxn - double check the maths
+double OriginTime::getFOFBDProbOriginTime(FossilGraph *fg, Speciation *s){
+    
+    // this returns log[ 1 / ((lambda*(1-Phat(x_0))) ]
+    s->setAllBDFossParams();
+    
+    double lambda = s->getBDSSSpeciationRateLambda();
+    double mu = s->getBDSSExtinctionRateMu();
+    double rho = s->getBDSSSppSampRateRho();
+    double fossRate = s->getBDSSFossilSampRatePsi(); // psi
+    
+    double phat = fg->bdssP0Fxn(lambda, mu, fossRate, rho, originTime); // note this is not the same as getFBDProbOriginTime
+    
     double otPrb = log(lambda) + log(1-phat);
     return otPrb;
 }

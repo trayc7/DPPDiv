@@ -90,7 +90,7 @@ public:
     // maybe neccessary
     
     double							getFossilGraphProb(double lambda, double mu, double fossRate, double sppSampRate); // cf getTreeAncCalBDSSTreeNodePriorProb
-    double							getActiveFossilGraphProb(); // cf getTreeCBDNodePriorProb
+    double							getActiveFossilGraphProb(); // cf getTreeCBDNodePriorProb, called by getTreeSpeciationProbability
     
     double							bdssC1Fxn(double b, double d, double psi);
     double							bdssC2Fxn(double b, double d, double psi,double rho);
@@ -102,7 +102,15 @@ public:
     
     double							updateOccurrenceAttachmentTimesPhi(void); //
     double							doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv); //c.f Tree::doAScaleMove, in this case hb is not node depth, but the origin time
-    double							getSumLogAllAttachNums(void);    
+    double							getSumLogAllAttachNums(void);
+    
+    double							updateRJMoveAddDelEdge(void);
+    void							doAddEdgeMove(void);
+    void							doDeleteEdgeMove(void);
+    
+    double                          getOldestFossilGraphSpeciationTime(void);
+    int								pickRandAncestorFossil(void);
+    int                             pickRandTipFossil(void);
     
 private:
  
@@ -112,6 +120,7 @@ private:
     
     
     int                             numFossils;
+    int                             numAncFossilsk;
     double                          originTime;
     double                          terminalTime;
     int								treeTimePrior; // this will always be > 9, but this class might also be used for other options 10+

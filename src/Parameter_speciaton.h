@@ -45,7 +45,7 @@ class Tree;
 class Speciation : public Parameter {
 	
 	public:
-							Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH);
+							Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh); //rw:
 							~Speciation(void);
 		Speciation			&operator=(const Speciation &c);
 		void				clone(const Speciation &c);
@@ -75,7 +75,7 @@ class Speciation : public Parameter {
 		double				birthRate;  // lambda
 		double				deathRate;  // mu
 		double				fossilRate; // psi
-		double				extantSampleRate; // rho = 1
+		double				extantSampleRate; // rho = 1 //rw: now flexible, specify using flag -rho
 		double				fossilStratSampleProb; // omega = ? This is for later
 		double				probSpeciationS;  // \psi / (\mu + \psi) // Need hyperprior
 		

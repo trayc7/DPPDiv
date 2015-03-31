@@ -95,7 +95,8 @@ void printHelp(bool files)
 		cout << "\t\t-cal  : file name with internal node calibrations \n";
 		cout << "\t\t-npr  : 1=uniform, 2=yule, 3=cbd, 4=cbd fix with given vals\n";
 		cout << "\t\t-bdr  : initial diversification rate (lambda - mu)\n";
-		cout << "\t\t-bda  : initial relative death rate (mu / lambda)\n";
+		cout << "\t\t-bda  : initial relative death rate (mu / lambda)\n"; // what about bds?
+        //cout << "\t\t-rho  : extant species sampling (fixed) -fofbd only\n"; //rw: probably should be fixed
 		cout << "\t\t-soft : turn on soft bounds on calibrated nodes\n";
 		cout << "\t\t-clok : run under strict clock (and estimate substitution rate)\n";
 		cout << "\t\t-urg  : run under uncorrelated gamma-distributed rates\n";
@@ -105,6 +106,8 @@ void printHelp(bool files)
 		cout << "\t\t-mup  : modify update probabilities mid run\n";
 		cout << "\t\t-fxm  : fix some model params\n";
 		cout << "\t\t-ihp  : run under independent hyperprior on exp cals\n";
+        cout << "\t\t-po   : print origin to log file\n"; //rw
+        //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; //rw: not yet functioning
 		cout << "\t\t** required\n\n";
 	}
 }
@@ -129,6 +132,7 @@ int main (int argc, char * const argv[]) {
 	double relDeath		= -1.0;		// initial relative death rate (mu / lambda)
 	double ssbdPrS		= -1.0;
 	double fixclokrt	= -1.0;		// fix the clock rate to this
+    double rho          = 1.0;      //rw: extant species sampling
 	int offmove			= 0;		// used to turn off one particular move
 	int printFreq		= 100;
 	int sampleFreq		= 100;
@@ -226,8 +230,10 @@ int main (int argc, char * const argv[]) {
 					netDiv = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-bda"))	// (mu / lambda)
 					relDeath = atof(argv[i+1]);
-				else if(!strcmp(curArg, "-bds"))	// (mu / lambda)
+				else if(!strcmp(curArg, "-bds"))	// (mu / lambda) //rw: is this correct, is this not psi? how do these flags work?
 					ssbdPrS = atof(argv[i+1]);
+                else if(!strcmp(curArg, "-rho"))	//rw: extant species sampling
+                    rho = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-fix")){	// fix clock
 					fixclokrt = atof(argv[i+1]);
 					fixClockToR = true;
@@ -311,8 +317,8 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior == 9){
-        Model myModel(&myRandom, calibFN, treeNodePrior);
-        // overload mcmc
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho);
+        // overload run chain
         // Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin)
         cout << "\nFossil only FBD not yet implemented!\n";
         return 0;

@@ -33,6 +33,7 @@
 class MbRandom;
 class Model;
 class ExpCalib;
+class FossilGraph; //rw
 class Tree;
 class Speciation;
 class OriginTime : public Parameter {
@@ -44,6 +45,7 @@ public:
     void				clone(const OriginTime &c);
     double				update(double &oldLnL);
     double              getFBDProbOriginTime(Tree *t, Speciation *s);
+    double              getFOFBDProbOriginTime(FossilGraph *fg, Speciation *s);
     void				print(std::ostream & o) const;
     double				lnPrior(void);
     std::string			writeParam(void);

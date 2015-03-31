@@ -64,7 +64,11 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
 	printratef		= false;
 	modUpdateProbs  = modUpP;
     printOrigin     = po;
-	runChain();
+    treeTimePr      = mp->getTreeTimePriorNum();
+    if(treeTimePr < 9)
+        runChain();
+    //else
+        //runFOFBDChain();
 }
 
 void Mcmc::runChain(void) {
@@ -287,7 +291,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		nodeOut << "\t" << sp->getBDSSFossilSampProbS();
 	}
     if(treePr == 8){
-        if(printOrigin)//RW
+        if(printOrigin)
         nodeOut << "\t" << ot->getOriginTime();
     }
 	nodeOut << "\t" << t->getTreeSpeciationProbability();

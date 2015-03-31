@@ -79,6 +79,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixTestRun = fxtr;
 	estAbsRts = false;
     originMax = 100000.0;
+    rho = 1.0; //rw: fixed for now
     if(treeTimePrior == 8)
         conditionOnOrigin = true; // some redundancy for now
 	double initRootH = 1.0;
@@ -142,7 +143,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		parms[i].push_back( nr );												// restaurant containing node rates
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, ehpc) ); // the tree scale prior
-		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH) );												// hyper prior on diversification for cBDP speciation
+		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH, rho) );												// hyper prior on diversification for cBDP speciation
 		parms[i].push_back( excal );											// hyper prior exponential node calibration parameters
         parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) ); // the origin time parameters
 	}
@@ -172,17 +173,21 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	setTiProb();
 	myCurLnL = lnLikelihood();
 	cout << "lnL = " << myCurLnL << endl;
-	
 
 }
 
-Model::Model(MbRandom *rp, std::string clfn, int nodpr){
+Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
     treeTimePrior = nodpr;
     calibfilen = clfn;
     numFossils = 0;
+    rho = rh; //rw: if rho is 0, I think the likelihood will always = NaN
+    if(rho <= 0.0 || rho > 1.0) {
+        cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
+        exit(1);
+    }
     
     // RW initialization stuff ******
     if(calibfilen.empty() == false){
@@ -202,7 +207,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr){
     
     for (int i=0; i<2; i++){
         parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) );
-        parms[i].push_back( new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0) );
+        parms[i].push_back( new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho) ); //rw: bdr = netDiversificaton, bda = relativeDeath, bds = probSpeciationS, initRootH, rho
         parms[i].push_back( new FossilGraph(ranPtr, this, numFossils, initOT, calibrs) );
         
     }
@@ -224,10 +229,9 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr){
     for (unsigned i=0; i<updateProb.size(); i++)
         updateProb[i] /= sum;
     
-    //myCurLnL = -1254697.0; // this->getActiveFossilGraph()->getPublicFossilGraphProb();
     myCurLnL = this->getActiveFossilGraph()->getActiveFossilGraphProb();
     cout << "lnL = " << myCurLnL << endl;
-    
+
 }
 
 Model::~Model(void) {

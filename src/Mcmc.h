@@ -60,6 +60,7 @@ class Mcmc {
 		bool			printratef;
 		bool			modUpdateProbs;
         bool            printOrigin; //RW
+        int             treeTimePr;
 };
 
 #endif
