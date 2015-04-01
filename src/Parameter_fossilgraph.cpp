@@ -56,16 +56,44 @@ FossilGraph::~FossilGraph(void){
     
 }
 
-FossilGraph& FossilGraph::operator=(const FossilGraph &t) {
+FossilGraph& FossilGraph::operator=(const FossilGraph &fg) {
     
-    if (this != &t)
-        clone(t);
+    if (this != &fg)
+        clone(fg);
     return *this;
 }
 
-void FossilGraph::clone(const FossilGraph &t){
+void FossilGraph::clone(const FossilGraph &fg){
 
-    numFossils = t.numFossils;
+    numFossils = fg.numFossils;
+    
+    /* any error checking neccessary here?
+    if (numNodes != t.numNodes || numTaxa != t.numTaxa){
+        cerr << "ERROR: Attempting to clone trees of unequal size" << endl;
+        exit(1);
+    */
+    
+    //rw: any other info required to clone the fossil graph ?
+        
+    for(int i=0; i<occurrenceSpecimens.size(); i++){
+        Occurrence *fTo = occurrenceSpecimens[i];
+        Occurrence *fFrom = fg.occurrenceSpecimens[i];
+        fTo->setFossilIndex(fFrom->getFossilIndex());
+        fTo->setFossilAge(fFrom->getFossilAge());
+        fTo->setFossilSppTime(fFrom->getFossilSppTime());
+        fTo->setFossilID(fFrom->getFossilID());
+        fTo->setFossilFossBrGamma(fFrom->getFossilFossBrGamma());
+        fTo->setFossilIndicatorVar(fFrom->getFossilIndicatorVar());
+        fTo->setIsTerminal(fFrom->getIsTerminal());
+    }
+    
+    numAncFossilsk = fg.numAncFossilsk;
+    treeTimePrior = fg.treeTimePrior;
+        
+    // TAH: double check this (more bookkeeping is probably needed, for now this is a placeholder)
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+    originTime = ot->getOriginTime();
+
 }
 
 double FossilGraph::update(double &oldLnL){
@@ -93,13 +121,15 @@ string FossilGraph::writeParam(void){
 void FossilGraph::createOccurrenceVector(vector<Calibration *> clb){
     
     double et = originTime;
+    int oid=1;
     for(int c = 0; c < clb.size(); c++){
         Calibration *p = clb[c];
         double yf = p->getYngTime();
-        Occurrence *o = new Occurrence(yf);
+        Occurrence *o = new Occurrence(yf, oid);
         occurrenceSpecimens.push_back(o);
         if( yf < et)
             et = yf;
+        oid ++;
     }
     terminalTime = et;
     for(int c = 0; c < numFossils; c++){
@@ -258,8 +288,57 @@ double FossilGraph::bdssC2Fxn(double b, double d, double psi, double rho){
     return v;
 }
 
+// the following functions are for sampling/printing from the mcmc
+int FossilGraph::getSumIndicatorFG(){
+    int niv = 0;
+    for(int i=0; i<occurrenceSpecimens.size(); i++){
+        Occurrence *o = occurrenceSpecimens[i];
+        niv += o->getFossilIndicatorVar();
+    }
+    return niv;
+}
 
-// the following functions are to do with update moves
+string FossilGraph::getOccInfoParamNames(void){
+    
+    stringstream ss;
+    Occurrence *o = NULL;
+    for(int i=0; i<occurrenceSpecimens.size(); i++){
+        o = occurrenceSpecimens[i];
+        int oID = o->getFossilID();
+        //rw: we probably not want it to print the fossil age forever
+        ss << "\ty_f(Oc_" << oID << ")";
+        ss << "\tz_f(Oc_" << oID << ")";
+    }
+    for(int i=0; i<occurrenceSpecimens.size(); i++){
+        o = occurrenceSpecimens[i];
+        int oID = o->getFossilID();
+        ss << "\tgamma_f(Oc_" << oID << ")"; //".nd" << nID << ")";
+    }
+    string ni = ss.str();
+    return ni;
+}
+
+string FossilGraph::getOccInfoParamList(void){
+    
+    stringstream ss;
+    Occurrence *o = NULL;
+
+    for(int i=0; i<occurrenceSpecimens.size(); i++){
+        o = occurrenceSpecimens[i];
+        //rw: we probably not want it to print the fossil age forever
+        ss << "\t" << o->getFossilAge();
+        ss << "\t" << o->getFossilSppTime();
+    }
+    for(int i=0; i<occurrenceSpecimens.size(); i++){
+        o = occurrenceSpecimens[i];
+        ss << "\t" << o->getFossilFossBrGamma();
+    }
+    string ni = ss.str();
+    return ni;
+}
+
+
+// the following functions are all to do with update moves
 
 double FossilGraph::updateOccurrenceAttachmentTimesPhi() {
     

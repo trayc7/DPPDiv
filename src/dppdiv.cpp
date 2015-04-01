@@ -107,7 +107,7 @@ void printHelp(bool files)
 		cout << "\t\t-fxm  : fix some model params\n";
 		cout << "\t\t-ihp  : run under independent hyperprior on exp cals\n";
         cout << "\t\t-po   : print origin to log file\n"; //rw
-        //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; //rw: not yet functioning
+        //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; //rw: right now this also prints yf times (probably not neccessary)
 		cout << "\t\t** required\n\n";
 	}
 }
@@ -160,7 +160,8 @@ int main (int argc, char * const argv[]) {
 	bool indHP			= false;
 	bool doAbsRts		= false;
 	bool fixTest		= false;
-    bool printOrigin    = false;    //RW: print origin to log file
+    bool printOrigin    = false;    //rw: print origin to log file
+    bool printAttach    = false;     //rw: maybe issue a warning if cal file is large & printAttach = true
 	
 	if(argc > 1){
 		for (int i = 1; i < argc; i++){
@@ -283,6 +284,9 @@ int main (int argc, char * const argv[]) {
                 else if(!strcmp(curArg, "-po")){//RW
                     printOrigin = true;
                 }
+                else if(!strcmp(curArg, "-pfat")){//RW
+                    printAttach = true;
+                }
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -318,9 +322,8 @@ int main (int argc, char * const argv[]) {
 	
     if(treeNodePrior == 9){
         Model myModel(&myRandom, calibFN, treeNodePrior, rho);
-        // overload run chain
-        // Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin)
-        cout << "\nFossil only FBD not yet implemented!\n";
+        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
+        cout << "\nFossil only FBD not yet fully implemented!\n";
         return 0;
     }
     else {
@@ -345,7 +348,7 @@ int main (int argc, char * const argv[]) {
             myModel.writeUnifTreetoFile();
             return 0;
         }
-        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin); //RW:
+        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach); //RW:
     }
 	
     return 0;

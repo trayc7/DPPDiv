@@ -52,7 +52,7 @@
 
 using namespace std;
 
-Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf, bool modUpP, bool po) {//RW:
+Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf, bool modUpP, bool po, bool pfat) {//RW:
 
 	ranPtr          = rp;
 	modelPtr        = mp;
@@ -64,11 +64,12 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
 	printratef		= false;
 	modUpdateProbs  = modUpP;
     printOrigin     = po;
+    printAttach     = pfat;
     treeTimePr      = mp->getTreeTimePriorNum();
     if(treeTimePr < 9)
         runChain();
-    //else
-        //runFOFBDChain();
+    else
+        runFOFBDChain();
 }
 
 void Mcmc::runChain(void) {
@@ -191,6 +192,95 @@ void Mcmc::runChain(void) {
 	dOut.close();
 	nOut.close();
 	mxOut.close();
+}
+
+void Mcmc::runFOFBDChain() {
+    
+    string dFile = fileNamePref + ".info.out"; // what's this?
+    string occFile = fileNamePref + ".occ.out"; // info about occurrences, speciation parameters
+    ofstream oOut(occFile.c_str(), ios::out);
+    ofstream mxOut; //?
+    ofstream dOut; //?
+    
+    if(writeInfoFile)
+        dOut.open(dFile.c_str(), ios::out);
+    
+    double oldLnLikelihood = modelPtr->getActiveFossilGraph()->getActiveFossilGraphProb(); //rw: ??
+    
+    // verbose logging
+    if(writeInfoFile){
+        dOut << "Running MCMC with:\n";
+        dOut << "   Starting seeds = { " << modelPtr->getStartingSeed1() << " , " << modelPtr->getStartingSeed2() << " } \n";
+        dOut << "   # Gens = " << numCycles << "\n";
+        dOut << "   lnL = " << oldLnLikelihood << "\n";
+        //printAllModelParams(dOut);
+    }
+    
+    int timeSt = (int)time(NULL);
+    bool testLnL = false;
+    int modifyUProbsGen = (int)numCycles * 0.5;
+    for (int n=1; n<=numCycles; n++){
+        if(modUpdateProbs && n == modifyUProbsGen)
+            modelPtr->setUpdateProbabilities(false);
+        
+        modelPtr->switchActiveParm();
+        Parameter *parm = modelPtr->pickParmToUpdate();
+        
+        double prevlnl = oldLnLikelihood;
+        double lnPriorProposalRatio = parm->update(oldLnLikelihood);
+        
+        //double newLnLikelihood = modelPtr->getMyCurrLnL();
+        double newLnLikelihood = -123456;
+        double lnLikelihoodRatio = newLnLikelihood - oldLnLikelihood;
+        
+        double lnR = lnLikelihoodRatio + lnPriorProposalRatio;
+        double r = safeExponentiation(lnR);
+        
+        bool isAccepted = false;
+        if ( ranPtr->uniformRv() < r )
+            isAccepted = true;
+        
+        if ( n % printFrequency == 0 || n == 1){
+            cout << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
+            if(writeInfoFile){
+                dOut << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
+                dOut << n << " -- " << parm->writeParam();
+            }
+        }
+        
+        if (isAccepted == true){
+            oldLnLikelihood = newLnLikelihood;
+            modelPtr->updateAccepted();
+        }
+        else{
+            modelPtr->updateRejected();
+            
+            // TAH : without this, the lnls were not right for some moves following rejected ones
+            //Tree *t = modelPtr->getActiveTree();
+            //Treescale *ts = modelPtr->getActiveTreeScale();
+            //t->setTreeScale(ts->getScaleValue());
+            //t->flipAllCls();
+            //t->flipAllTis();
+            //t->upDateAllCls();
+            //t->upDateAllTis();
+            //modelPtr->upDateRateMatrix();
+            //modelPtr->setTiProb();
+        }
+        
+        // sample chain
+        if ( n % sampleFrequency == 0 || n == 1){
+            sampleChain(n, oOut, oldLnLikelihood);
+        }
+        
+    }
+    
+    int timeEnd = time(NULL);
+    cout << "   Markov chain completed in " << (static_cast<float>(timeEnd - timeSt)) << " seconds" << endl;
+    dOut.close();
+    oOut.close();
+    mxOut.close();
+    
+    cout << "\nFossil only run chain not yet implemented!\n";
 }
 
 double Mcmc::safeExponentiation(double lnX) {
@@ -388,7 +478,49 @@ void Mcmc::sampleRtsFChain(int gen, std::ofstream &rOut){
 }
 
 
+void Mcmc::sampleChain(int gen, ofstream &occOut, double lnl) {
+    
+    FossilGraph *fg = modelPtr->getActiveFossilGraph();
+    Speciation *sp = modelPtr->getActiveSpeciation();
+    OriginTime *ot = modelPtr->getActiveOriginTime();
 
+    sp->setAllBDFossParams();
+
+    //int treePr = modelPtr->getTreeTimePriorNum(); // probably required for options >9
+    
+    if(gen == 1){
+        
+        occOut << "Gen\tlnL";
+        occOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)";
+        occOut << "\tFBD.psi\tFBD.rho";
+        occOut << "\tFBD.lambda\tFBD.mu\tFBD.prsp";
+        occOut << "\tPr(speciation)";
+        if(printOrigin)
+            occOut << "\tFBD.OriginTime";
+        if(printAttach)
+            occOut << fg->getOccInfoParamNames(); // cf getNodeInfoNames()
+        occOut << "\tnum.tip_fossils";
+        occOut << "\n";
+    }
+    
+    // then print stuff
+    occOut << gen << "\t" << lnl;
+    occOut << "\t" << sp->getNetDiversification();
+    occOut << "\t" << sp->getRelativeDeath();
+    occOut << "\t" << sp->getBDSSFossilSampRatePsi();
+    occOut << "\t" << sp->getBDSSSppSampRateRho();
+    occOut << "\t" << sp->getBDSSSpeciationRateLambda();
+    occOut << "\t" << sp->getBDSSExtinctionRateMu();
+    occOut << "\t" << sp->getBDSSFossilSampProbS();
+    if(printOrigin)
+        occOut << "\t" << ot->getOriginTime();
+    occOut << "\t" << fg->getActiveFossilGraphProb();
+    if(printAttach)
+        occOut << fg->getOccInfoParamList(); // cf getNodeInfoList()
+    occOut << "\t" << fg->getSumIndicatorFG();
+    occOut << "\n";
+    
+}
 
 
 

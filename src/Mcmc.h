@@ -40,13 +40,15 @@ class Mcmc {
 
 	public:
 						Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, 
-                             std::string ofp, bool wdf, bool modUpP, bool po); //RW
+                             std::string ofp, bool wdf, bool modUpP, bool po, bool pfat); //RW
 							
 	private:
 		void			runChain(void);
+        void            runFOFBDChain(void);
 		double			safeExponentiation(double lnX);
 		void			sampleChain(int gen, std::ofstream &paraOut, 
 									std::ofstream &figTOut, std::ofstream &nodeOut, double lnl);
+        void			sampleChain(int gen, std::ofstream &occOut, double lnl); //rw: sample chain overload fxn for fofbd
 		void			sampleRtsFChain(int gen, std::ofstream &rOut);
 		void			printAllModelParams(std::ofstream &dOut);
 		void			writeCalibrationTree();
@@ -60,6 +62,7 @@ class Mcmc {
 		bool			printratef;
 		bool			modUpdateProbs;
         bool            printOrigin; //RW
+        bool            printAttach; //RW
         int             treeTimePr;
 };
 

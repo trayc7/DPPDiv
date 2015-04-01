@@ -268,7 +268,7 @@ void Tree::buildTreeFromNewickDescription(string ts) {
 }
 
 Tree& Tree::operator=(const Tree &t) {
-
+    
 	if (this != &t)
 		clone(t);
 	return *this;

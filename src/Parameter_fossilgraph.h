@@ -38,20 +38,23 @@
 class Occurrence {
     
 public:
-    Occurrence(double fa) :age(fa), fossilBrGamma(0), ancFossIndicator(1), isTerminal(false) {}
+    Occurrence(double fa, int oid) :age(fa), occurrenceID(oid), fossilBrGamma(0), ancFossIndicator(1), isTerminal(false) {}
     
     int								getFossilIndex(void) { return indx; }
     double							getFossilAge(void) { return age; }
     double							getFossilSppTime(void) { return phi; }
     int								getFossilFossBrGamma(void) { return fossilBrGamma; }
     int								getFossilIndicatorVar(void) { return ancFossIndicator; }
+    int								getFossilID(void) { return occurrenceID; } //rw: what does getFossilIndex do?
     bool                            getIsTerminal(void) { return isTerminal; }
+
     
     void							setFossilIndex(int i) { indx = i; }
     void							setFossilAge(double d) { age = d; }
     void							setFossilSppTime(double d) { phi = d; }
     void							setFossilFossBrGamma(int i) { fossilBrGamma = i; }
     void							setFossilIndicatorVar(int i) { ancFossIndicator = i; }
+    void							setFossilID(int i) { occurrenceID = i; }
     void                            setIsTerminal(bool b) { isTerminal = b; }
     
 private:
@@ -59,7 +62,8 @@ private:
     double							age;
     double							phi;
     int								gamma;
-    double							nodeAge;
+    int                             occurrenceID;
+    //double							nodeAge; //rw: not used
     int								fossilBrGamma;
     int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
     bool                            isTerminal;
@@ -77,8 +81,8 @@ public:
     
 									~FossilGraph(void);
     
-    FossilGraph						&operator=(const FossilGraph &t);
-    void							clone(const FossilGraph &t);
+    FossilGraph						&operator=(const FossilGraph &fg);
+    void							clone(const FossilGraph &fg);
     double							update(double &oldLnL);
     double							lnPrior();
     void							print(std::ostream & o) const;
@@ -111,6 +115,11 @@ public:
     double                          getOldestFossilGraphSpeciationTime(void);
     int								pickRandAncestorFossil(void);
     int                             pickRandTipFossil(void);
+    
+    int								getSumIndicatorFG(void);
+    
+    std::string						getOccInfoParamNames(void);
+    std::string						getOccInfoParamList(void);
     
 private:
  
