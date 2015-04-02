@@ -50,6 +50,9 @@
 
 #include <time.h>
 
+#include <unistd.h>//rw: remember to remove
+
+
 using namespace std;
 
 Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf, bool modUpP, bool po, bool pfat) {//RW:
@@ -111,7 +114,7 @@ void Mcmc::runChain(void) {
 
 		modelPtr->switchActiveParm();
 		Parameter *parm = modelPtr->pickParmToUpdate();
-		
+        
 		double prevlnl = oldLnLikelihood;
 		double lnPriorProposalRatio = parm->update(oldLnLikelihood);
 		
@@ -205,7 +208,7 @@ void Mcmc::runFOFBDChain() {
     if(writeInfoFile)
         dOut.open(dFile.c_str(), ios::out);
     
-    double oldLnLikelihood = modelPtr->getActiveFossilGraph()->getActiveFossilGraphProb(); //rw: ??
+    double oldLnLikelihood = modelPtr->getActiveFossilGraph()->getActiveFossilGraphProb(); //rw: revisit this
     
     // verbose logging
     if(writeInfoFile){
@@ -230,9 +233,12 @@ void Mcmc::runFOFBDChain() {
         double lnPriorProposalRatio = parm->update(oldLnLikelihood);
         
         //double newLnLikelihood = modelPtr->getMyCurrLnL();
-        double newLnLikelihood = -123456;
-        double lnLikelihoodRatio = newLnLikelihood - oldLnLikelihood;
+        double newLnLikelihood = modelPtr->getActiveFossilGraph()->getActiveFossilGraphProb(); //rw: revisit this
         
+        cout << "oldLnLikelihood " << oldLnLikelihood << endl;
+        cout << "newLnLikelihood " << newLnLikelihood << endl;
+        
+        double lnLikelihoodRatio = newLnLikelihood - oldLnLikelihood;
         double lnR = lnLikelihoodRatio + lnPriorProposalRatio;
         double r = safeExponentiation(lnR);
         
@@ -280,7 +286,6 @@ void Mcmc::runFOFBDChain() {
     oOut.close();
     mxOut.close();
     
-    cout << "\nFossil only run chain not yet implemented!\n";
 }
 
 double Mcmc::safeExponentiation(double lnX) {

@@ -184,7 +184,8 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh){
     calibfilen = clfn;
     numFossils = 0;
     rho = rh; //rw: if rho is 0, I think the likelihood will always = NaN
-    if(rho <= 0.0 || rho > 1.0) {
+    //if(rho <= 0.0 || rho > 1.0) {
+    if(rho < 0.0 || rho > 1.0) {
         cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
         exit(1);
     }
