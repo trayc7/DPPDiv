@@ -187,8 +187,7 @@ void Mcmc::runChain(void) {
 			cout << "   " << n << "  " << parm->getName() << " -->  OL" << prevlnl << "   ---   NL" << newLnLikelihood << "  (" << chklnl << ", " << oldLnLikelihood << ")\n\n";
 		}
 	}
-	Tree *t = modelPtr->getActiveTree();
-	int timeEnd = time(NULL);
+	int timeEnd = (int)time(NULL);
 	cout << "   Markov chain completed in " << (static_cast<float>(timeEnd - timeSt)) << " seconds" << endl;
 	pOut.close();
 	fTOut.close();
@@ -220,7 +219,6 @@ void Mcmc::runFOFBDChain() {
     }
     
     int timeSt = (int)time(NULL);
-    bool testLnL = false;
     int modifyUProbsGen = (int)numCycles * 0.5;
     for (int n=1; n<=numCycles; n++){
         if(modUpdateProbs && n == modifyUProbsGen)
@@ -230,21 +228,12 @@ void Mcmc::runFOFBDChain() {
         Parameter *parm = modelPtr->pickParmToUpdate();
         
         double prevlnl = oldLnLikelihood;
-        double lnPriorProposalRatio = parm->update(oldLnLikelihood);
+        double newLnLikelihood = parm->update(oldLnLikelihood); //all of the moves for FOFBD return the new likelihood for reporting
         
-        //double newLnLikelihood = modelPtr->getMyCurrLnL();
-        double newLnLikelihood = modelPtr->getActiveFossilGraph()->getActiveFossilGraphProb(); //rw: revisit this
         
         cout << "oldLnLikelihood " << oldLnLikelihood << endl;
         cout << "newLnLikelihood " << newLnLikelihood << endl;
         
-        double lnLikelihoodRatio = newLnLikelihood - oldLnLikelihood;
-        double lnR = lnLikelihoodRatio + lnPriorProposalRatio;
-        double r = safeExponentiation(lnR);
-        
-        bool isAccepted = false;
-        if ( ranPtr->uniformRv() < r )
-            isAccepted = true;
         
         if ( n % printFrequency == 0 || n == 1){
             cout << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
@@ -254,23 +243,10 @@ void Mcmc::runFOFBDChain() {
             }
         }
         
+        bool isAccepted = true;
         if (isAccepted == true){
             oldLnLikelihood = newLnLikelihood;
             modelPtr->updateAccepted();
-        }
-        else{
-            modelPtr->updateRejected();
-            
-            // TAH : without this, the lnls were not right for some moves following rejected ones
-            //Tree *t = modelPtr->getActiveTree();
-            //Treescale *ts = modelPtr->getActiveTreeScale();
-            //t->setTreeScale(ts->getScaleValue());
-            //t->flipAllCls();
-            //t->flipAllTis();
-            //t->upDateAllCls();
-            //t->upDateAllTis();
-            //modelPtr->upDateRateMatrix();
-            //modelPtr->setTiProb();
         }
         
         // sample chain
@@ -280,7 +256,7 @@ void Mcmc::runFOFBDChain() {
         
     }
     
-    int timeEnd = time(NULL);
+    int timeEnd = (int)time(NULL);
     cout << "   Markov chain completed in " << (static_cast<float>(timeEnd - timeSt)) << " seconds" << endl;
     dOut.close();
     oOut.close();

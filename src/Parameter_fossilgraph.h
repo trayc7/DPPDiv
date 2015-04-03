@@ -94,6 +94,7 @@ public:
     // maybe neccessary
     
     double							getFossilGraphProb(double lambda, double mu, double fossRate, double sppSampRate); // cf getTreeAncCalBDSSTreeNodePriorProb
+    double							getFossilGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot); // cf getTreeAncCalBDSSTreeNodePriorProb
     double							getActiveFossilGraphProb(); // cf getTreeCBDNodePriorProb, called by getTreeSpeciationProbability
     
     double							bdssC1Fxn(double b, double d, double psi);
@@ -120,6 +121,8 @@ public:
     
     std::string						getOccInfoParamNames(void);
     std::string						getOccInfoParamList(void);
+	double							getCurrentFossilGraphLnL(void) { return currentFossilGraphLnL; }
+
     
 private:
  
@@ -135,6 +138,8 @@ private:
     int								treeTimePrior; // this will always be > 9, but this class might also be used for other options 10+
     std::vector<Occurrence *>		occurrenceSpecimens;
     double							tuningVal;
+	double							currentFossilGraphLnL;
+
     
     
 };

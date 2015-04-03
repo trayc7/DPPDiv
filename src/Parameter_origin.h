@@ -46,6 +46,7 @@ public:
     double				update(double &oldLnL);
     double              getFBDProbOriginTime(Tree *t, Speciation *s);
     double              getFOFBDProbOriginTime(FossilGraph *fg, Speciation *s);
+	double				getFossilGraphLnLikelihood(FossilGraph *fg, Speciation *s);
     void				print(std::ostream & o) const;
     double				lnPrior(void);
     std::string			writeParam(void);
@@ -63,6 +64,9 @@ private:
     double				numAccepted;
     double				numTried;
 	int					treeTimePrior;
+	double				currentFossilGraphLnL;
+
+	
 	
 	double				updateFOFBD(void);
 	double				updateDPPDiv(void);

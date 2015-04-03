@@ -41,6 +41,7 @@ This also defines parameters for the FBD model (Heath, Huelsenbeck, Stadler. unp
 
 class MbRandom;
 class Model;
+class FossilGraph;
 class Tree;
 class Speciation : public Parameter {
 	
@@ -58,6 +59,7 @@ class Speciation : public Parameter {
 		double				getNetDiversification() { return netDiversificaton; }
 		void				setNetDiversification(double v) { netDiversificaton = v; }
 		double				getLnTreeProb(Tree *t);
+		double				getLnFossilGraphProb(FossilGraph *fg);
 		
 		double				getBDSSSpeciationRateLambda(void) { return birthRate; }
 		double				getBDSSExtinctionRateMu(void) { return deathRate; }
@@ -78,6 +80,7 @@ class Speciation : public Parameter {
 		double				extantSampleRate; // rho = 1 //rw: now flexible, specify using flag -rho
 		double				fossilStratSampleProb; // omega = ? This is for later
 		double				probSpeciationS;  // \psi / (\mu + \psi) // Need hyperprior
+		double				currentFossilGraphLnL;
 		
 		double				getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv);
 		double				getNewValSWindoMv(double ov, double vmin, double vmax, double tv);
@@ -93,6 +96,10 @@ class Speciation : public Parameter {
 		double				updateNetDivRate(Tree *t);
 		double				updateBDSSFossilProbS(Tree *t);
 		double				updatePsiRate(Tree *t);
+		
+		// updates for fossil-graph FBD
+		double				updateRelDeathRt(FossilGraph *fg);
+
 
 };
 

@@ -49,6 +49,7 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob)
     tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.2;
     name = "OT";
 	treeTimePrior = mp->getTreeTimePriorNum();
+	currentFossilGraphLnL = 0.0;
 //    cout << "OT initialized" << originTime << endl;
     cout << "ob = " << oldBound << endl;
 
@@ -85,14 +86,14 @@ void OriginTime::print(std::ostream & o) const {
 double OriginTime::update(double &oldLnL) {
     
     double myPrR = 0.0;
-	if(treeTimePrior < 9)
+	if(treeTimePrior < 9){
 		myPrR = updateDPPDiv();
+		modelPtr->setLnLGood(true);
+		modelPtr->setMyCurrLnl(oldLnL);
+	}
 	else
 		myPrR = updateFOFBD();
-
-    modelPtr->setLnLGood(true);
-    modelPtr->setMyCurrLnl(oldLnL);
-    
+   
     return myPrR;
     
 }
@@ -143,7 +144,7 @@ double OriginTime::updateFOFBD(void){
     double oldOT = originTime;
     //    cout << "OT1 " << originTime << endl;
 
-    double oldOTProb = getFOFBDProbOriginTime(fg, s); // c.f. getFBDProbOriginTime
+    double oldLikelihood = getFossilGraphLnLikelihood(fg, s); // c.f. getFBDProbOriginTime
     
     double minAge = fg->getOldestFossilGraphSpeciationTime(); // getOldestTreeSpeciationTime
 
@@ -163,12 +164,20 @@ double OriginTime::updateFOFBD(void){
             newOT = (2 * maxAge) - newOT;
     }
     originTime = newOT;
-    //    cout << "OT2 " << originTime << endl;
-    double newOTProb = getFOFBDProbOriginTime(fg, s);
+    double newLikelihood = getFossilGraphLnLikelihood(fg, s);
+	double lnR = newLikelihood - oldLikelihood;
+	double r = modelPtr->safeExponentiation(lnR);
+	if(ranPtr->uniformRv() < r){
+		originTime = newOT;
+		currentFossilGraphLnL = newLikelihood;
+	}
+	else{
+		originTime = oldOT;
+		currentFossilGraphLnL = oldLikelihood;
+	}
+	
     
-    //    cout << "old: OT = " << oldOT << ", old Prob = " << oldOTProb << endl;
-    //    cout << "new: OT = " << newOT << ", new Prob = " << newOTProb << endl;
-    return oldOTProb-newOTProb;
+    return currentFossilGraphLnL;
 
 
 }
@@ -222,6 +231,21 @@ double OriginTime::getFOFBDProbOriginTime(FossilGraph *fg, Speciation *s){
     
     double otPrb = log(lambda) + log(1-phat);
     return otPrb;
+}
+
+double OriginTime::getFossilGraphLnLikelihood(FossilGraph *fg, Speciation *s){
+    
+    // this returns log[ 1 / ((lambda*(1-Phat(x_0))) ]
+    s->setAllBDFossParams();
+    
+    double lambda = s->getBDSSSpeciationRateLambda();
+    double mu = s->getBDSSExtinctionRateMu();
+    double rho = s->getBDSSSppSampRateRho();
+    double fossRate = s->getBDSSFossilSampRatePsi(); // psi
+    
+    double lnprob = fg->getFossilGraphProb(lambda, mu, fossRate, rho, originTime); // note this is not the same as getFBDProbOriginTime
+    
+    return lnprob;
 }
 
 double OriginTime::lnPrior(void) {

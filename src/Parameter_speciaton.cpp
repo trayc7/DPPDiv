@@ -30,6 +30,7 @@
 
 #include "Parameter.h"
 #include "Parameter_speciaton.h"
+#include "Parameter_fossilgraph.h"
 #include "Parameter_treescale.h"
 #include "Parameter_tree.h"
 #include "MbRandom.h"
@@ -53,6 +54,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	//extantSampleRate = 1.0;
     extantSampleRate = rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
+	currentFossilGraphLnL = 0.0;
 	
 	if(mp->getFixTestRun()){
 		relativeDeath = bda;
@@ -129,40 +131,49 @@ void Speciation::print(std::ostream & o) const {
 
 double Speciation::update(double &oldLnL) {
 	
-	Tree *t = modelPtr->getActiveTree();
-	double oldtreeprob = getLnTreeProb(t); 
-	double lnProposalRatio = 0.0;
-	
-	
-	if(treeTimePrior == 2){
-		lnProposalRatio += updateNetDivRate();
-		relativeDeath = 0.0;
+	double lnR = 0.0;
+	if(treeTimePrior == 9){
+		FossilGraph *fg = modelPtr->getActiveFossilGraph();
+		updateRelDeathRt(fg);
+		
+		return currentFossilGraphLnL;
 	}
-	else if(treeTimePrior == 3){
-		updateRelDeathRt(t);
-		updateNetDivRate(t);
+	else{
+		Tree *t = modelPtr->getActiveTree();
+		double oldtreeprob = getLnTreeProb(t); 
+		double lnProposalRatio = 0.0;
+		
+		
+		if(treeTimePrior == 2){
+			lnProposalRatio += updateNetDivRate();
+			relativeDeath = 0.0;
+		}
+		else if(treeTimePrior == 3){
+			updateRelDeathRt(t);
+			updateNetDivRate(t);
+			modelPtr->setLnLGood(true);
+			modelPtr->setMyCurrLnl(oldLnL);
+			
+			return 0.0;
+		}
+		else if(treeTimePrior > 3){ 
+			
+			updateRelDeathRt(t);
+			updateNetDivRate(t);
+			updateBDSSFossilProbS(t);
+			modelPtr->setLnLGood(true);
+			modelPtr->setMyCurrLnl(oldLnL);
+			return 0.0;
+			
+			
+		}
+		double newtreeprob = getLnTreeProb(t); 
+		double lnPriorRatio = (newtreeprob - oldtreeprob);
+		lnR = lnPriorRatio + lnProposalRatio;
+		
 		modelPtr->setLnLGood(true);
 		modelPtr->setMyCurrLnl(oldLnL);
-		
-		return 0.0;
 	}
-	else if(treeTimePrior > 3){ 
-		
-		updateRelDeathRt(t);
-		updateNetDivRate(t);
-		updateBDSSFossilProbS(t);
-		modelPtr->setLnLGood(true);
-		modelPtr->setMyCurrLnl(oldLnL);
-		return 0.0;
-		
-		
-	}
-	double newtreeprob = getLnTreeProb(t); 
-	double lnPriorRatio = (newtreeprob - oldtreeprob);
-	double lnR = lnPriorRatio + lnProposalRatio;
-	
-	modelPtr->setLnLGood(true);
-	modelPtr->setMyCurrLnl(oldLnL);
 	return lnR;
 }
 
@@ -198,6 +209,33 @@ double Speciation::updateRelDeathRt(Tree *t) {
 	return 0.0;
 	
 }
+
+double Speciation::updateRelDeathRt(FossilGraph *fg) {
+	
+	double oldfgprob = getLnFossilGraphProb(fg);
+	double lnPropR = 0.0;
+	double rdwindow = 0.2;
+	double oldRD = relativeDeath;
+	double newRD = getNewValSWindoMv(oldRD, 0.0, 0.99999, rdwindow);
+	relativeDeath = newRD;
+	double newfgprob = getLnFossilGraphProb(fg);
+	double lnLikeRatio = (newfgprob - oldfgprob);
+	double lnR = lnLikeRatio + lnPropR;
+	double r = modelPtr->safeExponentiation(lnR);
+	if(ranPtr->uniformRv() < r){
+		setAllBDFossParams();
+		currentFossilGraphLnL = newfgprob;
+	}
+	else{
+		relativeDeath = oldRD;
+		setAllBDFossParams();
+		currentFossilGraphLnL = oldfgprob;
+	}
+	return 0.0;
+	
+}
+
+
 
 double Speciation::getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv){
 	
@@ -434,6 +472,13 @@ double Speciation::getLnTreeProb(Tree *t) {
         return nps;
     }
 	return 0.0;
+}
+
+double Speciation::getLnFossilGraphProb(FossilGraph *fg) {
+	
+	setAllBDFossParams();
+	double fgprob = fg->getFossilGraphProb(birthRate, deathRate, fossilRate, extantSampleRate);
+	return fgprob;
 }
 
 

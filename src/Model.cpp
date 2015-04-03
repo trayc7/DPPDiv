@@ -206,10 +206,13 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh){
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
+	FossilGraph *fg = new FossilGraph(ranPtr, this, numFossils, initOT, calibrs);
+	OriginTime *ot = new OriginTime(ranPtr, this, initOT, rHtY, originMax);
+	Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho); 
     for (int i=0; i<2; i++){
-        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) );
-        parms[i].push_back( new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho) ); //rw: bdr = netDiversificaton, bda = relativeDeath, bds = probSpeciationS, initRootH, rho
-        parms[i].push_back( new FossilGraph(ranPtr, this, numFossils, initOT, calibrs) );
+        parms[i].push_back( ot );
+        parms[i].push_back( sp ); //rw: bdr = netDiversificaton, bda = relativeDeath, bds = probSpeciationS, initRootH, rho
+        parms[i].push_back( fg );
         
     }
     numParms = (int)parms[0].size();
