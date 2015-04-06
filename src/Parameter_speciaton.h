@@ -87,19 +87,22 @@ class Speciation : public Parameter {
 
 
 		
-		double				updateRelDeathRt();
-		double				updateNetDivRate();
-		double				updateBDSSFossilProbS();
-		double				updateBDSSSampleProbRho();
+		double				updateRelDeathRt(); //rw: function never used?
+		double				updateNetDivRate(); //rw: this is for trpr = 2
+		double				updateBDSSFossilProbS(); //rw: function never used?
+		double				updateBDSSSampleProbRho(); //rw: function never used?
 
 		double				updateRelDeathRt(Tree *t);
 		double				updateNetDivRate(Tree *t);
 		double				updateBDSSFossilProbS(Tree *t);
-		double				updatePsiRate(Tree *t);
+		double				updatePsiRate(Tree *t); //rw: function never used?
 		
 		// updates for fossil-graph FBD
 		double				updateRelDeathRt(FossilGraph *fg);
-
+        double				updateNetDivRate(FossilGraph *fg);
+        double				updateBDSSFossilProbS(FossilGraph *fg);
+        double				updateBDSSSampleProbRho(FossilGraph *fg); //rw: not used yet
+        double				updatePsiRate(FossilGraph *fg); //rw: not used yet
 
 };
 
