@@ -48,11 +48,11 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	
 	maxdivV = 30000.0;
 	name = "SP";
-	relativeDeath = ranPtr->uniformRv(); 
-	netDiversificaton = ranPtr->uniformRv();
-	probSpeciationS = ranPtr->uniformRv();
+	relativeDeath = 0.7; //ranPtr->uniformRv();
+	netDiversificaton = 0.5; //ranPtr->uniformRv();
+	probSpeciationS = 0.01; //ranPtr->uniformRv();
 	//extantSampleRate = 1.0;
-    extantSampleRate = rh;
+    extantSampleRate = 0.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
 	
@@ -133,6 +133,7 @@ double Speciation::update(double &oldLnL) {
 	
 	double lnR = 0.0;
 	if(treeTimePrior == 9){
+		currentFossilGraphLnL = oldLnL;
 		FossilGraph *fg = modelPtr->getActiveFossilGraph();
 		updateRelDeathRt(fg);
 		
