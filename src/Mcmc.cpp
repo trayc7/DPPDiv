@@ -475,7 +475,6 @@ void Mcmc::sampleChain(int gen, ofstream &occOut, double lnl) {
         occOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)";
         occOut << "\tFBD.psi\tFBD.rho";
         occOut << "\tFBD.lambda\tFBD.mu\tFBD.prsp";
-        occOut << "\tPr(speciation)";
         if(printOrigin)
             occOut << "\tFBD.OriginTime";
         if(printAttach)
@@ -495,7 +494,6 @@ void Mcmc::sampleChain(int gen, ofstream &occOut, double lnl) {
     occOut << "\t" << sp->getBDSSFossilSampProbS();
     if(printOrigin)
         occOut << "\t" << ot->getOriginTime();
-    occOut << "\t" << fg->getActiveFossilGraphProb();
     if(printAttach)
         occOut << fg->getOccInfoParamList(); // cf getNodeInfoList()
     occOut << "\t" << fg->getSumIndicatorFG();
