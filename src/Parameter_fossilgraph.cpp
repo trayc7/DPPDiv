@@ -49,6 +49,7 @@ FossilGraph::FossilGraph(MbRandom *rp, Model *mp, int nf, double initOrigTime, v
     originTime = initOrigTime;
     createOccurrenceVector(clb);
     numAncFossilsk=0;
+	tuningVal = 2.0;
     initializeOccurrenceSpecVariables();
 }
 
@@ -515,7 +516,7 @@ void FossilGraph::doAddEdgeMove(){
     int mvFoss = pickRandAncestorFossil();
     Occurrence *o = occurrenceSpecimens[mvFoss]; // rand fossil
     double oldSumLogGammas = getSumLogAllAttachNums();
-    
+	
     double alA = 1.0;
     if(kN == 1) // account for terminal
         alA = 2.0;
@@ -524,6 +525,8 @@ void FossilGraph::doAddEdgeMove(){
     
     OriginTime *ot = modelPtr->getActiveOriginTime();
     double cf = ot->getOriginTime();
+//	double oldLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate, cf);
+    
     
     double yf = o->getFossilAge();
     double nu = ranPtr->uniformRv() * (cf - yf);
@@ -546,6 +549,12 @@ void FossilGraph::doAddEdgeMove(){
     lnPriorR += (newSumLogGammas + log(2.0) + v1 + v2 - v3);
     lnPriorR -= (((numFossils - k) * log(lambda)) + oldSumLogGammas);
     
+//	double newLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate, cf);
+	
+//	cout << "lnlRat = " << newLnl - oldLnl << endl;
+//	cout << "lnlRat2 = " << lnPriorR << endl;
+
+
     double lpr = lnPriorR + lnHastings + lnJacobian;
     double r = modelPtr->safeExponentiation(lpr);
     /* */
@@ -578,6 +587,7 @@ void FossilGraph::doDeleteEdgeMove(){
     int mvFoss = pickRandTipFossil();
     Occurrence *o = occurrenceSpecimens[mvFoss];
     double oldSumLogGammas = getSumLogAllAttachNums();
+//	double oldLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
 
     double alD = 1.0;
     if(k == 1) // account for terminal
@@ -605,6 +615,11 @@ void FossilGraph::doDeleteEdgeMove(){
     lnPriorR = ((numFossils - kN) * log(lambda)) + newSumLogGammas;
     lnPriorR -= (((numFossils - k) * log(lambda)) + (oldSumLogGammas + log(2.0) + v1 + v2 - v3));
     
+//	double newLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
+//	
+//	cout << "lnlRat = " << newLnl - oldLnl << endl;
+//	cout << "lnlRat2 = " << lnPriorR << endl;
+
     double lpr = lnPriorR + lnHastings + lnJacobian;
     double r = modelPtr->safeExponentiation(lpr);
     
