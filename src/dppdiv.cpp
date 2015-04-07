@@ -321,7 +321,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior == 9){
-        Model myModel(&myRandom, calibFN, treeNodePrior, rho);
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         cout << "\nFossil only FBD not yet fully implemented!\n";
         return 0;
