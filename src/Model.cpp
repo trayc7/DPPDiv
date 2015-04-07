@@ -176,13 +176,14 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 
 }
 
-Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh){
+Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
     treeTimePrior = nodpr;
     calibfilen = clfn;
     numFossils = 0;
+	runUnderPrior = rnp;
     rho = rh; //rw: if rho is 0, I think the likelihood will always = NaN
     //if(rho <= 0.0 || rho > 1.0) {
     if(rho < 0.0 || rho > 1.0) {
@@ -206,7 +207,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh){
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
-	FossilGraph *fg = new FossilGraph(ranPtr, this, numFossils, initOT, calibrs);
+	FossilGraph *fg = new FossilGraph(ranPtr, this, numFossils, initOT, calibrs, runUnderPrior);
 	OriginTime *ot = new OriginTime(ranPtr, this, initOT, rHtY, originMax);
 	Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho); 
     for (int i=0; i<2; i++){
@@ -224,7 +225,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh){
         parms[0][i]->print(std::cout);
     
     updateProb.clear();
-    updateProb.push_back(0.5); // 1 origin time
+    updateProb.push_back(0.0); // 1 origin time
     updateProb.push_back(0.5); // 2 speciation
     updateProb.push_back(0.5); // 3 fossil graph
     double sum = 0.0;
@@ -805,7 +806,7 @@ void Model::readOccurrenceFile(void){
         if(tmpv > yb)
             yb = tmpv;
     }
-    ob = yb + (yb * 2);
+    ob = yb + (yb * 1.2);
     initOT = yb + (ranPtr->uniformRv() * (ob - yb));
     rHtY = yb;
     
