@@ -77,7 +77,7 @@ class Calibration;
 class FossilGraph : public Parameter {
     
 public:
-                                    FossilGraph(MbRandom *rp, Model *mp, int nf, double initOrigTime, std::vector<Calibration *> clb);
+                                    FossilGraph(MbRandom *rp, Model *mp, int nf, double initOrigTime, std::vector<Calibration *> clb, bool rnp);
     
 									~FossilGraph(void);
     
@@ -110,8 +110,8 @@ public:
     double							getSumLogAllAttachNums(void);
     
     double							updateRJMoveAddDelEdge(void);
-    void							doAddEdgeMove(void);
-    void							doDeleteEdgeMove(void);
+    void							doAddEdgeMove(int k);
+    void							doDeleteEdgeMove(int k);
     
     double                          getOldestFossilGraphSpeciationTime(void);
     int								pickRandAncestorFossil(void);
@@ -139,6 +139,7 @@ private:
     std::vector<Occurrence *>		occurrenceSpecimens;
     double							tuningVal;
 	double							currentFossilGraphLnL;
+	bool							runUnderPrior;
 
     
     
