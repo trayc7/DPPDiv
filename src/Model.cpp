@@ -196,14 +196,8 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
     }
 
-    originMax = 100000.0;
+    originMax = initOT * 3.0;
     
-    // the following variables will all come from the initialisation above
-    //initOT = 150.0;
-    //rHtY = 5.0; // retrieve youngest fossil age = terminal time
-    //numFossils = 10;
-    //calibrs = vector of calibrations
-    // RW initialization stuff ******
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
@@ -225,7 +219,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         parms[0][i]->print(std::cout);
     
     updateProb.clear();
-    updateProb.push_back(0.0); // 1 origin time
+    updateProb.push_back(0.5); // 1 origin time
     updateProb.push_back(0.5); // 2 speciation
     updateProb.push_back(0.5); // 3 fossil graph
     double sum = 0.0;
