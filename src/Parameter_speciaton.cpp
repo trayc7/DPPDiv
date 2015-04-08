@@ -52,7 +52,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	netDiversificaton = 0.5; //ranPtr->uniformRv();
 	probSpeciationS = 0.01; //ranPtr->uniformRv();
 	//extantSampleRate = 1.0;
-    extantSampleRate = 0.5; //rh;
+    extantSampleRate = 1.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
 	
