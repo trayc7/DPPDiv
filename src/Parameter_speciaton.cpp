@@ -46,7 +46,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	// Based on BEAST implementation of the birth-death model described in Gernhard (2008)
 	// Note: the beast implementation doesn't allow for lambda=mu
 	
-	maxdivV = 30000.0;
+	maxdivV = 1000.0;
 	name = "SP";
 	relativeDeath = 0.7; //ranPtr->uniformRv();
 	netDiversificaton = 0.5; //ranPtr->uniformRv();
@@ -135,11 +135,13 @@ double Speciation::update(double &oldLnL) {
 	if(treeTimePrior == 9){
 		currentFossilGraphLnL = oldLnL;
 		FossilGraph *fg = modelPtr->getActiveFossilGraph();
-		updateRelDeathRt(fg); // r
-        updateNetDivRate(fg); // d
-        updateBDSSFossilProbS(fg); // s
-//        updatePsiRate(fg); // psi
-        //updateBDSSSampleProbRho(fg); // rho
+		int v = (int)(ranPtr->uniformRv() * 3);
+		if(v == 0)
+			updateRelDeathRt(fg); // r
+		else if(v ==2)
+			updateNetDivRate(fg); // d
+		else
+			updateBDSSFossilProbS(fg); // s
 		return currentFossilGraphLnL;
 	}
 	else{
@@ -214,7 +216,7 @@ double Speciation::updateRelDeathRt(Tree *t) {
 
 double Speciation::updateRelDeathRt(FossilGraph *fg) {
     
-	double oldfgprob = getLnFossilGraphProb(fg);
+	double oldfgprob = currentFossilGraphLnL;
 	double lnPropR = 0.0;
 	double rdwindow = 0.2;
 	double oldRD = relativeDeath;
@@ -311,7 +313,7 @@ double Speciation::updateNetDivRate(Tree *t) {
 
 double Speciation::updateNetDivRate(FossilGraph *fg) {
     
-    double oldfgprob = getLnFossilGraphProb(fg);
+    double oldfgprob = currentFossilGraphLnL;
     double lpr = 0.0;
     double oldND = netDiversificaton;
     double newND;
@@ -430,7 +432,7 @@ double Speciation::updateBDSSFossilProbS(Tree *t) {
 
 double Speciation::updateBDSSFossilProbS(FossilGraph *fg) {
     
-    double oldfgprob = getLnFossilGraphProb(fg);
+    double oldfgprob = currentFossilGraphLnL;
     double lnPropR = 0.0;
     double swindow = 0.2;
     double oldS = probSpeciationS;
@@ -494,7 +496,7 @@ double Speciation::updatePsiRate(Tree *t) {
 
 double Speciation::updatePsiRate(FossilGraph *fg) {
     
-    double oldfgprob = getLnFossilGraphProb(fg);
+    double oldfgprob = currentFossilGraphLnL;
     double lpr = 0.0;
     double oldPsi = fossilRate;
     double newPsi;
