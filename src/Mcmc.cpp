@@ -223,31 +223,31 @@ void Mcmc::runFOFBDChain() {
     for (int n=1; n<=numCycles; n++){
         if(modUpdateProbs && n == modifyUProbsGen)
             modelPtr->setUpdateProbabilities(false);
-        
-        modelPtr->switchActiveParm();
-        Parameter *parm = modelPtr->pickParmToUpdate();
-        
         double prevlnl = oldLnLikelihood;
-        double newLnLikelihood = parm->update(oldLnLikelihood); //all of the moves for FOFBD return the new likelihood for reporting
-        
-        
-        cout << "oldLnLikelihood " << oldLnLikelihood << endl;
-        cout << "newLnLikelihood " << newLnLikelihood << endl;
-        
+		double newLnLikelihood = 0.0;
+		
+		for(int it=0; it<6; it++){
+			modelPtr->switchActiveParm();
+			Parameter *parm = modelPtr->pickParmToUpdate();
+			
+			prevlnl = oldLnLikelihood;
+			newLnLikelihood = parm->update(oldLnLikelihood); //all of the moves for FOFBD return the new likelihood for reporting
+			bool isAccepted = true;
+			if (isAccepted == true){
+				oldLnLikelihood = newLnLikelihood;
+				modelPtr->updateAccepted();
+			}
+        }
+                
         
         if ( n % printFrequency == 0 || n == 1){
             cout << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
-            if(writeInfoFile){
-                dOut << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
-                dOut << n << " -- " << parm->writeParam();
-            }
+//            if(writeInfoFile){
+//                dOut << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
+//                dOut << n << " -- " << parm->writeParam();
+//            }
         }
         
-        bool isAccepted = true;
-        if (isAccepted == true){
-            oldLnLikelihood = newLnLikelihood;
-            modelPtr->updateAccepted();
-        }
         
         // sample chain
         if ( n % sampleFrequency == 0 || n == 1){
