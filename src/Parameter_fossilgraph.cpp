@@ -92,7 +92,6 @@ void FossilGraph::clone(const FossilGraph &fg){
     numAncFossilsk = fg.numAncFossilsk;
     treeTimePrior = fg.treeTimePrior;
     
-    //cout << "2. num anc Fossils = " << numAncFossilsk << endl;//rw:
         
     // TAH: double check this (more bookkeeping is probably needed, for now this is a placeholder)
     OriginTime *ot = modelPtr->getActiveOriginTime();
@@ -106,13 +105,13 @@ double FossilGraph::update(double &oldLnL){
     originTime = ot->getOriginTime();
     
     //double lppr = 0.0;
-
-    updateOccurrenceAttachmentTimesPhi();
-
-    for(int i=0; i < numFossils; i++){
-        updateRJMoveAddDelEdge();
+	if(ranPtr->uniformRv() < 0.5)
+		updateOccurrenceAttachmentTimesPhi();
+	else{
+		for(int i=0; i < numFossils; i++){
+			updateRJMoveAddDelEdge();
+		}
 	}
-	
 	getActiveFossilGraphProb();
     return currentFossilGraphLnL;
 }
@@ -497,14 +496,12 @@ double FossilGraph::getSumLogAllAttachNums(){
 }
 
 double FossilGraph::updateRJMoveAddDelEdge() {
-//    cout << "1. numAncFossilsk " << numAncFossilsk << endl;
 	int nAncs = numFossils - getSumIndicatorFG() - 1;
 	int nf = numFossils - 1;
     
     double gA = 0.5;
     if(nAncs == nf)
         gA = 1.0;
-    //else if(numAncFossilsk == 0)
     else if(nAncs == 0)
         gA = 0.0;
     
@@ -520,7 +517,6 @@ double FossilGraph::updateRJMoveAddDelEdge() {
 //rw: new fxn - double check the maths
 void FossilGraph::doAddEdgeMove(int k){
     
-//    int k = numAncFossilsk;
     int m = numFossils-1;
     int kN = k-1;
     Speciation *s = modelPtr->getActiveSpeciation();
@@ -570,29 +566,23 @@ void FossilGraph::doAddEdgeMove(int k){
 	double newLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate, cf);
 	double lnLikeR = newLnl - oldLnl;
 	
-//	cout << "lnlRat = " << newLnl - oldLnl << endl;
-//	cout << "lnlRat2 = " << lnPriorR << endl;
 
 
     double lpr = lnLikeR + lnHastings + lnJacobian;
     double r = modelPtr->safeExponentiation(lpr);
-    /* */
     
     if(ranPtr->uniformRv() < r){
         o->setFossilIndicatorVar(1);
         o->setFossilSppTime(newPhi);
-//        numAncFossilsk = kN;
     }
     else{
         o->setFossilIndicatorVar(0);
         o->setFossilSppTime(yf);
-//        numAncFossilsk = k;
     }
 }
 
 void FossilGraph::doDeleteEdgeMove(int k){
     
-//    int k = numAncFossilsk;
     int m = numFossils-1;
     int kN = k+1;
     Speciation *s = modelPtr->getActiveSpeciation();
@@ -609,7 +599,7 @@ void FossilGraph::doDeleteEdgeMove(int k){
 	double oldLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
 
     double alD = 1.0;
-    if(k == 0) // account for terminal
+    if(k == 0)
         alD = 0.5;
     else if(kN == m)
         alD = 2.0;
@@ -637,9 +627,6 @@ void FossilGraph::doDeleteEdgeMove(int k){
 	double newLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
 	double lnLikeR = newLnl - oldLnl;
 
-//
-//	cout << "lnlRat = " << newLnl - oldLnl << endl;
-//	cout << "lnlRat2 = " << lnPriorR << endl;
 
     double lpr = lnLikeR + lnHastings + lnJacobian;
     double r = modelPtr->safeExponentiation(lpr);
@@ -647,7 +634,6 @@ void FossilGraph::doDeleteEdgeMove(int k){
     if(ranPtr->uniformRv() < r){
         o->setFossilIndicatorVar(0);
         o->setFossilSppTime(yf);
-//        numAncFossilsk = kN;
     }
     else{
         o->setFossilSppTime(oldPhi);
@@ -658,7 +644,6 @@ void FossilGraph::doDeleteEdgeMove(int k){
 
 int FossilGraph::pickRandAncestorFossil(){
     
-    //cout << "I am here 5." << endl;//rw:
     
     vector<int> af;
     for(int i=0; i<occurrenceSpecimens.size(); i++){
@@ -675,7 +660,7 @@ int FossilGraph::pickRandAncestorFossil(){
 }
 
 int FossilGraph::pickRandTipFossil(){
-    //cout << "I am here 1." << endl;//rw:
+
     vector<int> af;
     for(int i=0; i<occurrenceSpecimens.size(); i++){
         Occurrence *f = occurrenceSpecimens[i];
