@@ -253,7 +253,7 @@ double FossilGraph::getFossilGraphProb(double lambda, double mu, double fossRate
     originTime = ot;
     
     // the following has been modified for the fofbd
-    double nprb = 1.0 - (log(2*lambda) + log(1.0 - bdssP0Fxn(lambda, mu, fossRate, sppSampRate, originTime)));
+    double nprb = -(log(2*lambda) + log(1.0 - bdssP0Fxn(lambda, mu, fossRate, sppSampRate, originTime)));
     
     for(int f=0; f < occurrenceSpecimens.size(); f++){
         Occurrence *o = occurrenceSpecimens[f];
