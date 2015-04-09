@@ -141,7 +141,7 @@ double Speciation::update(double &oldLnL) {
 	if(treeTimePrior == 9){
 		currentFossilGraphLnL = oldLnL;
 		FossilGraph *fg = modelPtr->getActiveFossilGraph();
-		int v = (int)(ranPtr->uniformRv() * 2);
+		int v = (int)(ranPtr->uniformRv() * 3);
 		
 		if(parameterization == 1){
 			if(v == 0)
