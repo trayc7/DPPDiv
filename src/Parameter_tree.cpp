@@ -2377,7 +2377,7 @@ double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, do
     OriginTime *ot = modelPtr->getActiveOriginTime();
     originTime = ot->getOriginTime();
 
-	double nprb = 1.0 - (log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, originTime)));
+	double nprb = - (log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, originTime)));
 	
 	for(int i=0; i<numNodes; i++){
 		Node *p = &nodes[i];
