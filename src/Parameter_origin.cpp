@@ -73,6 +73,7 @@ void OriginTime::clone(const OriginTime &c) {
     yngBound = c.yngBound;
     isBounded = c.isBounded;
     tuning = c.tuning;
+	treeTimePrior = c.treeTimePrior;
     name = "OT";
 }
 
