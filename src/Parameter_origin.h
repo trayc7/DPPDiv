@@ -50,6 +50,7 @@ public:
     double				getOriginTime() { return originTime; }
     void				setOriginTime(double s) { originTime = s; }
     double				getLnTreeProb(Tree *t);
+    double              lnExpOriginTimePriorRatio(double nOT, double oOT, double offSt, double expRate);
     
 private:
     double				originTime;
@@ -59,7 +60,10 @@ private:
     bool				isBounded;
     bool				retune;
     double				numAccepted;
-    double				numTried;				
+    double				numTried;
+    int                 otProposal;
+    int                 otPrior;
+    double              expRate;
     
 };
 
