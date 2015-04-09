@@ -53,6 +53,7 @@ public:
     double				getOriginTime() { return originTime; }
     void				setOriginTime(double s) { originTime = s; }
     double				getLnTreeProb(Tree *t);
+    double              lnExpOriginTimePriorRatio(double nOT, double oOT, double offSt, double expRate);
     
 private:
     double				originTime;
@@ -63,6 +64,7 @@ private:
     bool				retune;
     double				numAccepted;
     double				numTried;
+<<<<<<< HEAD
 	int					treeTimePrior;
 	double				currentFossilGraphLnL;
 
@@ -70,6 +72,11 @@ private:
 	
 	double				updateFOFBD(void);
 	double				updateDPPDiv(void);
+=======
+    int                 otProposal;
+    int                 otPrior;
+    double              expRate;
+>>>>>>> f0287476acfdd6d43b2def99af3326a488da0fb7
     
 };
 
