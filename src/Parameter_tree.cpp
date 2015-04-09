@@ -268,7 +268,7 @@ void Tree::buildTreeFromNewickDescription(string ts) {
 }
 
 Tree& Tree::operator=(const Tree &t) {
-
+    
 	if (this != &t)
 		clone(t);
 	return *this;
@@ -808,16 +808,16 @@ double Tree::update(double &oldLnL) {
 
 		updateAllTGSNodes(oldLnL);
 		
-		updateFossilBDSSAttachmentTimePhi();
+		updateFossilBDSSAttachmentTimePhi(); //rw:** might be very similar
         treeUpdateNodeOldestBoundsAttchTimes();
 		modelPtr->setLnLGood(true);
 		modelPtr->setMyCurrLnl(oldLnL);
 		modelPtr->setTiProb();
 
-		for(int i=0; i<5; i++){
-			updateRJMoveAddDelEdge();
-            treeUpdateNodeOldestBoundsAttchTimes();
-			modelPtr->setLnLGood(true);
+		for(int i=0; i<5; i++){//rw:** for each numfossils
+			updateRJMoveAddDelEdge();//rw:**
+            treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
+			modelPtr->setLnLGood(true);//rw:** none of this needed (hopefully)
 			modelPtr->setMyCurrLnl(oldLnL);
 			modelPtr->setTiProb();
 		}
@@ -2377,7 +2377,7 @@ double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, do
     OriginTime *ot = modelPtr->getActiveOriginTime();
     originTime = ot->getOriginTime();
 
-	double nprb = - (log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, originTime)));
+	double nprb = -(log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, originTime)));
 	
 	for(int i=0; i<numNodes; i++){
 		Node *p = &nodes[i];
