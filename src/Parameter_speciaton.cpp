@@ -51,10 +51,14 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	relativeDeath = 0.7; //ranPtr->uniformRv();
 	netDiversificaton = 0.5; //ranPtr->uniformRv();
 	probSpeciationS = 0.01; //ranPtr->uniformRv();
-	//extantSampleRate = 1.0;
+	fossilRate = 0.1;
+	birthRate = 0.1;
+	deathRate = 0.05;
     extantSampleRate = 1.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
+	parameterization = 3;
+	setAllBDFossParams();
 	
 	if(mp->getFixTestRun()){
 		relativeDeath = bda;
@@ -112,7 +116,9 @@ void Speciation::clone(const Speciation &c) {
 	birthRate = c.birthRate;
 	deathRate = c.deathRate;
 	fossilRate = c.fossilRate;
+	parameterization = c.parameterization;
 	extantSampleRate = c.extantSampleRate;
+	treeTimePrior = c.treeTimePrior;
 	name = "SP";
 }
 
@@ -135,13 +141,32 @@ double Speciation::update(double &oldLnL) {
 	if(treeTimePrior == 9){
 		currentFossilGraphLnL = oldLnL;
 		FossilGraph *fg = modelPtr->getActiveFossilGraph();
-		int v = (int)(ranPtr->uniformRv() * 3);
-		if(v == 0)
-			updateRelDeathRt(fg); // r
-		else if(v ==2)
-			updateNetDivRate(fg); // d
-		else
-			updateBDSSFossilProbS(fg); // s
+		int v = (int)(ranPtr->uniformRv() * 2);
+		
+		if(parameterization == 1){
+			if(v == 0)
+				updateRelDeathRt(fg); // r
+			else if(v == 1)
+				updateNetDivRate(fg); // d
+			else
+				updateBDSSFossilProbS(fg); // s
+		}
+		else if(parameterization == 2){
+			if(v == 0)
+				updateRelDeathRt(fg); // r
+			else if(v == 1)
+				updateNetDivRate(fg); // d
+			else
+				updatePsiRate(fg); // psi
+		}
+		else if(parameterization == 3){
+			if(v == 0)
+				updateDeathRate(fg); // mu
+			else if(v == 1)
+				updateBirthRate(fg); // lambda
+			else
+				updatePsiRate(fg); // psi
+		}
 		return currentFossilGraphLnL;
 	}
 	else{
@@ -511,18 +536,71 @@ double Speciation::updatePsiRate(FossilGraph *fg) {
     double r = modelPtr->safeExponentiation(lnR);
     
     if(ranPtr->uniformRv() < r){
-        //setAllBDFossParams();
-        probSpeciationS = newPsi / (deathRate + newPsi);
         currentFossilGraphLnL = newfgprob;
     }
     else{
         fossilRate = oldPsi;
-        // setAllBDFossParams();
-        probSpeciationS = oldPsi / (deathRate + oldPsi); //rw: possibly don't need to do this here
+        setAllBDFossParams();
         currentFossilGraphLnL = oldfgprob;
     }
     return 0.0;
 }
+
+double Speciation::updateDeathRate(FossilGraph *fg) {
+    
+    double oldfgprob = currentFossilGraphLnL;
+    double lpr = 0.0;
+    double oldMu = deathRate;
+    double newMu;
+    double tuning = log(2.0);
+    double minV = 0.0001;
+    double c = getNewValScaleMv(newMu, oldMu, minV, 100.0, tuning);
+    deathRate = newMu;
+    lpr = c;
+    double newfgprob = getLnFossilGraphProb(fg);
+	double lnPriorRat = 0.0; // getDeathRatePriorRatio(oldMu, newMu);
+    double lnLikeRat = (newfgprob - oldfgprob);
+    double lnR = lnLikeRat + lpr + lnPriorRat;
+    double r = modelPtr->safeExponentiation(lnR);
+    
+    if(ranPtr->uniformRv() < r){
+        currentFossilGraphLnL = newfgprob;
+    }
+    else{
+        deathRate = oldMu;
+        setAllBDFossParams();
+        currentFossilGraphLnL = oldfgprob;
+    }
+    return 0.0;
+}
+
+double Speciation::updateBirthRate(FossilGraph *fg) {
+    
+    double oldfgprob = currentFossilGraphLnL;
+    double lpr = 0.0;
+    double oldLambda = birthRate;
+    double newLambda;
+    double tuning = log(2.0);
+    double minV = 0.0001;
+    double c = getNewValScaleMv(newLambda, oldLambda, minV, maxdivV, tuning);
+    birthRate = newLambda;
+    lpr = c;
+    double newfgprob = getLnFossilGraphProb(fg);
+    double lnPriorRatio = (newfgprob - oldfgprob);
+    double lnR = lnPriorRatio + lpr;
+    double r = modelPtr->safeExponentiation(lnR);
+    
+    if(ranPtr->uniformRv() < r){
+        currentFossilGraphLnL = newfgprob;
+    }
+    else{
+        birthRate = oldLambda;
+        setAllBDFossParams();
+        currentFossilGraphLnL = oldfgprob;
+    }
+    return 0.0;
+}
+
 
 double Speciation::lnPrior(void) {
 	
@@ -591,7 +669,20 @@ double Speciation::getLnFossilGraphProb(FossilGraph *fg) {
 
 
 void Speciation::setAllBDFossParams(){
-	fossilRate = (probSpeciationS / (1-probSpeciationS)) * ((relativeDeath * netDiversificaton) / (1 - relativeDeath));
-	birthRate = netDiversificaton / (1.0 - relativeDeath); 
-	deathRate = (relativeDeath * netDiversificaton) / (1 - relativeDeath);
+	
+	if(parameterization == 1){
+		fossilRate = (probSpeciationS / (1-probSpeciationS)) * ((relativeDeath * netDiversificaton) / (1 - relativeDeath));
+		birthRate = netDiversificaton / (1.0 - relativeDeath); 
+		deathRate = (relativeDeath * netDiversificaton) / (1 - relativeDeath);
+	}
+	else if(parameterization == 2){
+		birthRate = netDiversificaton / (1.0 - relativeDeath);
+		deathRate = (relativeDeath * netDiversificaton) / (1 - relativeDeath);
+		probSpeciationS = fossilRate / (deathRate + fossilRate);
+	}
+	else if(parameterization == 3){
+		netDiversificaton = birthRate - deathRate;
+		relativeDeath = deathRate / birthRate;
+		probSpeciationS = fossilRate / (deathRate + fossilRate);
+	}
 }

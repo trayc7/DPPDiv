@@ -82,6 +82,8 @@ class Speciation : public Parameter {
 		double				probSpeciationS;  // \psi / (\mu + \psi) // Need hyperprior
 		double				currentFossilGraphLnL;
 		
+		int					parameterization; // 1=d,r,s,rho; 2=d,r,psi,rho; 3=lambda,mu,psi,rho;
+		
 		double				getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv);
 		double				getNewValSWindoMv(double ov, double vmin, double vmax, double tv);
 
@@ -102,7 +104,10 @@ class Speciation : public Parameter {
         double				updateNetDivRate(FossilGraph *fg);
         double				updateBDSSFossilProbS(FossilGraph *fg);
         double				updateBDSSSampleProbRho(FossilGraph *fg); //rw: not used yet
-        double				updatePsiRate(FossilGraph *fg); //rw: not used yet
+        double				updatePsiRate(FossilGraph *fg); 
+        double				updateDeathRate(FossilGraph *fg);
+        double				updateBirthRate(FossilGraph *fg);
+
 
 };
 
