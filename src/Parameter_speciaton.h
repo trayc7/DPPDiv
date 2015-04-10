@@ -107,7 +107,17 @@ class Speciation : public Parameter {
         double				updatePsiRate(FossilGraph *fg); 
         double				updateDeathRate(FossilGraph *fg);
         double				updateBirthRate(FossilGraph *fg);
-
+    
+        // altermative priors
+        int                 deathRatePrior;
+        double              deathRateExpRate;
+        int                 birthRatePrior;
+        double              birthRateExpRate;
+        int                 fossilSamplingRatePrior;
+        double              fossilSamplingRateExpRate;
+        int                 netDivRatePrior;
+        double              netDivRateExpRate;
+        double              getExpPriorRatio(double oldVal, double newVal, double rate, double prior);
 
 };
 

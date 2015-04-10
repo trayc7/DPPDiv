@@ -57,8 +57,18 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     extantSampleRate = 1.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
-	parameterization = 3;
+	parameterization = 2;
 	setAllBDFossParams();
+    
+    // priors on birth death paras
+    deathRatePrior = 1; // 1 = unifrom prior on mu, 2 = exponential prior on mu
+    birthRatePrior = 1;
+    fossilSamplingRatePrior = 2;
+    netDivRatePrior = 2;
+    deathRateExpRate = 10; //
+    birthRateExpRate = 10;
+    fossilSamplingRateExpRate = 100;
+    netDivRateExpRate = 10;
 	
 	if(mp->getFixTestRun()){
 		relativeDeath = bda;
@@ -348,8 +358,9 @@ double Speciation::updateNetDivRate(FossilGraph *fg) {
     netDiversificaton = newND;
     lpr = c;
     double newfgprob = getLnFossilGraphProb(fg);
-    double lnPriorRatio = (newfgprob - oldfgprob);
-    double lnR = lnPriorRatio + lpr;
+    double lnPriorRat = getExpPriorRatio(oldND, newND, netDivRateExpRate, netDivRatePrior);
+    double lnLikeRat = (newfgprob - oldfgprob);
+    double lnR = lnLikeRat + lpr + lnPriorRat;
     double r = modelPtr->safeExponentiation(lnR);
     if(ranPtr->uniformRv() < r){
         setAllBDFossParams();
@@ -531,8 +542,9 @@ double Speciation::updatePsiRate(FossilGraph *fg) {
     fossilRate = newPsi;
     lpr = c;
     double newfgprob = getLnFossilGraphProb(fg);
-    double lnPriorRatio = (newfgprob - oldfgprob);
-    double lnR = lnPriorRatio + lpr;
+    double lnPriorRat = getExpPriorRatio(oldPsi, newPsi, fossilSamplingRateExpRate, fossilSamplingRatePrior);
+    double lnLikeRat = (newfgprob - oldfgprob);
+    double lnR = lnLikeRat + lpr + lnPriorRat;
     double r = modelPtr->safeExponentiation(lnR);
     
     if(ranPtr->uniformRv() < r){
@@ -558,7 +570,7 @@ double Speciation::updateDeathRate(FossilGraph *fg) {
     deathRate = newMu;
     lpr = c;
     double newfgprob = getLnFossilGraphProb(fg);
-	double lnPriorRat = 0.0; // getDeathRatePriorRatio(oldMu, newMu);
+    double lnPriorRat = getExpPriorRatio(oldMu, newMu, deathRateExpRate, deathRatePrior);
     double lnLikeRat = (newfgprob - oldfgprob);
     double lnR = lnLikeRat + lpr + lnPriorRat;
     double r = modelPtr->safeExponentiation(lnR);
@@ -586,8 +598,9 @@ double Speciation::updateBirthRate(FossilGraph *fg) {
     birthRate = newLambda;
     lpr = c;
     double newfgprob = getLnFossilGraphProb(fg);
-    double lnPriorRatio = (newfgprob - oldfgprob);
-    double lnR = lnPriorRatio + lpr;
+    double lnPriorRat = getExpPriorRatio(oldLambda, newLambda, birthRateExpRate, birthRatePrior);
+    double lnLikeRat = (newfgprob - oldfgprob);
+    double lnR = lnLikeRat + lpr + lnPriorRat;
     double r = modelPtr->safeExponentiation(lnR);
     
     if(ranPtr->uniformRv() < r){
@@ -601,6 +614,16 @@ double Speciation::updateBirthRate(FossilGraph *fg) {
     return 0.0;
 }
 
+double Speciation::getExpPriorRatio(double oldVal, double newVal, double rate, double prior) {
+    double nv = newVal;
+    double ov = oldVal;
+    double expR = rate;
+    double dist = prior;
+    if (dist == 2)
+        return (ranPtr->lnExponentialPdf(expR, nv)) - (ranPtr->lnExponentialPdf(expR, ov));
+    else
+        return 0.0;
+}
 
 double Speciation::lnPrior(void) {
 	
