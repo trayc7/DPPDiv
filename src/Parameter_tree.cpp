@@ -104,6 +104,7 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	isCalibTree = false;
 	isTipCals = false; 
 	expHyperPrCal = exhpc;
+	sampleFossilAges = false;
 	buildTreeFromNewickDescription(ts); 
 	
 	nodeProposal = 2; // proposal type 1=window, 2=scale, 3=slide
@@ -805,22 +806,22 @@ double Tree::update(double &oldLnL) {
 		
 		Treescale *ts = modelPtr->getActiveTreeScale();
 		setTreeScale(ts->getScaleValue());
-
+		
 		updateAllTGSNodes(oldLnL);
 		
 		updateFossilBDSSAttachmentTimePhi(); //rw:** might be very similar
         treeUpdateNodeOldestBoundsAttchTimes();
+
+		for(int i=0; i<fossSpecimens.size(); i++){//rw:** for each numfossils
+			updateRJMoveAddDelEdge();//rw:**
+            treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
+		}
+		if(sampleFossilAges){
+			updateFossilAges();
+		}
 		modelPtr->setLnLGood(true);
 		modelPtr->setMyCurrLnl(oldLnL);
 		modelPtr->setTiProb();
-
-		for(int i=0; i<5; i++){//rw:** for each numfossils
-			updateRJMoveAddDelEdge();//rw:**
-            treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
-			modelPtr->setLnLGood(true);//rw:** none of this needed (hopefully)
-			modelPtr->setMyCurrLnl(oldLnL);
-			modelPtr->setTiProb();
-		}
 		return 0.0;
 	}
 	else{ 
@@ -1333,6 +1334,48 @@ double Tree::updateAllNodesRnd(double &oldLnL) {
 			recountFossilAttachNums();
 	}
 	oldLnL = oldLike;	
+	return 0.0;
+}
+
+double Tree::updateFossilAges(void){
+	
+	Speciation *s = modelPtr->getActiveSpeciation();
+	s->setAllBDFossParams();
+	double lambda = s->getBDSSSpeciationRateLambda();	
+	double mu = s->getBDSSExtinctionRateMu();
+	double fossRate = s->getBDSSFossilSampRatePsi();
+	double sppSampRate = s->getBDSSSppSampRateRho();
+	vector<int> rndFossIDs;
+	for(int i=0; i<fossSpecimens.size(); i++)
+		rndFossIDs.push_back(i);
+	random_shuffle(rndFossIDs.begin(), rndFossIDs.end());
+	for(vector<int>::iterator it=rndFossIDs.begin(); it!=rndFossIDs.end(); it++){
+		Fossil *f = fossSpecimens[(*it)];
+		if(f->getFossilIndicatorVar()==1 && f->getDoEstFossilAge() == true){
+			double oldAge = f->getFossilAge();
+			double oldSumLogGammas = getSumLogAllAttachNums();
+			double aMin = f->getFossilMinAge();
+			double aMax = f->getFossilMaxAge();
+			if(f->getFossilSppTime()*treeScale < aMax)
+				aMax = f->getFossilSppTime() * treeScale;
+			double pr1 = log(oldSumLogGammas) + (log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, oldAge)) - fbdQHatFxn(lambda, mu, fossRate, sppSampRate, oldAge));
+			double newAge = ranPtr->uniformRv(aMin, aMax);
+			f->setFossilAge(newAge);
+			double newSumLogGammas = getSumLogAllAttachNums();
+
+			double pr2 = log(newSumLogGammas) + (log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, newAge)) - fbdQHatFxn(lambda, mu, fossRate, sppSampRate, newAge));
+			double prRatio = pr1 - pr2;
+			double r = modelPtr->safeExponentiation(prRatio);
+			
+			if(ranPtr->uniformRv() < r){ 
+				f->setFossilAge(newAge);
+			}
+			else{
+				f->setFossilAge(oldAge);
+				recountFossilAttachNums();
+			}
+		}
+	}
 	return 0.0;
 }
 
@@ -1884,6 +1927,13 @@ string Tree::getCalBDSSNodeInfoParamNames(void){
 		int nID = f->getFossilMRCANodeID();
 		ss << "\tgamma_f(C" << i << ".nd" << nID << ")";
 	}
+	if(sampleFossilAges){
+		for(int i=0; i<fossSpecimens.size(); i++){
+			f = fossSpecimens[i];
+			int nID = f->getFossilMRCANodeID();
+			ss << "\ty_f(C" << i << ".nd" << nID << ")";
+		}
+	}
 	string ni = ss.str();
 	return ni;
 }
@@ -1911,6 +1961,12 @@ string Tree::getCalBDSSNodeInfoParamList(void){
 	for(int i=0; i<fossSpecimens.size(); i++){
 		f = fossSpecimens[i];
 		ss << "\t" << f->getFossilFossBrGamma();
+	}
+	if(sampleFossilAges){
+		for(int i=0; i<fossSpecimens.size(); i++){
+			f = fossSpecimens[i];
+			ss << "\t" << f->getFossilAge();
+		}
 	}
 	string ni = ss.str();
 	return ni;
@@ -2757,7 +2813,15 @@ void Tree::setUPTGSCalibrationFossils() { // definitely have to change for FBDS
 		calbNo = findCalibNode((*v)->getTxN1(), (*v)->getTxN2());
 		Node *p = &nodes[calbNo];
 		double fAge = (*v)->getYngTime();
-		Fossil *f = new Fossil(fAge, calbNo);
+		double ageMin = 0.0, ageMax = 0.0;
+		bool sampleFAge =(*v)->getIsSampledAge();
+		if(sampleFAge){
+			ageMin = fAge;
+			ageMax = (*v)->getOldTime();
+			fAge = ranPtr->uniformRv(ageMin,ageMax);
+			sampleFossilAges = true;
+		}
+		Fossil *f = new Fossil(fAge, calbNo, ageMin, ageMax, sampleFAge);
 		fossSpecimens.push_back(f);
 		int nPFoss = p->getNumCalibratingFossils();
 		p->setNumFCalibratingFossils(nPFoss + 1);

@@ -144,7 +144,8 @@ class Node {
 class Fossil {
 	
 	public:
-										Fossil(double fa, int nid) :age(fa), nodeID(nid),
+										Fossil(double fa, int nid, double aMin, double aMax, bool est) :age(fa), nodeID(nid),
+																	ageMin(aMin), ageMax(aMax), estFossilAge(est),
 																	fossilBrGamma(0), ancFossIndicator(1) {}
 		
 		int								getFossilIndex(void) { return indx; } 
@@ -156,6 +157,9 @@ class Fossil {
 		int								getFossilIndicatorVar(void) { return ancFossIndicator; }
 		double							getCalibrationDistance(void) { return nodeAge - age; }
         bool                            getIsTotalGroupFossil(void) {return isTotalGroupFossil; }
+        bool                            getDoEstFossilAge(void) {return estFossilAge; }
+		double							getFossilMinAge(void) { return ageMin; }
+		double							getFossilMaxAge(void) { return ageMax; }
 		
 		void							setFossilIndex(int i) { indx = i; }
 		void							setFossilAge(double d) { age = d; }
@@ -165,6 +169,9 @@ class Fossil {
 		void							setFossilFossBrGamma(int i) { fossilBrGamma = i; }
 		void							setFossilIndicatorVar(int i) { ancFossIndicator = i; }
         void							setIsTotalGroupFossil(bool b) { isTotalGroupFossil = b; }
+        void                            setDoEstFossilAge(bool b) { estFossilAge = b; }
+		void							setFossilMinAge(double d) { ageMin = d; }
+		void							setFossilMaxAge(double d) { ageMax = d; }
 
 		
 		
@@ -178,6 +185,8 @@ class Fossil {
 		int								fossilBrGamma;
 		int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
         bool                            isTotalGroupFossil;
+		double							ageMin, ageMax;
+		bool							estFossilAge;
 		
 	
 	
@@ -284,6 +293,7 @@ class Tree : public Parameter {
         double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
     
         double                          getOldestTreeSpeciationTime(void);
+		bool							getEstimateFossilAges(void){ return sampleFossilAges; }
 
     
 	private:
@@ -341,6 +351,8 @@ class Tree : public Parameter {
 		void							recountFromNodeFossilAttchNums(Node *p);
 		int								recursivCreateTempFossVec(std::vector<Fossil *> &v, Node *p);
 		
+		double							updateFossilAges(void);
+		
 		
 		Alignment						*alignmentPtr;
 		int								numTaxa;
@@ -372,6 +384,7 @@ class Tree : public Parameter {
 		double							tuningVal;
 		int								numMoves;
 		bool							autotune;
+		bool							sampleFossilAges;
 		
 		
 };
