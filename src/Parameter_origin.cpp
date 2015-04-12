@@ -48,10 +48,16 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob)
     originTime = sv;
     tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.2;
     name = "OT";
+<<<<<<< HEAD
 	treeTimePrior = mp->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
 //    cout << "OT initialized" << originTime << endl;
     cout << "ob = " << oldBound << endl;
+=======
+    otProposal = 2; // 1 = sliding window, 2 = scale move
+    otPrior = 2; // 1 = uniform, 2 = exponential
+    expRate = 0.005;
+>>>>>>> f0287476acfdd6d43b2def99af3326a488da0fb7
 
 }
 
@@ -84,8 +90,10 @@ void OriginTime::print(std::ostream & o) const {
     o << endl;
 }
 
+/* original update function
 double OriginTime::update(double &oldLnL) {
     
+<<<<<<< HEAD
     double myPrR = 0.0;
 	if(treeTimePrior < 9){
 		myPrR = updateDPPDiv();
@@ -100,13 +108,15 @@ double OriginTime::update(double &oldLnL) {
 }
 
 double OriginTime::updateDPPDiv(void){
+=======
+    //Treescale *ts = modelPtr->getActiveTreeScale(); // not required
+>>>>>>> f0287476acfdd6d43b2def99af3326a488da0fb7
     
     Speciation *s = modelPtr->getActiveSpeciation();
     
     Tree *t = modelPtr->getActiveTree();
     
     double oldOT = originTime;
-//    cout << "OT1 " << originTime << endl;
     
     double oldOTProb = getFBDProbOriginTime(t, s);
     
@@ -116,21 +126,22 @@ double OriginTime::updateDPPDiv(void){
     double limO = oldOT + tuning;
     double limY = oldOT - tuning;
     
-    
     double newOT;
     
     double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
     newOT = oldOT + u;
+   
     while(newOT < minAge || newOT > maxAge){
         if(newOT < minAge)
             newOT = (2 * minAge) - newOT;
         if(newOT > maxAge)
             newOT = (2 * maxAge) - newOT;
     }
+    
     originTime = newOT;
-//    cout << "OT2 " << originTime << endl;
     double newOTProb = getFBDProbOriginTime(t, s);
     
+<<<<<<< HEAD
 //    cout << "old: OT = " << oldOT << ", old Prob = " << oldOTProb << endl;
 //    cout << "new: OT = " << newOT << ", new Prob = " << newOTProb << endl;
 	return oldOTProb-newOTProb;
@@ -153,6 +164,107 @@ double OriginTime::updateFOFBD(void){
     
     double limO = oldOT + tuning;
     double limY = oldOT - tuning;
+=======
+    // Need to double check this
+    
+    modelPtr->setLnLGood(true);
+    modelPtr->setMyCurrLnl(oldLnL);
+    
+    double myPrR = oldOTProb-newOTProb;
+    
+    return myPrR;
+    
+}
+ */
+
+
+/* modified update function */
+double OriginTime::update(double &oldLnL) {
+ 
+    //Treescale *ts = modelPtr->getActiveTreeScale();
+ 
+    Speciation *s = modelPtr->getActiveSpeciation();
+ 
+    Tree *t = modelPtr->getActiveTree();
+ 
+    double oldOT = originTime;
+ 
+    double oldOTProb = getFBDProbOriginTime(t, s);
+ 
+    double minAge = t->getOldestTreeSpeciationTime();
+    double maxAge = oldBound;
+ 
+    double newOT;
+    double lnProposalRatio = 0.0;
+    
+    /* sliding window */
+    if (otProposal == 1){
+        double limO = oldOT + tuning;
+        double limY = oldOT - tuning;
+     
+        double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
+        newOT = oldOT + u;
+    
+        while(newOT < minAge || newOT > maxAge){
+            if(newOT < minAge)
+                newOT = (2 * minAge) - newOT;
+            if(newOT > maxAge)
+                newOT = (2 * maxAge) - newOT;
+        }
+    }
+    /* scale move */
+    else if (otProposal == 2){
+        double rv = ranPtr->uniformRv();
+        double c = tuning * (rv-0.5);
+        newOT = oldOT * exp(c);
+        //lnProposalRatio = c;
+
+        bool validOT = false;
+        do{
+            if(newOT < minAge)
+                newOT = minAge * minAge / newOT;
+             else if(newOT > maxAge)
+                 newOT = maxAge * maxAge / newOT;
+             else
+                 validOT = true;
+         } while(!validOT);
+        
+        lnProposalRatio = (log(newOT) - log(oldOT));
+    }
+    
+    originTime = newOT;
+    double newOTProb = getFBDProbOriginTime(t, s);
+ 
+    // Need to double check this
+ 
+    modelPtr->setLnLGood(true);
+    modelPtr->setMyCurrLnl(oldLnL);
+    
+    double myPrR = oldOTProb-newOTProb;
+ 
+    /* uniform prior on ot*/
+    if (otPrior == 1)
+        myPrR += lnProposalRatio;
+    
+    /* exponential prior */
+    else if (otPrior == 2)
+        myPrR += lnProposalRatio + lnExpOriginTimePriorRatio(newOT,oldOT,minAge,expRate);
+        //myPrR += lnProposalRatio + (expRate * ( (oldOT-minAge) - (newOT-minAge) ));
+ 
+    return myPrR;
+ 
+}
+
+double OriginTime::lnExpOriginTimePriorRatio(double nOT, double oOT, double offSt, double expRate) {
+    
+    /* Prior ratio for offset exponential */
+    double newDiff = 0.0;
+    double oldDiff = 0.0;
+    
+    newDiff = ranPtr->lnExponentialPdf(expRate, nOT - offSt);
+    oldDiff = ranPtr->lnExponentialPdf(expRate, oOT - offSt);
+    return newDiff - oldDiff;
+>>>>>>> f0287476acfdd6d43b2def99af3326a488da0fb7
     
     double newOT;
     
