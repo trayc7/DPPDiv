@@ -44,6 +44,7 @@ class Calibration {
 		double			exponRate, exponMean;
         bool            isStem;
         bool            isOrigin;
+		bool			isSampledAge;
 		
 		
 		
@@ -64,6 +65,7 @@ class Calibration {
         bool			getIsStemFossil() { return isStem; }
         void			setIsOriginFossil(bool b) { isOrigin = b; }
         bool			setIsOriginFossil() { return isOrigin; }
+		bool			getIsSampledAge(void) { return isSampledAge; }
 		
 		void			initializeNodeCalibration(std::string calstr);
 		void			initialzeTipCalibration(std::string calstr);

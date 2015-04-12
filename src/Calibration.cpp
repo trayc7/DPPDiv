@@ -56,6 +56,7 @@ void Calibration::initializeNodeCalibration(string calstr){
 	exponRate = -1.0;
 	exponMean = -1.0;
     isStem = false;
+	isSampledAge = false;
 	stringstream ss;
 	string tmp = "";
 	ss << calstr;
@@ -74,6 +75,10 @@ void Calibration::initializeNodeCalibration(string calstr){
 		else{
 			cerr << "ERROR: There's a problem with the calibration file " << endl;
 			exit(1);
+		}
+		cout << tmp[2] << endl;
+		if(tmp[2] == 'E' || tmp[2] == 'e'){
+			isSampledAge = true;
 		}
 		
 		ss >> txn1;
@@ -124,12 +129,18 @@ void Calibration::initializeNodeCalibration(string calstr){
         else if(prDistType == 3){
             youngtime = atof(tmp.c_str());
             ss >> tmp;
+			if(isSampledAge){
+				oldtime = atof(tmp.c_str());
+			}
             cout << "   Calibrate Birth-Death Prior on MRCA[" << txn1 << ", " << txn2 << "] --> (offset="
             << youngtime << ")" << endl;
         }
         else if(prDistType == 4){
             youngtime = atof(tmp.c_str());
             ss >> tmp;
+			if(isSampledAge){
+				oldtime = atof(tmp.c_str());
+			}
             cout << "   Calibrate Birth-Death Prior on MRCA[" << txn1 << ", " << txn2 << "] --> (offset="
             << youngtime << ")" << endl;
         }
