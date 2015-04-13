@@ -365,7 +365,8 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
         if(printOrigin)
         nodeOut << "\t" << ot->getOriginTime();
     }
-	nodeOut << "\t" << t->getTreeSpeciationProbability();
+	nodeOut << "\t" << 0.0;
+    //nodeOut << "\t" << t->getTreeSpeciationProbability();
 	nodeOut << "\t" << nr->getAverageRate();
 	nodeOut << "\t" << nr->getNumRateGroups();
 	nodeOut << "\t" << nr->getConcenParam();
