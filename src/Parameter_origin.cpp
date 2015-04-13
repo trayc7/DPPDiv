@@ -50,7 +50,6 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob)
     name = "OT";
 	treeTimePrior = mp->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
-//    cout << "OT initialized" << originTime << endl;
     cout << "ob = " << oldBound << endl;
 
 }
@@ -106,7 +105,6 @@ double OriginTime::updateDPPDiv(void){
     Tree *t = modelPtr->getActiveTree();
     
     double oldOT = originTime;
-//    cout << "OT1 " << originTime << endl;
     
     double oldOTProb = getFBDProbOriginTime(t, s);
     
@@ -128,11 +126,8 @@ double OriginTime::updateDPPDiv(void){
             newOT = (2 * maxAge) - newOT;
     }
     originTime = newOT;
-//    cout << "OT2 " << originTime << endl;
     double newOTProb = getFBDProbOriginTime(t, s);
     
-//    cout << "old: OT = " << oldOT << ", old Prob = " << oldOTProb << endl;
-//    cout << "new: OT = " << newOT << ", new Prob = " << newOTProb << endl;
 	return oldOTProb-newOTProb;
 }
 
@@ -143,7 +138,6 @@ double OriginTime::updateFOFBD(void){
 	FossilGraph *fg = modelPtr->getActiveFossilGraph();
     
     double oldOT = originTime;
-    //    cout << "OT1 " << originTime << endl;
 
     double oldLikelihood = getFossilGraphLnLikelihood(fg, s); // c.f. getFBDProbOriginTime
     

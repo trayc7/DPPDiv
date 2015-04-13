@@ -59,14 +59,14 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     extantSampleRate = 1.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
-	parameterization = 2;
+	parameterization = 1;
 	setAllBDFossParams();
     
     // priors on birth death paras
-    deathRatePrior = 2; // 1 = unifrom prior, 2 = exponential prior
-    birthRatePrior = 2;
-    fossilSamplingRatePrior = 2;
-    netDivRatePrior = 2;
+    deathRatePrior = 1; // 1 = unifrom prior, 2 = exponential prior
+    birthRatePrior = 1;
+    fossilSamplingRatePrior = 1;
+    netDivRatePrior = 1;
     deathRateExpRate = 10;
     birthRateExpRate = 10;
     fossilSamplingRateExpRate = 100;
@@ -225,8 +225,8 @@ double Speciation::update(double &oldLnL) {
             }
             else if(parameterization == 3){
               
-                cout << "Pr (speciation) " << t->getTreeSpeciationProbability() << endl;
-                cout << "deathRate " << deathRate << endl;
+                //cout << "Pr (speciation) " << t->getTreeSpeciationProbability() << endl;
+                //cout << "deathRate " << deathRate << endl;
               
                 if(v == 0){
                     updateBirthRate(t); // lambda
