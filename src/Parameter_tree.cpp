@@ -1469,7 +1469,6 @@ double Tree::bdssP0Fxn(double b, double d, double psi, double rho, double t){
 double Tree::bdssP0HatFxn(double b, double d, double rho, double t){
 	
 	double v = 1.0 - ((rho * (b - d)) / ((b*rho) + (((b * (1-rho)) - d) * exp(-(b-d)*t))));
-    cout << "bdssP0HatFxn " << v << endl;
 	return v;
 }
 
