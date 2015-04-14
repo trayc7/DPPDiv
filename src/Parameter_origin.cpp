@@ -48,16 +48,13 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob)
     originTime = sv;
     tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.2;
     name = "OT";
-<<<<<<< HEAD
 	treeTimePrior = mp->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
 //    cout << "OT initialized" << originTime << endl;
     cout << "ob = " << oldBound << endl;
-=======
     otProposal = 2; // 1 = sliding window, 2 = scale move
     otPrior = 2; // 1 = uniform, 2 = exponential
     expRate = 0.005;
->>>>>>> f0287476acfdd6d43b2def99af3326a488da0fb7
 
 }
 
@@ -264,33 +261,7 @@ double OriginTime::lnExpOriginTimePriorRatio(double nOT, double oOT, double offS
     newDiff = ranPtr->lnExponentialPdf(expRate, nOT - offSt);
     oldDiff = ranPtr->lnExponentialPdf(expRate, oOT - offSt);
     return newDiff - oldDiff;
->>>>>>> f0287476acfdd6d43b2def99af3326a488da0fb7
     
-    double newOT;
-    
-    double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
-    newOT = oldOT + u;
-    while(newOT < minAge || newOT > maxAge){
-        if(newOT < minAge)
-            newOT = (2 * minAge) - newOT;
-        if(newOT > maxAge)
-            newOT = (2 * maxAge) - newOT;
-    }
-    originTime = newOT;
-    double newLikelihood = getFossilGraphLnLikelihood(fg, s);
-	double lnR = newLikelihood - oldLikelihood;
-	double r = modelPtr->safeExponentiation(lnR);
-	if(ranPtr->uniformRv() < r){
-		originTime = newOT;
-		currentFossilGraphLnL = newLikelihood;
-	}
-	else{
-		originTime = oldOT;
-		currentFossilGraphLnL = oldLikelihood;
-	}
-	
-    
-    return currentFossilGraphLnL;
 
 
 }
