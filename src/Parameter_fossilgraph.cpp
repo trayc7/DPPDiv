@@ -263,17 +263,9 @@ double FossilGraph::getFossilGraphProb(double lambda, double mu, double fossRate
 			if(o->getFossilIndicatorVar()){
 				double fossAge = o->getFossilAge();
 				double fossPhi = o->getFossilSppTime(); // n.b. treescale removed from this part of the equation
-				double fossPr = log(2.0 * lambda) + log( bdssP0Fxn(lambda, mu, fossRate, sppSampRate, fossAge) );
+				double fossPr = log(2.0 * lambda) + log( bdssP0Fxn(lambda, mu, fossRate, sppSampRate, fossAge) ) + bdssQFxn(lambda, mu, fossRate, sppSampRate, fossAge) - bdssQFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
 				
-				/* rw: when rho = 0, Qhat will be zero
-				- note when rho is zero this fxn sometimes return a +ve likelihood
-				- might be better for rho to be some small non-zero number
-				 */
-				if(sppSampRate != 0){
-					fossPr += fbdQHatFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
-					fossPr -= fbdQHatFxn(lambda, mu, fossRate, sppSampRate, fossAge);
-				}
-				//else do something smart?
+				
 				
 				nprb += fossPr;
 			}
