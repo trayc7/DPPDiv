@@ -41,15 +41,16 @@
 
 using namespace std;
 
+
 OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob) : Parameter(rp, mp) {
     oldBound = ob;
     yngBound = yb;
     originTime = sv;
     tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.2;
     name = "OT";
-    otProposal = 1; // 1 = sliding window, 2 = scale move
-    otPrior = 1 ; // 1 = uniform, 2 = exponential
-    priorOnDiff = true; // 1 = propose changes to the difference between the min and the ot, rather than the age of the ot
+    otProposal = 2; // 1 = sliding window, 2 = scale move
+    otPrior = 2; // 1 = uniform, 2 = exponential
+    moveOnDiff = true; // 1 = propose changes to the difference between the min and the ot, rather than the age of the ot
     expRate = 0.005;
 
 }
@@ -82,52 +83,6 @@ void OriginTime::print(std::ostream & o) const {
     o << endl;
 }
 
-/* original update function
-double OriginTime::update(double &oldLnL) {
-    
-    //Treescale *ts = modelPtr->getActiveTreeScale(); // not required
-    
-    Speciation *s = modelPtr->getActiveSpeciation();
-    
-    Tree *t = modelPtr->getActiveTree();
-    
-    double oldOT = originTime;
-    
-    double oldOTProb = getFBDProbOriginTime(t, s);
-    
-    double minAge = t->getOldestTreeSpeciationTime();
-    double maxAge = oldBound;
-    
-    double limO = oldOT + tuning;
-    double limY = oldOT - tuning;
-    
-    double newOT;
-    
-    double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
-    newOT = oldOT + u;
-   
-    while(newOT < minAge || newOT > maxAge){
-        if(newOT < minAge)
-            newOT = (2 * minAge) - newOT;
-        if(newOT > maxAge)
-            newOT = (2 * maxAge) - newOT;
-    }
-    
-    originTime = newOT;
-    double newOTProb = getFBDProbOriginTime(t, s);
-    
-    // Need to double check this
-    
-    modelPtr->setLnLGood(true);
-    modelPtr->setMyCurrLnl(oldLnL);
-    
-    double myPrR = oldOTProb-newOTProb;
-    
-    return myPrR;
-    
-}
- */
-
 
 /* modified update function */
 double OriginTime::update(double &oldLnL) {
@@ -148,11 +103,11 @@ double OriginTime::update(double &oldLnL) {
     double newOT;
     double lnProposalRatio = 0.0;
     
-    if(priorOnDiff){
+    if(moveOnDiff){
         /* sliding window */
         double oldDiff = oldOT - minAge;
         double newDiff;
-        double minDiff = 0;
+        double minDiff = 0.0001;
         double maxDiff = oldBound - minAge;
         
         if (otProposal == 1){
@@ -181,7 +136,7 @@ double OriginTime::update(double &oldLnL) {
             do{
                 if(newDiff < minDiff)
                     newDiff = minDiff * minDiff / newDiff;
-                else if(newOT > maxAge)
+                else if(newDiff > maxDiff)
                     newDiff = maxDiff * maxDiff / newDiff;
                 else
                     validOT = true;
@@ -231,9 +186,7 @@ double OriginTime::update(double &oldLnL) {
     
     originTime = newOT;
     double newOTProb = getFBDProbOriginTime(t, s);
- 
-    // Need to double check this
- 
+  
     modelPtr->setLnLGood(true);
     modelPtr->setMyCurrLnl(oldLnL);
     
@@ -243,10 +196,9 @@ double OriginTime::update(double &oldLnL) {
     if (otPrior == 1)
         myPrR += lnProposalRatio;
     
-    /* exponential prior */
+    /* exponential prior on ot */
     else if (otPrior == 2)
         myPrR += lnProposalRatio + lnExpOriginTimePriorRatio(newOT,oldOT,minAge,expRate);
-        //myPrR += lnProposalRatio + (expRate * ( (oldOT-minAge) - (newOT-minAge) ));
  
     return myPrR;
  
