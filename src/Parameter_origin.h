@@ -64,6 +64,7 @@ private:
     int                 otProposal;
     int                 otPrior;
     double              expRate;
+    bool                priorOnDiff;
     
 };
 
