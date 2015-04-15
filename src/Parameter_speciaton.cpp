@@ -59,11 +59,11 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     extantSampleRate = 1.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
-	parameterization = 1;
+	parameterization = 4;
 	setAllBDFossParams();
     
     // priors on birth death paras
-    deathRatePrior = 1; // 1 = unifrom prior, 2 = exponential prior
+    deathRatePrior = 2; // 1 = unifrom prior, 2 = exponential prior
     birthRatePrior = 1;
     fossilSamplingRatePrior = 1;
     netDivRatePrior = 1;
@@ -223,13 +223,25 @@ double Speciation::update(double &oldLnL) {
                 else
                     updatePsiRate(t); // psi
             }
+            //rw: this parameterization is currently problematic
+            //because it allows mu >> lambda
             else if(parameterization == 3){
-              
-                //cout << "Pr (speciation) " << t->getTreeSpeciationProbability() << endl;
-                //cout << "deathRate " << deathRate << endl;
               
                 if(v == 0){
                     updateBirthRate(t); // lambda
+                }
+                else if(v == 1){
+                    updateDeathRate(t); // mu
+                    
+                }
+                else {
+                    updatePsiRate(t); // psi
+                }
+            }
+            else if(parameterization == 4){
+                
+                if(v == 0){
+                    updateNetDivRate(t); // d
                 }
                 else if(v == 1){
                     updateDeathRate(t); // mu
@@ -800,4 +812,9 @@ void Speciation::setAllBDFossParams(){
 		relativeDeath = deathRate / birthRate;
 		probSpeciationS = fossilRate / (deathRate + fossilRate);
 	}
+    else if(parameterization == 4){
+        birthRate = netDiversificaton + deathRate;
+        relativeDeath = deathRate / birthRate;
+        probSpeciationS = fossilRate / (deathRate + fossilRate);
+    }
 }
