@@ -2219,7 +2219,7 @@ double Tree::getTreeCBDNodePriorProb() {
 		return nprb;
 	}
 	else if(treeTimePrior == 7){ // FBD conditioned on the root
-		Speciation *s = modelPtr->getActiveSpeciation();
+        Speciation *s = modelPtr->getActiveSpeciation();
 		s->setAllBDFossParams();
 		double lambda = s->getBDSSSpeciationRateLambda();	
 		double mu = s->getBDSSExtinctionRateMu();			
@@ -2418,23 +2418,29 @@ double Tree::getTreeAncCalBDSSTreeNodePriorProb(double lambda, double mu, double
 		if(f->getFossilIndicatorVar()){
 			double fossAge = f->getFossilAge();
 			double fossPhi = f->getFossilSppTime() * treeScale;
-			double fossPr = log(2.0 * lambda) + bdssQFxn(lambda, mu, fossRate, sppSampRate, fossAge);
+            double fossPr = log(2.0 * lambda) + bdssQFxn(lambda, mu, fossRate, sppSampRate, fossAge);
 			fossPr += log( bdssP0Fxn(lambda, mu, fossRate, sppSampRate, fossAge) );
 			fossPr -= bdssQFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
 			nprb += fossPr;
 		}
 	}
-	
+
 	return nprb;
+    
 }
 
 
 double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, double fossRate, double sppSampRate) {
     OriginTime *ot = modelPtr->getActiveOriginTime();
     originTime = ot->getOriginTime();
-
+    
+//    cout << "lambda " << setprecision(15) << lambda << endl;
+//    cout << "mu " << mu << endl;
+//    cout << "psi " << fossRate << endl;
+//    cout << "sppSampRate " << sppSampRate << endl;
+    
 	double nprb = -(log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, originTime)));
-	
+    
 	for(int i=0; i<numNodes; i++){
 		Node *p = &nodes[i];
 		if(!p->getIsLeaf()){
@@ -2446,6 +2452,7 @@ double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, do
 	for(int i=0; i<fossSpecimens.size(); i++){
 		Fossil *f = fossSpecimens[i];
 		nprb += log(fossRate * f->getFossilFossBrGamma() );
+        
 		if(f->getFossilIndicatorVar()){
 			double fossAge = f->getFossilAge();
 			double fossPhi = f->getFossilSppTime() * treeScale;
@@ -2455,8 +2462,8 @@ double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, do
 			nprb += fossPr;
 		}
 	}
-    //cout << "FBDS prob = " << nprb << endl;
-	return nprb;
+
+    return nprb;
 }
 
 
@@ -2766,8 +2773,7 @@ int Tree::countDecLinsTimeIntersect(Node *p, double t, double ancAge){
 		n += countDecLinsTimeIntersect(p->getLft(), t, myAge);
 		n += countDecLinsTimeIntersect(p->getRht(), t, myAge);
 	}
-	
-	
+
 	return n;
 }
 

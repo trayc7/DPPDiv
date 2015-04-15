@@ -97,17 +97,29 @@ class Speciation : public Parameter {
 		double				updateRelDeathRt(Tree *t);
 		double				updateNetDivRate(Tree *t);
 		double				updateBDSSFossilProbS(Tree *t);
-		double				updatePsiRate(Tree *t); //rw: function never used?
+		double				updatePsiRate(Tree *t);
+        double				updateDeathRate(Tree *t);
+        double				updateBirthRate(Tree *t);
 		
 		// updates for fossil-graph FBD
 		double				updateRelDeathRt(FossilGraph *fg);
         double				updateNetDivRate(FossilGraph *fg);
         double				updateBDSSFossilProbS(FossilGraph *fg);
-        double				updateBDSSSampleProbRho(FossilGraph *fg); //rw: not used yet
+        double				updateBDSSSampleProbRho(FossilGraph *fg);
         double				updatePsiRate(FossilGraph *fg); 
         double				updateDeathRate(FossilGraph *fg);
         double				updateBirthRate(FossilGraph *fg);
-
+    
+        // alternative priors options
+        int                 deathRatePrior;
+        double              deathRateExpRate;
+        int                 birthRatePrior;
+        double              birthRateExpRate;
+        int                 fossilSamplingRatePrior;
+        double              fossilSamplingRateExpRate;
+        int                 netDivRatePrior;
+        double              netDivRateExpRate;
+        double              getExpPriorRatio(double oldVal, double newVal, double rate, double prior);
 
 };
 
