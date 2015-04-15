@@ -59,11 +59,11 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     extantSampleRate = 1.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
-	parameterization = 4;
+	parameterization = 1;
 	setAllBDFossParams();
     
     // priors on birth death paras
-    deathRatePrior = 2; // 1 = unifrom prior, 2 = exponential prior
+    deathRatePrior = 1; // 1 = unifrom prior, 2 = exponential prior
     birthRatePrior = 1;
     fossilSamplingRatePrior = 1;
     netDivRatePrior = 1;
@@ -180,6 +180,17 @@ double Speciation::update(double &oldLnL) {
 			else
 				updatePsiRate(fg); // psi
 		}
+        else if(parameterization == 4){
+            if(v == 0){
+                updateNetDivRate(fg); // d
+            }
+            else if(v == 1){
+                updateDeathRate(fg); // mu
+            }
+            else {
+                updatePsiRate(fg); // psi
+            }
+        }
 		return currentFossilGraphLnL;
 	}
 	else{
@@ -251,7 +262,6 @@ double Speciation::update(double &oldLnL) {
                     updatePsiRate(t); // psi
                 }
             }
-            
             modelPtr->setLnLGood(true);
 			modelPtr->setMyCurrLnl(oldLnL);
 			return 0.0;
