@@ -61,7 +61,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	currentFossilGraphLnL = 0.0;
 	parameterization = 1;
 	if(treeTimePrior == 9)
-		parameterization = 3;
+		parameterization = 4;
 	setAllBDFossParams();
     
     // priors on birth death paras

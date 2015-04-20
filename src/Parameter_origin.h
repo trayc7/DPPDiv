@@ -73,6 +73,7 @@ private:
 	double				updateDPPDiv(void);
     int                 otProposal;
     int                 otPrior;
+    bool                moveOnDiff;
     double              expRate;
     
 };

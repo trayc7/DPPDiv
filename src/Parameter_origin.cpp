@@ -48,13 +48,14 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob)
     originTime = sv;
     tuning = ((yngBound + (sv * 1.2)) * 0.5) * 0.2;
     name = "OT";
-	treeTimePrior = mp->getTreeTimePriorNum();
-	currentFossilGraphLnL = 0.0;
+    treeTimePrior = mp->getTreeTimePriorNum();
+    currentFossilGraphLnL = 0.0;
     cout << "ob = " << oldBound << endl;
     otProposal = 2; // 1 = sliding window, 2 = scale move
     otPrior = 2; // 1 = uniform, 2 = exponential
+    moveOnDiff = true; // 1 = propose changes to the difference between the min and the ot, rather than the age of the ot
     expRate = 0.005;
-
+    
 }
 
 OriginTime::~OriginTime(void) {
@@ -75,7 +76,7 @@ void OriginTime::clone(const OriginTime &c) {
     yngBound = c.yngBound;
     isBounded = c.isBounded;
     tuning = c.tuning;
-	treeTimePrior = c.treeTimePrior;
+    treeTimePrior = c.treeTimePrior;
     name = "OT";
 }
 
@@ -89,22 +90,22 @@ void OriginTime::print(std::ostream & o) const {
 double OriginTime::update(double &oldLnL) {
     
     double myPrR = 0.0;
-	if(treeTimePrior < 9){
-		myPrR = updateDPPDiv();
-		modelPtr->setLnLGood(true);
-		modelPtr->setMyCurrLnl(oldLnL);
-	}
-	else
-		myPrR = updateFOFBD();
-   
+    if(treeTimePrior < 9){
+        myPrR = updateDPPDiv();
+        modelPtr->setLnLGood(true);
+        modelPtr->setMyCurrLnl(oldLnL);
+    }
+    else
+        myPrR = updateFOFBD();
+    
     return myPrR;
     
 }
 
+/* modified update function - needs to be added to updateDPPDiv & updateFOFBD */
 double OriginTime::updateDPPDiv(void){
     
     Speciation *s = modelPtr->getActiveSpeciation();
-    
     Tree *t = modelPtr->getActiveTree();
     
     double oldOT = originTime;
@@ -114,57 +115,217 @@ double OriginTime::updateDPPDiv(void){
     double minAge = t->getOldestTreeSpeciationTime();
     double maxAge = oldBound;
     
-    double limO = oldOT + tuning;
-    double limY = oldOT - tuning;
-    
     double newOT;
+    double lnProposalRatio = 0.0;
     
-    double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
-    newOT = oldOT + u;
-   
-    while(newOT < minAge || newOT > maxAge){
-        if(newOT < minAge)
-            newOT = (2 * minAge) - newOT;
-        if(newOT > maxAge)
-            newOT = (2 * maxAge) - newOT;
+    if(moveOnDiff){
+        /* sliding window */
+        double oldDiff = oldOT - minAge;
+        double newDiff;
+        double minDiff = 0.0001;
+        double maxDiff = oldBound - minAge;
+        
+        if (otProposal == 1){
+            double limO = oldDiff + tuning;
+            double limY = oldDiff - tuning;
+            
+            double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
+            newDiff = oldDiff + u;
+            
+            while(newDiff < minDiff || newDiff > maxDiff){
+                if(newDiff < minDiff)
+                    newDiff = (2 * minDiff) - newDiff;
+                if(newDiff > maxDiff)
+                    newDiff = (2 * maxDiff) - newDiff;
+            }
+            newOT = minAge + newDiff;
+        }
+        /* scale move */
+        else if (otProposal == 2){
+            double rv = ranPtr->uniformRv();
+            double c = tuning * (rv-0.5);
+            newDiff = oldDiff * exp(c);
+            //lnProposalRatio = c;
+            
+            bool validOT = false;
+            do{
+                if(newDiff < minDiff)
+                    newDiff = minDiff * minDiff / newDiff;
+                else if(newDiff > maxDiff)
+                    newDiff = maxDiff * maxDiff / newDiff;
+                else
+                    validOT = true;
+            } while(!validOT);
+            
+            newOT = minAge + newDiff;
+            
+            lnProposalRatio = (log(newDiff) - log(oldDiff));
+        }
+    }
+    else {
+        /* sliding window */
+        if (otProposal == 1){
+            double limO = oldOT + tuning;
+            double limY = oldOT - tuning;
+            
+            double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
+            newOT = oldOT + u;
+            
+            while(newOT < minAge || newOT > maxAge){
+                if(newOT < minAge)
+                    newOT = (2 * minAge) - newOT;
+                if(newOT > maxAge)
+                    newOT = (2 * maxAge) - newOT;
+            }
+        }
+        /* scale move */
+        else if (otProposal == 2){
+            double rv = ranPtr->uniformRv();
+            double c = tuning * (rv-0.5);
+            newOT = oldOT * exp(c);
+            //lnProposalRatio = c;
+            
+            bool validOT = false;
+            do{
+                if(newOT < minAge)
+                    newOT = minAge * minAge / newOT;
+                else if(newOT > maxAge)
+                    newOT = maxAge * maxAge / newOT;
+                else
+                    validOT = true;
+            } while(!validOT);
+            
+            lnProposalRatio = (log(newOT) - log(oldOT));
+        }
     }
     
     originTime = newOT;
     double newOTProb = getFBDProbOriginTime(t, s);
     
-	return oldOTProb-newOTProb;
+    double myPrR = oldOTProb-newOTProb;
+    
+    /* uniform prior on ot*/
+    if (otPrior == 1)
+        myPrR += lnProposalRatio;
+    
+    /* exponential prior on ot */
+    else if (otPrior == 2)
+        myPrR += lnProposalRatio + lnExpOriginTimePriorRatio(newOT,oldOT,minAge,expRate);
+    
+    return myPrR;
+    
 }
 
 double OriginTime::updateFOFBD(void){
-	
+    
     Speciation *s = modelPtr->getActiveSpeciation();
-	FossilGraph *fg = modelPtr->getActiveFossilGraph();
+    FossilGraph *fg = modelPtr->getActiveFossilGraph();
     
     double oldOT = originTime;
-
+    
     double oldLikelihood = getFossilGraphLnLikelihood(fg, s); // c.f. getFBDProbOriginTime
     
     double minAge = fg->getOldestFossilGraphSpeciationTime(); // getOldestTreeSpeciationTime
-
     double maxAge = oldBound;
     
-    double limO = oldOT + tuning;
-    double limY = oldOT - tuning;
-    
     double newOT;
+    double lnProposalRatio = 0.0;
     
-    double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
-    newOT = oldOT + u;
-    while(newOT < minAge || newOT > maxAge){
-        if(newOT < minAge)
-            newOT = (2 * minAge) - newOT;
-        if(newOT > maxAge)
-            newOT = (2 * maxAge) - newOT;
+    
+    if(moveOnDiff){
+        /* sliding window */
+        double oldDiff = oldOT - minAge;
+        double newDiff;
+        double minDiff = 0.0001;
+        double maxDiff = oldBound - minAge;
+        
+        if (otProposal == 1){
+            double limO = oldDiff + tuning;
+            double limY = oldDiff - tuning;
+            
+            double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
+            newDiff = oldDiff + u;
+            
+            while(newDiff < minDiff || newDiff > maxDiff){
+                if(newDiff < minDiff)
+                    newDiff = (2 * minDiff) - newDiff;
+                if(newDiff > maxDiff)
+                    newDiff = (2 * maxDiff) - newDiff;
+            }
+            newOT = minAge + newDiff;
+        }
+        /* scale move */
+        else if (otProposal == 2){
+            double rv = ranPtr->uniformRv();
+            double c = tuning * (rv-0.5);
+            newDiff = oldDiff * exp(c);
+            //lnProposalRatio = c;
+            
+            bool validOT = false;
+            do{
+                if(newDiff < minDiff)
+                    newDiff = minDiff * minDiff / newDiff;
+                else if(newDiff > maxDiff)
+                    newDiff = maxDiff * maxDiff / newDiff;
+                else
+                    validOT = true;
+            } while(!validOT);
+            
+            newOT = minAge + newDiff;
+            
+            lnProposalRatio = (log(newDiff) - log(oldDiff));
+        }
     }
+    else {
+        /* sliding window */
+        if (otProposal == 1){
+            double limO = oldOT + tuning;
+            double limY = oldOT - tuning;
+
+            double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
+            newOT = oldOT + u;
+            while(newOT < minAge || newOT > maxAge){
+                if(newOT < minAge)
+                    newOT = (2 * minAge) - newOT;
+                if(newOT > maxAge)
+                    newOT = (2 * maxAge) - newOT;
+            }
+        }
+        /* scale move */
+        else if (otProposal == 2){
+            double rv = ranPtr->uniformRv();
+            double c = tuning * (rv-0.5);
+            newOT = oldOT * exp(c);
+            //lnProposalRatio = c;
+            
+            bool validOT = false;
+            do{
+                if(newOT < minAge)
+                    newOT = minAge * minAge / newOT;
+                else if(newOT > maxAge)
+                    newOT = maxAge * maxAge / newOT;
+                else
+                    validOT = true;
+            } while(!validOT);
+            
+            lnProposalRatio = (log(newOT) - log(oldOT));
+        }
+    }
+
     originTime = newOT;
     double newLikelihood = getFossilGraphLnLikelihood(fg, s);
-    double lnR = newLikelihood - oldLikelihood;
-    double r = modelPtr->safeExponentiation(lnR);
+
+    double myPrR = newLikelihood - oldLikelihood;
+    
+    /* uniform prior on ot*/
+    if (otPrior == 1)
+        myPrR += lnProposalRatio;
+    
+    /* exponential prior on ot */
+    else if (otPrior == 2)
+        myPrR += lnProposalRatio + lnExpOriginTimePriorRatio(newOT,oldOT,minAge,expRate);
+    
+    double r = modelPtr->safeExponentiation(myPrR);
     if(ranPtr->uniformRv() < r){
         originTime = newOT;
         currentFossilGraphLnL = newLikelihood;
@@ -178,83 +339,6 @@ double OriginTime::updateFOFBD(void){
     
 }
 
-/* modified update function - needs to be added to updateDPPDiv & updateFOFBD */
-//double OriginTime::update(double &oldLnL) {
-// 
-//    //Treescale *ts = modelPtr->getActiveTreeScale();
-// 
-//    Speciation *s = modelPtr->getActiveSpeciation();
-// 
-//    Tree *t = modelPtr->getActiveTree();
-// 
-//    double oldOT = originTime;
-// 
-//    double oldOTProb = getFBDProbOriginTime(t, s);
-// 
-//    double minAge = t->getOldestTreeSpeciationTime();
-//    double maxAge = oldBound;
-// 
-//    double newOT;
-//    double lnProposalRatio = 0.0;
-//    
-//    /* sliding window */
-//    if (otProposal == 1){
-//        double limO = oldOT + tuning;
-//        double limY = oldOT - tuning;
-//     
-//        double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
-//        newOT = oldOT + u;
-//    
-//        while(newOT < minAge || newOT > maxAge){
-//            if(newOT < minAge)
-//                newOT = (2 * minAge) - newOT;
-//            if(newOT > maxAge)
-//                newOT = (2 * maxAge) - newOT;
-//        }
-//    }
-//    /* scale move */
-//    else if (otProposal == 2){
-//        double rv = ranPtr->uniformRv();
-//        double c = tuning * (rv-0.5);
-//        newOT = oldOT * exp(c);
-//        //lnProposalRatio = c;
-//
-//        bool validOT = false;
-//        do{
-//            if(newOT < minAge)
-//                newOT = minAge * minAge / newOT;
-//             else if(newOT > maxAge)
-//                 newOT = maxAge * maxAge / newOT;
-//             else
-//                 validOT = true;
-//         } while(!validOT);
-//        
-//        lnProposalRatio = (log(newOT) - log(oldOT));
-//    }
-//    
-//    originTime = newOT;
-//    double newOTProb = getFBDProbOriginTime(t, s);
-// 
-//    // Need to double check this
-// 
-//    modelPtr->setLnLGood(true);
-//    modelPtr->setMyCurrLnl(oldLnL);
-//    
-//    double myPrR = oldOTProb-newOTProb;
-// 
-//    /* uniform prior on ot*/
-//    if (otPrior == 1)
-//        myPrR += lnProposalRatio;
-//    
-//    /* exponential prior */
-//    else if (otPrior == 2)
-//        myPrR += lnProposalRatio + lnExpOriginTimePriorRatio(newOT,oldOT,minAge,expRate);
-//        //myPrR += lnProposalRatio + (expRate * ( (oldOT-minAge) - (newOT-minAge) ));
-// 
-//    return myPrR;
-// 
-//}
-
 double OriginTime::lnExpOriginTimePriorRatio(double nOT, double oOT, double offSt, double expRate) {
     
     /* Prior ratio for offset exponential */
@@ -264,13 +348,11 @@ double OriginTime::lnExpOriginTimePriorRatio(double nOT, double oOT, double offS
     newDiff = ranPtr->lnExponentialPdf(expRate, nOT - offSt);
     oldDiff = ranPtr->lnExponentialPdf(expRate, oOT - offSt);
     return newDiff - oldDiff;
-    
-
 
 }
 
 //double OriginTime::doAScaleMove(double currentV, double lb, double hb, double rv){
-//    
+//
 //    double tuningV =
 //    double c = tv * (rv - 0.5);
 //    double newcv = cv * exp(c);
@@ -298,7 +380,7 @@ double OriginTime::getFBDProbOriginTime(Tree *t, Speciation *s){
     double rho = s->getBDSSSppSampRateRho();
     
     double phat = t->bdssP0HatFxn(lambda, mu, rho, originTime);
-
+    
     double otPrb = log(lambda) + log(1-phat);
     return otPrb;
 }
@@ -352,9 +434,5 @@ double OriginTime::getLnTreeProb(Tree *t) {
     
     return 0.0;
 }
-
-
-
-
 
 
