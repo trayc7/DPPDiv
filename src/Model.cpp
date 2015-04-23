@@ -220,8 +220,8 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
     
     updateProb.clear();
     updateProb.push_back(0.5); // 1 origin time
-    updateProb.push_back(0.5); // 2 speciation
-    updateProb.push_back(0.5); // 3 fossil graph
+    updateProb.push_back(1.0); // 2 speciation
+    updateProb.push_back(1.0); // 3 fossil graph
     double sum = 0.0;
     for (unsigned i=0; i<updateProb.size(); i++)
         sum += updateProb[i];
