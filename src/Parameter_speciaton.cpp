@@ -416,7 +416,7 @@ double Speciation::updateNetDivRate(FossilGraph *fg) {
     double oldND = netDiversificaton;
     double newND;
     double tuning = log(2.0);
-    double minV = 0.0001;
+    double minV = -1000.0;
     double c = getNewValScaleMv(newND, oldND, minV, maxdivV, tuning);
     netDiversificaton = newND;
     lpr = c;
@@ -435,6 +435,33 @@ double Speciation::updateNetDivRate(FossilGraph *fg) {
         currentFossilGraphLnL = oldfgprob;
     }
     return 0.0;
+}
+
+double Speciation::updateRealValNetDiv(FossilGraph *fg) {
+    
+	// a move that allows d to be a negative value
+    double oldfgprob = currentFossilGraphLnL;
+    double oldND = netDiversificaton;
+    double window = 0.2;
+    double minV = -1000.0;
+    double newND = getNewValSWindoMv(oldND, minV, maxdivV, window);
+    netDiversificaton = newND;
+    double newfgprob = getLnFossilGraphProb(fg);
+    double lnPriorRat = getExpPriorRatio(oldND, newND, netDivRateExpRate, netDivRatePrior);
+    double lnLikeRat = (newfgprob - oldfgprob);
+    double lnR = lnLikeRat + lnPriorRat;
+    double r = modelPtr->safeExponentiation(lnR);
+    if(ranPtr->uniformRv() < r){
+        setAllBDFossParams();
+        currentFossilGraphLnL = newfgprob;
+    }
+    else{
+        netDiversificaton = oldND;
+        setAllBDFossParams();
+        currentFossilGraphLnL = oldfgprob;
+    }
+	
+	return 0.0;
 }
 
 

@@ -104,6 +104,7 @@ class Speciation : public Parameter {
 		// updates for fossil-graph FBD
 		double				updateRelDeathRt(FossilGraph *fg);
         double				updateNetDivRate(FossilGraph *fg);
+		double				updateRealValNetDiv(FossilGraph *fg);
         double				updateBDSSFossilProbS(FossilGraph *fg);
         double				updateBDSSSampleProbRho(FossilGraph *fg);
         double				updatePsiRate(FossilGraph *fg); 
