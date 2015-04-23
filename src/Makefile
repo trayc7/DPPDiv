@@ -72,7 +72,7 @@ Model_likelihood-seq-avx.o: Model_likelihood.cpp
 Parameter.o: Parameter.cpp
 Parameter_basefreq.o: Parameter_basefreq.cpp
 Parameter_exchangeability.o: Parameter_exchangeability.cpp
-Parameter_exchangeability.o: Parameter_fossilgraph.cpp
+Parameter_fossilgraph.o: Parameter_fossilgraph.cpp
 Parameter_origin.o: Parameter_origin.cpp
 Parameter_rate.o: Parameter_rate.cpp
 Parameter_shape.o: Parameter_shape.cpp
