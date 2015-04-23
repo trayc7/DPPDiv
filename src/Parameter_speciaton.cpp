@@ -731,12 +731,8 @@ double Speciation::updateBirthRate(Tree *t) {
 }
 
 double Speciation::getExpPriorRatio(double oldVal, double newVal, double rate, double prior) {
-    double nv = newVal;
-    double ov = oldVal;
-    double expR = rate;
-    double dist = prior;
-    if (dist == 2)
-        return (ranPtr->lnExponentialPdf(expR, nv)) - (ranPtr->lnExponentialPdf(expR, ov));
+    if (prior == 2)
+        return (ranPtr->lnExponentialPdf(rate, newVal)) - (ranPtr->lnExponentialPdf(rate, oldVal));
     else
         return 0.0;
 }
