@@ -282,8 +282,10 @@ double FossilGraph::bdssP0Fxn(double b, double d, double psi, double rho, double
     
     double c1Val = bdssC1Fxn(b,d,psi);
     double c2Val = bdssC2Fxn(b,d,psi,rho);
+	
+	double expC1MinusC2 = exp(-c1Val * t) * (1.0 - c2Val);
     
-    double eCfrac = (exp(-c1Val * t) * (1.0 - c2Val) - (1.0 + c2Val)) / (exp(-c1Val * t) * (1.0 - c2Val) + (1.0 + c2Val));
+    double eCfrac = (expC1MinusC2 - (1.0 + c2Val)) / (expC1MinusC2 + (1.0 + c2Val));
     double v = 1.0 + ((-(b - d - psi)) + (c1Val * eCfrac)) / (2.0 * b);
     
     return v;
