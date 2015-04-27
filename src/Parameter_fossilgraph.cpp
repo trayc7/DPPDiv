@@ -264,7 +264,9 @@ double FossilGraph::getFossilGraphProb(double lambda, double mu, double fossRate
 			if(o->getFossilIndicatorVar()){
 				double fossAge = o->getFossilAge();
 				double fossPhi = o->getFossilSppTime(); // n.b. treescale removed from this part of the equation
-				double fossPr = log(2.0 * lambda) + log( bdssP0Fxn(lambda, mu, fossRate, sppSampRate, fossAge) ) + bdssQFxn(lambda, mu, fossRate, sppSampRate, fossAge) - bdssQFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
+				double fossPr = log(2.0 * lambda) + log( bdssP0Fxn(lambda, mu, fossRate, sppSampRate, fossAge) );
+				fossPr += bdssQFxn(lambda, mu, fossRate, sppSampRate, fossAge);
+				fossPr -= bdssQFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
 				
 				
 				
