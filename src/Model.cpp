@@ -219,15 +219,17 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         parms[0][i]->print(std::cout);
     
     updateProb.clear();
-    updateProb.push_back(0.5); // 1 origin time
-    updateProb.push_back(1.0); // 2 speciation
-    updateProb.push_back(1.0); // 3 fossil graph
+    updateProb.push_back(0.0); // 1 origin time
+    updateProb.push_back(0.0); // 2 speciation
+    updateProb.push_back(4.0); // 3 fossil graph
     double sum = 0.0;
     for (unsigned i=0; i<updateProb.size(); i++)
         sum += updateProb[i];
     for (unsigned i=0; i<updateProb.size(); i++)
         updateProb[i] /= sum;
     
+	totalUpdateWeights = (int)sum;
+	
     myCurLnL = this->getActiveFossilGraph()->getActiveFossilGraphProb();
     cout << "lnL = " << myCurLnL << endl;
 

@@ -203,6 +203,8 @@ void Mcmc::runFOFBDChain() {
     ofstream oOut(occFile.c_str(), ios::out);
     ofstream mxOut; //?
     ofstream dOut; //?
+	
+	int numMoves = modelPtr->getTotalUpdateWeights();
     
     if(writeInfoFile)
         dOut.open(dFile.c_str(), ios::out);
@@ -226,7 +228,7 @@ void Mcmc::runFOFBDChain() {
         double prevlnl = oldLnLikelihood;
 		double newLnLikelihood = 0.0;
 		
-		for(int it=0; it<6; it++){
+		for(int it=0; it<numMoves; it++){
 			modelPtr->switchActiveParm();
 			Parameter *parm = modelPtr->pickParmToUpdate();
 			

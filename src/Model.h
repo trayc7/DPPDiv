@@ -109,6 +109,8 @@ class Model {
 		void							setFixTestRun(bool b) { fixTestRun = b; }
 		bool							getFixTestRun(void) { return fixTestRun; }
 		bool							getOriginCondition(void) { return conditionOnOrigin; }
+		int								getTotalUpdateWeights(void){ return totalUpdateWeights; }
+
 	private:
 		void							initializeConditionalLikelihoods(void);
 		void							initializeTransitionProbabilityMatrices(void);
@@ -167,6 +169,8 @@ class Model {
 		bool							estAbsRts;
 		bool							fixTestRun;
         bool                            conditionOnOrigin;
+		
+		int								totalUpdateWeights;
 };
 
 #endif
