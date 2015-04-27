@@ -86,6 +86,7 @@ class Speciation : public Parameter {
 		
 		double				getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv);
 		double				getNewValSWindoMv(double ov, double vmin, double vmax, double tv);
+		double				getNewValUpDownScaleMv(double &nv1, double ov1, double &nv2, double ov2, double sf);
 
 
 		
@@ -110,6 +111,7 @@ class Speciation : public Parameter {
         double				updatePsiRate(FossilGraph *fg); 
         double				updateDeathRate(FossilGraph *fg);
         double				updateBirthRate(FossilGraph *fg);
+		double				updateBirthAndDeath(FossilGraph *fg);
     
         // alternative priors options
         int                 deathRatePrior;
