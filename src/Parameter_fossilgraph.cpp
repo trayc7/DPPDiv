@@ -113,7 +113,7 @@ double FossilGraph::update(double &oldLnL){
 			updateRJMoveAddDelEdge();
 		}
 	}
-	getActiveFossilGraphProb();
+//	getActiveFossilGraphProb(); // maybe delete
     return currentFossilGraphLnL;
 }
 
@@ -176,7 +176,7 @@ void FossilGraph::initializeOccurrenceSpecVariables(){
             else {
                 double yf = o->getFossilAge();
                 double zf = ranPtr->uniformRv(yf,originTime);
-                o->setFossilSppTime(zf);//rw: this was the problem, setFossilFossBrGamma used instead of setFossilSppTime
+                o->setFossilSppTime(zf);
                 o->setFossilIndicatorVar(1);
                 o->setFossilFossBrGamma(0);
             }
@@ -233,7 +233,7 @@ double FossilGraph::getActiveFossilGraphProb(){
     double mu = s->getBDSSExtinctionRateMu();
     double fossRate = s->getBDSSFossilSampRatePsi();
     double sppSampRate = s->getBDSSSppSampRateRho();
-    recountOccurrenceAttachNums();
+    recountOccurrenceAttachNums(); // debug
     nprb = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
     return nprb;
     
@@ -293,7 +293,7 @@ double FossilGraph::bdssP0Fxn(double b, double d, double psi, double rho, double
 
 double FossilGraph::fbdQHatFxn(double b, double d, double psi, double rho, double t){
     
-    double v = log(4.0 * rho);
+    double v = log(4.0);
     v -= bdssQFxn(b,d,psi,rho,t);
     return v;
 }
@@ -384,6 +384,9 @@ double FossilGraph::updateOccurrenceAttachmentTimesPhi() {
     double mu = s->getBDSSExtinctionRateMu();
     double fossRate = s->getBDSSFossilSampRatePsi();
     double sppSampRate = s->getBDSSSppSampRateRho();
+	
+	// maybe unnecessary here for debugging
+	getFossilGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
     
     vector<int> rndOccIDs;
     for(int i=0; i<occurrenceSpecimens.size(); i++)
@@ -396,7 +399,6 @@ double FossilGraph::updateOccurrenceAttachmentTimesPhi() {
             double fossDepth = o->getFossilAge();
             
             double oldPhi = o->getFossilSppTime(); // * treeScale;
-            double oldSumLogGammas = getSumLogAllAttachNums(); //??
 			
 			double oldLike = currentFossilGraphLnL;
             
@@ -428,26 +430,15 @@ double FossilGraph::updateOccurrenceAttachmentTimesPhi() {
             
             o->setFossilSppTime(newPhi);
             
-            double newSumLogGammas = getSumLogAllAttachNums();
-            
-            double lnLikeRat = 0.0;
-            double v1 = newSumLogGammas;
-            double v2 = bdssQFxn(lambda, mu, fossRate, sppSampRate, newPhi);
-            double v3 = bdssQFxn(lambda, mu, fossRate, sppSampRate, oldPhi);
-            double v4 = oldSumLogGammas;
-            lnLikeRat = (v1 - v2) - (v4 - v3);
-			
+			recountOccurrenceAttachNums();
 			double newLike = getFossilGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
 			double lnLikeRat2 = newLike - oldLike;
             
             double r = modelPtr->safeExponentiation(lnLikeRat2 + c);
             
-            if(ranPtr->uniformRv() < r){ 
-                o->setFossilSppTime(newPhi);
-				currentFossilGraphLnL = newLike;
-            }
-            else{
+            if(ranPtr->uniformRv() > r){
                 o->setFossilSppTime(oldPhi);
+				recountOccurrenceAttachNums();
 				currentFossilGraphLnL = oldLike;
             }
         }
@@ -526,7 +517,6 @@ void FossilGraph::doAddEdgeMove(int k){
     
     int mvFoss = pickRandAncestorFossil();
     Occurrence *o = occurrenceSpecimens[mvFoss]; // rand fossil
-//    double oldSumLogGammas = getSumLogAllAttachNums();
 	
     double alA = 1.0;
     if(kN == 0) // account for terminal
@@ -547,19 +537,8 @@ void FossilGraph::doAddEdgeMove(int k){
     o->setFossilSppTime(newPhi);
     o->setFossilIndicatorVar(1);
     
-    /* the following needs heavy checked */
-    
-//    double newSumLogGammas = getSumLogAllAttachNums();
-//    
-//    double v1 = log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, yf));
-//    double v2 = bdssQFxn(lambda, mu, fossRate, sppSampRate, yf);
-//    double v3 = bdssQFxn(lambda, mu, fossRate, sppSampRate, newPhi);
-//    
-//    
-//    lnPriorR = (numFossils - kN) * log(lambda);
-//    lnPriorR += (newSumLogGammas + log(2.0) + v1 + v2 - v3);
-//    lnPriorR -= (((numFossils - k) * log(lambda)) + oldSumLogGammas);
-    
+
+	recountOccurrenceAttachNums();
 	double newLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate, cf);
 	double lnLikeR = newLnl - oldLnl;
 	
@@ -568,13 +547,11 @@ void FossilGraph::doAddEdgeMove(int k){
     double lpr = lnLikeR + lnHastings + lnJacobian;
     double r = modelPtr->safeExponentiation(lpr);
     
-    if(ranPtr->uniformRv() < r){
-        o->setFossilIndicatorVar(1);
-        o->setFossilSppTime(newPhi);
-    }
-    else{
+    if(ranPtr->uniformRv() > r){
         o->setFossilIndicatorVar(0);
         o->setFossilSppTime(yf);
+		recountOccurrenceAttachNums();
+		currentFossilGraphLnL = oldLnl;
     }
 }
 
@@ -592,7 +569,6 @@ void FossilGraph::doDeleteEdgeMove(int k){
     
     int mvFoss = pickRandTipFossil();
     Occurrence *o = occurrenceSpecimens[mvFoss];
-//    double oldSumLogGammas = getSumLogAllAttachNums();
 	double oldLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
 
     double alD = 1.0;
@@ -608,19 +584,11 @@ void FossilGraph::doDeleteEdgeMove(int k){
     o->setFossilIndicatorVar(0);
     o->setFossilSppTime(yf);
 
-//    double newSumLogGammas = getSumLogAllAttachNums();
     
     lnHastings = log(alD) + (log(m-k) - log(k+1));
     lnJacobian = -(log(cf - yf));
     
-//    double v1 = log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, yf));
-//    double v2 = bdssQFxn(lambda, mu, fossRate, sppSampRate, yf);
-//    double v3 = bdssQFxn(lambda, mu, fossRate, sppSampRate, oldPhi);
-//    
-//    
-//    lnPriorR = ((numFossils - kN) * log(lambda)) + newSumLogGammas;
-//    lnPriorR -= (((numFossils - k) * log(lambda)) + (oldSumLogGammas + log(2.0) + v1 + v2 - v3));
-    
+    recountOccurrenceAttachNums();
 	double newLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
 	double lnLikeR = newLnl - oldLnl;
 
@@ -628,15 +596,82 @@ void FossilGraph::doDeleteEdgeMove(int k){
     double lpr = lnLikeR + lnHastings + lnJacobian;
     double r = modelPtr->safeExponentiation(lpr);
     
-    if(ranPtr->uniformRv() < r){
-        o->setFossilIndicatorVar(0);
-        o->setFossilSppTime(yf);
-    }
-    else{
+    if(ranPtr->uniformRv() > r){
         o->setFossilSppTime(oldPhi);
         o->setFossilIndicatorVar(1);
+		recountOccurrenceAttachNums();
+		currentFossilGraphLnL = oldLnl;
     }
 }
+
+double FossilGraph::doSinglePhiMove() {
+    
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+    originTime = ot->getOriginTime(); // active origin?
+    
+    Speciation *s = modelPtr->getActiveSpeciation();
+    s->setAllBDFossParams();
+    double lambda = s->getBDSSSpeciationRateLambda();
+    double mu = s->getBDSSExtinctionRateMu();
+    double fossRate = s->getBDSSFossilSampRatePsi();
+    double sppSampRate = s->getBDSSSppSampRateRho();
+	
+	int pick = (int)(ranPtr->uniformRv() * occurrenceSpecimens.size());
+    Occurrence *o = occurrenceSpecimens[pick];
+	while(o->getFossilIndicatorVar() == 0){
+		pick = (int)(ranPtr->uniformRv() * occurrenceSpecimens.size());
+		o = occurrenceSpecimens[pick];
+	}
+	
+            
+	double fossDepth = o->getFossilAge();
+	
+	double oldPhi = o->getFossilSppTime();
+	
+	double oldLike = currentFossilGraphLnL;
+	
+	double rv = ranPtr->uniformRv();
+	double newPhi, c;
+	
+	/*
+	if(nodeProposal == 1){ // used for options < 5
+		double delta = 5.0;
+		c = doAWindoMove(newPhi, oldPhi, delta, fossDepth, nodeDepth, rv);
+	}
+	else if(nodeProposal == 2){ // used for options > 5
+		double tv = tuningVal;
+		c = doAScaleMove(newPhi, oldPhi, tv, fossDepth, nodeDepth, rv);
+	}
+	else if(nodeProposal == 3){ // never used
+		newPhi = fossDepth + rv*(nodeDepth-fossDepth);
+		c = 0.0;
+	}
+	 */
+	
+	// we should spectify the following in the FG initialization
+	int nodeProposal = 2; // proposal type 1=window, 2=scale, 3=slide
+	
+	if(nodeProposal == 2){
+		double tv = tuningVal;
+		c = doAScaleMove(newPhi, oldPhi, tv, fossDepth, originTime, rv);
+	}
+	
+	o->setFossilSppTime(newPhi);
+	
+	recountOccurrenceAttachNums();
+	double newLike = getFossilGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
+	double lnLikeRat = newLike - oldLike;
+	
+	double r = modelPtr->safeExponentiation(lnLikeRat + c);
+	
+	if(ranPtr->uniformRv() > r){
+		o->setFossilSppTime(oldPhi);
+		recountOccurrenceAttachNums();
+		currentFossilGraphLnL = oldLike;
+	}
+     return 0.0;
+}
+
 
 
 int FossilGraph::pickRandAncestorFossil(){

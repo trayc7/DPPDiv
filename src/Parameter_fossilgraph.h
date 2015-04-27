@@ -105,13 +105,6 @@ public:
 //    double							bdssP0HatFxn(double b, double d, double rho, double t); // not required for the fofbd
     double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
     
-    double							updateOccurrenceAttachmentTimesPhi(void); //
-    double							doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv); //c.f Tree::doAScaleMove, in this case hb is not node depth, but the origin time
-    double							getSumLogAllAttachNums(void);
-    
-    double							updateRJMoveAddDelEdge(void);
-    void							doAddEdgeMove(int k);
-    void							doDeleteEdgeMove(int k);
     
     double                          getOldestFossilGraphSpeciationTime(void);
     int								pickRandAncestorFossil(void);
@@ -129,6 +122,16 @@ private:
     void                            createOccurrenceVector(std::vector<Calibration *> clb);
     void							initializeOccurrenceSpecVariables(); // cf initializeFossilSpecVariables
     void							recountOccurrenceAttachNums(); // cf recountFossilAttachNums();
+
+    double							updateOccurrenceAttachmentTimesPhi(void); //
+    double							doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv); //c.f Tree::doAScaleMove, in this case hb is not node depth, but the origin time
+    double							getSumLogAllAttachNums(void);
+    
+    double							updateRJMoveAddDelEdge(void);
+    void							doAddEdgeMove(int k);
+    void							doDeleteEdgeMove(int k);
+	
+	double							doSinglePhiMove(void);
     
     
     int                             numFossils;
