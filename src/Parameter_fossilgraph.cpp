@@ -113,7 +113,6 @@ double FossilGraph::update(double &oldLnL){
 			updateRJMoveAddDelEdge();
 		}
 	}
-//	getActiveFossilGraphProb(); // maybe delete
     return currentFossilGraphLnL;
 }
 
@@ -233,7 +232,7 @@ double FossilGraph::getActiveFossilGraphProb(){
     double mu = s->getBDSSExtinctionRateMu();
     double fossRate = s->getBDSSFossilSampRatePsi();
     double sppSampRate = s->getBDSSSppSampRateRho();
-    recountOccurrenceAttachNums(); // debug
+//    recountOccurrenceAttachNums(); // debug
     nprb = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
     return nprb;
     
@@ -254,34 +253,30 @@ double FossilGraph::getFossilGraphProb(double lambda, double mu, double fossRate
     originTime = ot;
     
     // the following has been modified for the fofbd
-    double nprb = -(log(2*lambda) + log(1.0 - bdssP0Fxn(lambda, mu, fossRate, sppSampRate, originTime)));
+    double nprb = -(log(2*lambda) + log(1.0 - fbdPFxn(lambda, mu, fossRate, sppSampRate, originTime)));
     
     for(int f=0; f < occurrenceSpecimens.size(); f++){
         Occurrence *o = occurrenceSpecimens[f];
-		if(!o->getIsTerminal()){
-			nprb += log(fossRate * o->getFossilFossBrGamma() );
+		nprb += log( fossRate * o->getFossilFossBrGamma() );
 
-			if(o->getFossilIndicatorVar()){
-				double fossAge = o->getFossilAge();
-				double fossPhi = o->getFossilSppTime(); // n.b. treescale removed from this part of the equation
-				double fossPr = log(2.0 * lambda) + log( bdssP0Fxn(lambda, mu, fossRate, sppSampRate, fossAge) );
-				fossPr += bdssQFxn(lambda, mu, fossRate, sppSampRate, fossAge);
-				fossPr -= bdssQFxn(lambda, mu, fossRate, sppSampRate, fossPhi);
-				
-				
-				
-				nprb += fossPr;
-			}
+		if(o->getFossilIndicatorVar()){
+			double yf = o->getFossilAge();
+			double zf = o->getFossilSppTime();
+			double fossPr = log(2.0 * lambda) + log( fbdPFxn(lambda, mu, fossRate, sppSampRate, yf) );
+			fossPr += fbdQFxn(lambda, mu, fossRate, sppSampRate, yf);
+			fossPr -= fbdQFxn(lambda, mu, fossRate, sppSampRate, zf);
+
+			nprb += fossPr;
 		}
     }
 	currentFossilGraphLnL = nprb;
     return nprb;
 }
 
-double FossilGraph::bdssP0Fxn(double b, double d, double psi, double rho, double t){
+double FossilGraph::fbdPFxn(double b, double d, double psi, double rho, double t){
     
-    double c1Val = bdssC1Fxn(b,d,psi);
-    double c2Val = bdssC2Fxn(b,d,psi,rho);
+    double c1Val = fbdC1Fxn(b,d,psi);
+    double c2Val = fbdC2Fxn(b,d,psi,rho);
 	
 	double expC1MinusC2 = exp(-c1Val * t) * (1.0 - c2Val);
     
@@ -294,14 +289,14 @@ double FossilGraph::bdssP0Fxn(double b, double d, double psi, double rho, double
 double FossilGraph::fbdQHatFxn(double b, double d, double psi, double rho, double t){
     
     double v = log(4.0);
-    v -= bdssQFxn(b,d,psi,rho,t);
+    v -= fbdQFxn(b,d,psi,rho,t);
     return v;
 }
 
-double FossilGraph::bdssQFxn(double b, double d, double psi, double rho, double t){
+double FossilGraph::fbdQFxn(double b, double d, double psi, double rho, double t){
     
-    double c1Val = bdssC1Fxn(b,d,psi);
-    double c2Val = bdssC2Fxn(b,d,psi,rho);
+    double c1Val = fbdC1Fxn(b,d,psi);
+    double c2Val = fbdC2Fxn(b,d,psi,rho);
     
     double vX = c1Val * t + 2.0 * log(exp(-c1Val * t) * (1.0 - c2Val) + (1.0 + c2Val));
     
@@ -309,15 +304,15 @@ double FossilGraph::bdssQFxn(double b, double d, double psi, double rho, double 
     return vX;
 }
 
-double FossilGraph::bdssC1Fxn(double b, double d, double psi){
+double FossilGraph::fbdC1Fxn(double b, double d, double psi){
     
     double v = abs( sqrt( ( (b-d-psi) * (b-d-psi) ) + 4*b*psi) );
     return v;
 }
 
-double FossilGraph::bdssC2Fxn(double b, double d, double psi, double rho){
+double FossilGraph::fbdC2Fxn(double b, double d, double psi, double rho){
     
-    double v = -( ( b-d-(2*b*rho)-psi ) / (bdssC1Fxn(b,d,psi)) );
+    double v = -( ( b-d-(2*b*rho)-psi ) / (fbdC1Fxn(b,d,psi)) );
     return v;
 }
 
@@ -505,8 +500,9 @@ double FossilGraph::updateRJMoveAddDelEdge() {
 //rw: new fxn - double check the maths
 void FossilGraph::doAddEdgeMove(int k){
     
-    int m = numFossils-1;
-    int kN = k-1;
+	int b = k;
+    int w = numFossils-1;
+    int bN = b-1;
     Speciation *s = modelPtr->getActiveSpeciation();
     s->setAllBDFossParams();
     double lambda = s->getBDSSSpeciationRateLambda();
@@ -519,9 +515,9 @@ void FossilGraph::doAddEdgeMove(int k){
     Occurrence *o = occurrenceSpecimens[mvFoss]; // rand fossil
 	
     double alA = 1.0;
-    if(kN == 0) // account for terminal
+    if(bN == 0)
         alA = 2.0;
-    else if(k == m)
+    else if(b == w)
         alA = 0.5;
     
     OriginTime *ot = modelPtr->getActiveOriginTime();
@@ -531,7 +527,7 @@ void FossilGraph::doAddEdgeMove(int k){
     
     double yf = o->getFossilAge();
     double nu = ranPtr->uniformRv() * (cf - yf);
-    lnHastings = log(alA) + (log(k) - log(m - k + 1.0));
+    lnHastings = log(alA) + (log(b) - log(w - b + 1.0));
     lnJacobian = log(cf - yf);
     double newPhi = yf + nu;
     o->setFossilSppTime(newPhi);
@@ -557,8 +553,9 @@ void FossilGraph::doAddEdgeMove(int k){
 
 void FossilGraph::doDeleteEdgeMove(int k){
     
-    int m = numFossils-1;
-    int kN = k+1;
+	int b = k;
+    int w = numFossils-1;
+    int bN = b+1;
     Speciation *s = modelPtr->getActiveSpeciation();
     s->setAllBDFossParams();
     double lambda = s->getBDSSSpeciationRateLambda();
@@ -572,9 +569,9 @@ void FossilGraph::doDeleteEdgeMove(int k){
 	double oldLnl = getFossilGraphProb(lambda, mu, fossRate, sppSampRate);
 
     double alD = 1.0;
-    if(k == 0)
+    if(b == 0)
         alD = 0.5;
-    else if(kN == m)
+    else if(bN == w)
         alD = 2.0;
 
     double yf = o->getFossilAge();
@@ -585,7 +582,7 @@ void FossilGraph::doDeleteEdgeMove(int k){
     o->setFossilSppTime(yf);
 
     
-    lnHastings = log(alD) + (log(m-k) - log(k+1));
+    lnHastings = log(alD) + (log(w-b) - log(b+1));
     lnJacobian = -(log(cf - yf));
     
     recountOccurrenceAttachNums();

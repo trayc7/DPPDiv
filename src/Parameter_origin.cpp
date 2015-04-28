@@ -396,7 +396,7 @@ double OriginTime::getFOFBDProbOriginTime(FossilGraph *fg, Speciation *s){
     double rho = s->getBDSSSppSampRateRho();
     double fossRate = s->getBDSSFossilSampRatePsi(); // psi
     
-    double phat = fg->bdssP0Fxn(lambda, mu, fossRate, rho, originTime); // note this is not the same as getFBDProbOriginTime
+    double phat = fg->fbdPFxn(lambda, mu, fossRate, rho, originTime); // note this is not the same as getFBDProbOriginTime
     
     double otPrb = log(lambda) + log(1-phat);
     return otPrb;

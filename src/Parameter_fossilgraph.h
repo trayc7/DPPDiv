@@ -97,12 +97,11 @@ public:
     double							getFossilGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot); // cf getTreeAncCalBDSSTreeNodePriorProb
     double							getActiveFossilGraphProb(); // cf getTreeCBDNodePriorProb, called by getTreeSpeciationProbability
     
-    double							bdssC1Fxn(double b, double d, double psi);
-    double							bdssC2Fxn(double b, double d, double psi,double rho);
+    double							fbdC1Fxn(double b, double d, double psi);
+    double							fbdC2Fxn(double b, double d, double psi,double rho);
     
-    double							bdssQFxn(double b, double d, double psi, double rho, double t); // on log scale
-    double							bdssP0Fxn(double b, double d, double psi, double rho, double t);
-//    double							bdssP0HatFxn(double b, double d, double rho, double t); // not required for the fofbd
+    double							fbdQFxn(double b, double d, double psi, double rho, double t); // on log scale
+    double							fbdPFxn(double b, double d, double psi, double rho, double t);
     double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
     
     
