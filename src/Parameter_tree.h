@@ -353,6 +353,8 @@ class Tree : public Parameter {
 		
 		double							updateFossilAges(void);
 		
+		double							computeLogFirstProductFBDSProb(double b, double d, double rho, double tt);
+		
 		
 		Alignment						*alignmentPtr;
 		int								numTaxa;

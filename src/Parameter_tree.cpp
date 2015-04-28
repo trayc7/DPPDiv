@@ -2439,8 +2439,9 @@ double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, do
 //    cout << "psi " << fossRate << endl;
 //    cout << "sppSampRate " << sppSampRate << endl;
     
-	double nprb = -(log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, originTime)));
+//	double nprb = -(log(lambda) + log(1.0 - bdssP0HatFxn(lambda, mu, sppSampRate, originTime)));
     
+	double nprb = computeLogFirstProductFBDSProb(lambda, mu, sppSampRate, originTime);
 	for(int i=0; i<numNodes; i++){
 		Node *p = &nodes[i];
 		if(!p->getIsLeaf()){
@@ -3181,5 +3182,18 @@ double Tree::getOldestTreeSpeciationTime(){
     return oldestTime;
 }
 
+
+double Tree::computeLogFirstProductFBDSProb(double b, double d, double rho, double tt){
+
+	long double value = 0.0;
+	
+	long double v1 = (-(b-d)*tt);
+	long double ev = exp(v1);
+	
+	long double absNum = abs( (b*rho) + (((b * (1-rho)) - d) * ev) );
+	long double absDen = abs(b * rho * (b-d));
+	value = absNum - absDen;
+	return (double)value;
+}
 
 // END
