@@ -150,135 +150,149 @@ void Speciation::print(std::ostream & o) const {
 double Speciation::update(double &oldLnL) {
 	
 	double lnR = 0.0;
-    int v;
 	if(treeTimePrior == 9){
-		currentFossilGraphLnL = oldLnL;
-		FossilGraph *fg = modelPtr->getActiveFossilGraph();
-		int numMoves = 3;
-		if(parameterization == 3) numMoves = 4;
-		v = (int)(ranPtr->uniformRv() * numMoves);
+		return updateFossileGraphBDParams(oldLnL);
+	}
+	else{
+		return updateTreeBDParams(oldLnL);
+	}
+	return lnR;
+}
+
+double Speciation::updateTreeBDParams(double &oldLnL) {
+	
+	double lnR = 0.0;
+	int v;
+
+	Tree *t = modelPtr->getActiveTree();
+	double oldtreeprob = getLnTreeProb(t); 
+	double lnProposalRatio = 0.0;
+	
+	if(treeTimePrior == 2){
+		lnProposalRatio += updateNetDivRate();
+		relativeDeath = 0.0;
+	}
+	else if(treeTimePrior == 3){
+		updateRelDeathRt(t);
+		updateNetDivRate(t);
+		modelPtr->setLnLGood(true);
+		modelPtr->setMyCurrLnl(oldLnL);
+		
+		return 0.0;
+	}
+	else if(treeTimePrior > 3){ 
+		
+		//updateRelDeathRt(t);
+		//updateNetDivRate(t);
+		//updateBDSSFossilProbS(t);
+		
+		v = (int)(ranPtr->uniformRv() * 3);
 		
 		if(parameterization == 1){
 			if(v == 0)
-				updateRelDeathRt(fg); // r
+				updateRelDeathRt(t); // r
 			else if(v == 1)
-				updateNetDivRate(fg); // d
+				updateNetDivRate(t); // d
 			else
-				updateBDSSFossilProbS(fg); // s
+				updateBDSSFossilProbS(t); // s
 		}
 		else if(parameterization == 2){
 			if(v == 0)
-				updateRelDeathRt(fg); // r
+				updateRelDeathRt(t); // r
 			else if(v == 1)
-				updateNetDivRate(fg); // d
+				updateNetDivRate(t); // d
 			else
-				updatePsiRate(fg); // psi
+				updatePsiRate(t); // psi
 		}
-		else if(parameterization == 3){  //****//
-			if(v == 0)
-				updateDeathRate(fg); // mu
-			else if(v == 1)
-				updateBirthRate(fg); // lambda
-			else if(v == 2)
-				updatePsiRate(fg); // psi
-			else
-				updateBirthAndDeath(fg); // mu and lambda
+		//rw: this parameterization is currently problematic
+		//because it allows mu >> lambda
+		else if(parameterization == 3){
+		  
+			if(v == 0){
+				updateBirthRate(t); // lambda
+			}
+			else if(v == 1){
+				updateDeathRate(t); // mu
+				
+			}
+			else {
+				updatePsiRate(t); // psi
+			}
 		}
-        else if(parameterization == 4){
-            if(v == 0){
-                updateNetDivRate(fg); // d
-            }
-            else if(v == 1){
-                updateDeathRate(fg); // mu
-            }
-            else {
-                updatePsiRate(fg); // psi
-            }
-        }
-		return currentFossilGraphLnL;
-	}
-	else{
-		Tree *t = modelPtr->getActiveTree();
-		double oldtreeprob = getLnTreeProb(t); 
-		double lnProposalRatio = 0.0;
-		
-		if(treeTimePrior == 2){
-			lnProposalRatio += updateNetDivRate();
-			relativeDeath = 0.0;
-		}
-		else if(treeTimePrior == 3){
-			updateRelDeathRt(t);
-			updateNetDivRate(t);
-			modelPtr->setLnLGood(true);
-			modelPtr->setMyCurrLnl(oldLnL);
+		else if(parameterization == 4){
 			
-			return 0.0;
+			if(v == 0){
+				updateNetDivRate(t); // d
+			}
+			else if(v == 1){
+				updateDeathRate(t); // mu
+				
+			}
+			else {
+				updatePsiRate(t); // psi
+			}
 		}
-		else if(treeTimePrior > 3){ 
-			
-			//updateRelDeathRt(t);
-			//updateNetDivRate(t);
-			//updateBDSSFossilProbS(t);
-            
-            v = (int)(ranPtr->uniformRv() * 3);
-            
-            if(parameterization == 1){
-                if(v == 0)
-                    updateRelDeathRt(t); // r
-                else if(v == 1)
-                    updateNetDivRate(t); // d
-                else
-                    updateBDSSFossilProbS(t); // s
-            }
-            else if(parameterization == 2){
-                if(v == 0)
-                    updateRelDeathRt(t); // r
-                else if(v == 1)
-                    updateNetDivRate(t); // d
-                else
-                    updatePsiRate(t); // psi
-            }
-            //rw: this parameterization is currently problematic
-            //because it allows mu >> lambda
-            else if(parameterization == 3){
-              
-                if(v == 0){
-                    updateBirthRate(t); // lambda
-                }
-                else if(v == 1){
-                    updateDeathRate(t); // mu
-                    
-                }
-                else {
-                    updatePsiRate(t); // psi
-                }
-            }
-            else if(parameterization == 4){
-                
-                if(v == 0){
-                    updateNetDivRate(t); // d
-                }
-                else if(v == 1){
-                    updateDeathRate(t); // mu
-                    
-                }
-                else {
-                    updatePsiRate(t); // psi
-                }
-            }
-            modelPtr->setLnLGood(true);
-			modelPtr->setMyCurrLnl(oldLnL);
-			return 0.0;
-			
-		}
-		double newtreeprob = getLnTreeProb(t); 
-		double lnPriorRatio = (newtreeprob - oldtreeprob);
-		lnR = lnPriorRatio + lnProposalRatio;
-		
 		modelPtr->setLnLGood(true);
 		modelPtr->setMyCurrLnl(oldLnL);
+		return 0.0;
+		
 	}
+	double newtreeprob = getLnTreeProb(t); 
+	double lnPriorRatio = (newtreeprob - oldtreeprob);
+	lnR = lnPriorRatio + lnProposalRatio;
+	
+	modelPtr->setLnLGood(true);
+	modelPtr->setMyCurrLnl(oldLnL);
 	return lnR;
+}
+
+double Speciation::updateFossileGraphBDParams(double &oldLnL){
+
+	int v;
+	currentFossilGraphLnL = oldLnL;
+	FossilGraph *fg = modelPtr->getActiveFossilGraph();
+	int numMoves = 3;
+	if(parameterization == 3) numMoves = 4;
+	v = (int)(ranPtr->uniformRv() * numMoves);
+	
+	if(parameterization == 1){
+		if(v == 0)
+			updateRelDeathRt(fg); // r
+		else if(v == 1)
+			updateNetDivRate(fg); // d
+		else
+			updateBDSSFossilProbS(fg); // s
+	}
+	else if(parameterization == 2){
+		if(v == 0)
+			updateRelDeathRt(fg); // r
+		else if(v == 1)
+			updateNetDivRate(fg); // d
+		else
+			updatePsiRate(fg); // psi
+	}
+	else if(parameterization == 3){  //****//
+		if(v == 0)
+			updateDeathRate(fg); // mu
+		else if(v == 1)
+			updateBirthRate(fg); // lambda
+		else if(v == 2)
+			updatePsiRate(fg); // psi
+		else
+			updateBirthAndDeath(fg); // mu and lambda
+	}
+	else if(parameterization == 4){
+		if(v == 0){
+			updateNetDivRate(fg); // d
+		}
+		else if(v == 1){
+			updateDeathRate(fg); // mu
+		}
+		else {
+			updatePsiRate(fg); // psi
+		}
+	}
+	return currentFossilGraphLnL;
 }
 
 double Speciation::updateRelDeathRt(void) {
@@ -721,7 +735,7 @@ double Speciation::updateBirthRate(FossilGraph *fg) {
     double lpr = 0.0;
     double oldLambda = birthRate;
     double newLambda;
-    double tuning = log(2.0);
+    double tuning = log(3.0);
     double minV = 0.0001;
     double c = getNewValScaleMv(newLambda, oldLambda, minV, maxdivV, tuning);
     birthRate = newLambda;
@@ -750,7 +764,7 @@ double Speciation::updateBirthAndDeath(FossilGraph *fg) {
     double newLambda, newMu;
     double oldLambda = birthRate;
 	double oldMu = deathRate;
-    double scaleFactor = 0.1;
+    double scaleFactor = 0.5;
     getNewValUpDownScaleMv(newLambda, oldLambda, newMu, oldMu, scaleFactor);
     birthRate = newLambda;
 	deathRate = newMu;

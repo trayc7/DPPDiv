@@ -88,6 +88,8 @@ class Speciation : public Parameter {
 		double				getNewValSWindoMv(double ov, double vmin, double vmax, double tv);
 		double				getNewValUpDownScaleMv(double &nv1, double ov1, double &nv2, double ov2, double sf);
 
+		double				updateTreeBDParams(double &oldLnL);
+		double				updateFossileGraphBDParams(double &oldLnL);
 
 		
 		double				updateRelDeathRt(); //rw: function never used?
