@@ -196,7 +196,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
     }
 
-    originMax = initOT * 10.0;
+    originMax = initOT * 1.5;
     //originMax = 500.0;
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
@@ -220,7 +220,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
     
     updateProb.clear();
     updateProb.push_back(0.0); // 1 origin time
-    updateProb.push_back(0.0); // 2 speciation
+    updateProb.push_back(3.0); // 2 speciation
     updateProb.push_back(4.0); // 3 fossil graph
     double sum = 0.0;
     for (unsigned i=0; i<updateProb.size(); i++)

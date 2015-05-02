@@ -257,16 +257,17 @@ double FossilGraph::getFossilGraphProb(double lambda, double mu, double fossRate
     
     for(int f=0; f < occurrenceSpecimens.size(); f++){
         Occurrence *o = occurrenceSpecimens[f];
-		nprb += log( fossRate * o->getFossilFossBrGamma() );
+		if(!o->getIsTerminal()){
+			nprb += log( fossRate * o->getFossilFossBrGamma() );
+			if(o->getFossilIndicatorVar()){
+				double yf = o->getFossilAge();
+				double zf = o->getFossilSppTime();
+				double fossPr = log(2.0 * lambda) + log( fbdPFxn(lambda, mu, fossRate, sppSampRate, yf) );
+				fossPr += fbdQFxn(lambda, mu, fossRate, sppSampRate, yf);
+				fossPr -= fbdQFxn(lambda, mu, fossRate, sppSampRate, zf);
 
-		if(o->getFossilIndicatorVar()){
-			double yf = o->getFossilAge();
-			double zf = o->getFossilSppTime();
-			double fossPr = log(2.0 * lambda) + log( fbdPFxn(lambda, mu, fossRate, sppSampRate, yf) );
-			fossPr += fbdQFxn(lambda, mu, fossRate, sppSampRate, yf);
-			fossPr -= fbdQFxn(lambda, mu, fossRate, sppSampRate, zf);
-
-			nprb += fossPr;
+				nprb += fossPr;
+			}
 		}
     }
 	currentFossilGraphLnL = nprb;

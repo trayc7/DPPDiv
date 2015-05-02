@@ -69,7 +69,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     netDivRatePrior = 2;
     deathRateExpRate = 10.0;
     birthRateExpRate = 10.0;
-    fossilSamplingRateExpRate = 500.0;
+    fossilSamplingRateExpRate = 50.0;
     netDivRateExpRate = 10.0;
 	
 	if(mp->getFixTestRun()){
