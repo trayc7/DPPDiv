@@ -42,6 +42,7 @@
 
 using namespace std;
 
+
 OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob) : Parameter(rp, mp) {
     oldBound = ob;
     yngBound = yb;
@@ -231,7 +232,6 @@ double OriginTime::updateFOFBD(void){
     double newOT;
     double lnProposalRatio = 0.0;
     
-    
     if(moveOnDiff){
         /* sliding window */
         double oldDiff = oldOT - minAge;
@@ -281,7 +281,6 @@ double OriginTime::updateFOFBD(void){
         if (otProposal == 1){
             double limO = oldOT + tuning;
             double limY = oldOT - tuning;
-
             double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
             newOT = oldOT + u;
             while(newOT < minAge || newOT > maxAge){
@@ -297,7 +296,6 @@ double OriginTime::updateFOFBD(void){
             double c = tuning * (rv-0.5);
             newOT = oldOT * exp(c);
             //lnProposalRatio = c;
-            
             bool validOT = false;
             do{
                 if(newOT < minAge)
@@ -324,7 +322,6 @@ double OriginTime::updateFOFBD(void){
     /* exponential prior on ot */
     else if (otPrior == 2)
         myPrR += lnProposalRatio + lnExpOriginTimePriorRatio(newOT,oldOT,minAge,expRate);
-    
     double r = modelPtr->safeExponentiation(myPrR);
     if(ranPtr->uniformRv() < r){
         originTime = newOT;

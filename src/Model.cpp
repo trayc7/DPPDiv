@@ -196,7 +196,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
     }
 
-    originMax = initOT * 1.5;
+    originMax = initOT * 2.5;
     //originMax = 500.0;
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
