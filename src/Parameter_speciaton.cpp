@@ -54,12 +54,14 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	fossilRate = 0.01;
 	birthRate = 0.02;
 	deathRate = 0.01;
-    extantSampleRate = 0.0; //rh;
+    extantSampleRate = 1.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
 	parameterization = 1;
-	if(treeTimePrior == 9)
+	if(treeTimePrior == 9){
 		parameterization = 3;
+		extantSampleRate = 0.0;
+	}
 	setAllBDFossParams();
     
     // priors on birth death paras
