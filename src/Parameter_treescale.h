@@ -37,7 +37,7 @@ class Tree;
 class Treescale : public Parameter {
 	
 	public:
-							Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, int dt, bool calib, bool exhpc);
+							Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, int dt, bool calib, bool exhpc, bool sky=false);
 							~Treescale(void);
 		Treescale			&operator=(const Treescale &c);
 		void				clone(const Treescale &c);
@@ -69,11 +69,14 @@ class Treescale : public Parameter {
 		double				tOrigExpHPRate;
 		double				numAccepted;
 		double				numTried;
+		bool				skylineMod;
 		
 		double				updateTreeScale(double &oldLnL);
 		double				updateTreeScalePropSE(double &oldLnL);
 
 		double				updateTreeOrigTime(double &oldLnL);
+		
+		double				updateTreeScaleSkyline(double &oldLnl);
 				
 	
 };

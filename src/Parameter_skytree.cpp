@@ -44,6 +44,8 @@ void Tree::intitializeRelativeTimePoints(void){
 int Tree::getSkylineIndexForTime(double ot, double tt){
 	
 	int myID = 0;
+	if(tt == ot)
+		return 0;
 	while(relTimePoints[myID]*ot > tt){
 		myID++;
 	}

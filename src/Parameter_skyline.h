@@ -65,6 +65,8 @@ class Skyline : public Parameter {
 		std::string				writeSkylineParamLabels(void);
 		std::string				writeSkylineParamValues(void);
 		
+		void					setAllSkyFBDParameters(void);
+		
 		
 	private:
 		double					rho;
@@ -72,6 +74,9 @@ class Skyline : public Parameter {
 		std::vector<double>		lambdas;
 		std::vector<double>		mus;
 		std::vector<double>		psis;
+		std::vector<double>		netDivVec;
+		std::vector<double>		turnoverVec;
+		int						parameterization;
 
 };
 

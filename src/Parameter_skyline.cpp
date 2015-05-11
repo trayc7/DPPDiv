@@ -66,6 +66,14 @@ Skyline::Skyline(MbRandom *rp, Model *mp, int nrts) : Parameter(rp, mp) {
 	mus[3] = 0.4;
 	mus[4] = 0.1;
 
+	for(int i=0; i<numRates; i++){
+		netDivVec.push_back(0.4);
+		turnoverVec.push_back(0.1);
+	}
+
+	parameterization = 1; // 1 = lambda, mu, psi; 2 = r, d, psi
+	
+	
 }
 
 Skyline::~Skyline(void) {
@@ -93,6 +101,8 @@ double Skyline::update(double &oldLnL) {
 	
 	double lnR = 0.0;
 	
+	
+	setAllSkyFBDParameters();
 	return lnR;
 }
 
@@ -139,4 +149,20 @@ string Skyline::writeSkylineParamValues(void){
 	ss << "\t" << rho;
 	string pi = ss.str();
 	return pi;
+}
+
+void Skyline::setAllSkyFBDParameters(void){
+	
+	if(parameterization == 1){
+		for(int i=0; i<numRates; i++){
+			netDivVec[i] = lambdas[i] - mus[i];
+			turnoverVec[i] = mus[i] / lambdas[i];
+		}
+	}
+	else if(parameterization == 2){
+		for(int i=0; i<numRates; i++){
+			lambdas[i] = netDivVec[i] / (1.0 - turnoverVec[i]);
+			mus[i] = (turnoverVec[i] * netDivVec[i]) / (1.0 - turnoverVec[i]);
+		}
+	}
 }

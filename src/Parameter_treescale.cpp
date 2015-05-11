@@ -42,7 +42,7 @@
 
 using namespace std;
 
-Treescale::Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, int dt, bool calib, bool exhpc) : Parameter(rp, mp) {
+Treescale::Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, int dt, bool calib, bool exhpc, bool sky) : Parameter(rp, mp) {
 	oldBound = ob;
 	yngBound = yb;
 	scaleVal = sv;
@@ -52,6 +52,7 @@ Treescale::Treescale(MbRandom *rp, Model *mp, double sv, double yb, double ob, i
 	tsPriorD = dt;
 	isUserCalib = calib;
 	exponHPCalib = exhpc;
+	skylineMod = sky;
 	expoRate = 1.0;
 	
 	tOrigExpHPRate = 1.0 / (sv * 0.5);
@@ -140,10 +141,15 @@ void Treescale::print(std::ostream & o) const {
 
 double Treescale::update(double &oldLnL) {
 	
+	double lppr = 0.0;
+	if(skylineMod){
+		lppr = updateTreeScaleSkyline(oldLnL);
+		return lppr;
+	}
+	
     if(treeTimePrior == 8){ // refine this at some point
         oldBound = modelPtr->getActiveOriginTime()->getOriginTime();
     }
-	double lppr = 0.0;
 	if(treeTimePrior == 4 && ranPtr->uniformRv() < 0.3){
 		lppr = updateTreeOrigTime(oldLnL);
 	}
@@ -377,6 +383,87 @@ double Treescale::updateTreeOrigTime(double &oldLnL) {
 	modelPtr->setMyCurrLnl(oldLnL);
 	return lnR;
 
+}
+
+double Treescale::updateTreeScaleSkyline(double &oldLnL) {
+
+	oldBound = modelPtr->getActiveOriginTime()->getOriginTime();
+	Tree *t = modelPtr->getActiveTree();
+	Node *rt = t->getRoot();
+	
+	double oldtreeprob = t->getTreeSpeciationProbability(); // this can be simplified 
+	double rtLB = t->getNodeLowerBoundTime(rt) * scaleVal;
+	double lowBound = rtLB;
+	
+	double hiBound = oldBound;
+	if(isBounded){
+		if(lowBound < yngBound)
+			lowBound = yngBound;
+		if(hiBound > oldBound)
+			hiBound = oldBound;
+	}
+	
+	double oldRH, newRH;
+	oldRH = scaleVal;
+	
+	double rv = ranPtr->uniformRv();
+	double tv = log(2.0);
+	double c = tv * (rv - 0.5);
+	newRH = oldRH * exp(c);
+	bool validV = false;
+	do{
+		if(newRH < lowBound)
+			newRH = lowBound * lowBound / newRH;
+		else if(newRH > hiBound)
+			newRH = hiBound * hiBound / newRH;
+		else
+			validV = true;
+	} while(!validV);
+	
+	double scaleRatio = oldRH / newRH;
+	int numNodes = t->getNumNodes();
+	for(int i=0; i<numNodes; i++){
+		Node *p = t->getNodeByIndex(i);
+		if(p != rt){
+			if(p->getIsLeaf() && p->getIsCalibratedDepth() == false){
+				p->setNodeDepth(0.0);
+			}
+			else{
+				double oldP = p->getNodeDepth();
+				double newP = oldP * scaleRatio;
+				p->setNodeDepth(newP);
+				p->setFossAttchTime(0.0);
+			}
+		}
+	}
+	scaleVal = newRH;
+	t->setTreeScale(scaleVal);
+	t->treeScaleUpdateFossilAttchTimes(scaleRatio, oldRH, newRH);
+	t->treeUpdateNodeOldestBoundsAttchTimes();
+	t->setAllNodeBranchTimes();
+	
+	double lnPriorRatio = 0.0;
+	double newtreeprob = t->getTreeSpeciationProbability();
+	lnPriorRatio += (newtreeprob - oldtreeprob);
+	if(tsPriorD == 2){
+		if(exponHPCalib)
+			expoRate = t->getRootCalibExpRate();
+		lnPriorRatio += lnExponentialTSPriorRatio(newRH, oldRH);
+	}
+	double lnProposalRatio = c;
+	
+	double jacobian = 0.0; 
+	if(treeTimePrior < 2)
+		jacobian = (log(oldRH) - log(newRH)) * (t->getNumTaxa() - 2);
+	
+	t->flipAllCls();
+	t->flipAllTis();
+	t->upDateAllCls();
+	t->upDateAllTis();
+	modelPtr->setTiProb();
+	
+	
+	return lnPriorRatio + lnProposalRatio + jacobian;
 }
 
 

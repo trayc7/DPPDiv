@@ -415,7 +415,7 @@ void Model::initializeSkylineRateDPPDiv(double initRootH,double bdr, double bda,
 									 calibrs, tipDates) );    // rooted phylogenetic tree
 		parms[i].push_back( nr );												// restaurant containing node rates
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
-		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, false) ); // the tree scale prior
+		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, false, true) ); // the tree scale prior
 		parms[i].push_back( new Skyline(ranPtr, this, numIntervals) );												// hyper prior on diversification for cBDP speciation
         parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) ); // the origin time parameters
 	}
@@ -997,7 +997,7 @@ void Model::setUpdateProbabilities(bool initial) {
 		otp = 0.0; // this is off until a move that calcs whole FBD prob is implemented
 		double sky = 0.0; //4.0;
 		ntp = 4.0;
-		tsp = 0.0; // need a root-age aware skyline update
+		tsp = 1.0; 
 		
 		updateProb.push_back(bfp); // 1 basefreq
 		updateProb.push_back(srp); // 2 sub rates
