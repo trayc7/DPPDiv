@@ -40,6 +40,7 @@
 #include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_shape.h"
+#include "Parameter_skyline.h"
 #include "Parameter_speciaton.h"
 #include "Parameter_tree.h"
 #include "Parameter_cphyperp.h"
@@ -364,6 +365,17 @@ FossilGraph* Model::getActiveFossilGraph(void) {
     for (int i=0; i<numParms; i++){
         Parameter *p = parms[activeParm][i];
         FossilGraph *derivedPtr = dynamic_cast<FossilGraph *>(p);
+        if ( derivedPtr != 0 )
+            return derivedPtr;
+    }
+    return NULL;
+}
+
+Skyline* Model::getActiveSkyline(void) {
+    
+    for (int i=0; i<numParms; i++){
+        Parameter *p = parms[activeParm][i];
+        Skyline *derivedPtr = dynamic_cast<Skyline *>(p);
         if ( derivedPtr != 0 )
             return derivedPtr;
     }

@@ -36,6 +36,7 @@
 #include "Parameter_expcalib.h"
 #include "Parameter_origin.h"
 #include "Parameter_rate.h"
+#include "Parameter_skyline.h"
 #include "Parameter_speciaton.h"
 #include "Parameter_treescale.h"
 #include "Parameter_tree.h"
@@ -1358,13 +1359,13 @@ double Tree::updateFossilAges(void){
 			double aMax = f->getFossilMaxAge();
 			if(f->getFossilSppTime()*treeScale < aMax)
 				aMax = f->getFossilSppTime() * treeScale;
-			double pr1 = log(oldSumLogGammas) + (log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, oldAge)) - fbdQHatFxn(lambda, mu, fossRate, sppSampRate, oldAge));
+			double prOld = log(oldSumLogGammas) + (log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, oldAge)) + bdssQFxn(lambda, mu, fossRate, sppSampRate, oldAge));
 			double newAge = ranPtr->uniformRv(aMin, aMax);
 			f->setFossilAge(newAge);
 			double newSumLogGammas = getSumLogAllAttachNums();
 
-			double pr2 = log(newSumLogGammas) + (log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, newAge)) - fbdQHatFxn(lambda, mu, fossRate, sppSampRate, newAge));
-			double prRatio = pr1 - pr2;
+			double prNew = log(newSumLogGammas) + (log(bdssP0Fxn(lambda, mu, fossRate, sppSampRate, newAge)) + bdssQFxn(lambda, mu, fossRate, sppSampRate, newAge));
+			double prRatio = prNew - prOld;
 			double r = modelPtr->safeExponentiation(prRatio);
 			
 			if(ranPtr->uniformRv() < r){ 
@@ -3195,5 +3196,7 @@ double Tree::computeLogFirstProductFBDSProb(double b, double d, double rho, doub
 	value = absNum - absDen;
 	return (double)value;
 }
+
+
 
 // END

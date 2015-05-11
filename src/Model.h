@@ -45,6 +45,7 @@ class Node;
 class NodeRate;
 class Parameter;
 class Shape;
+class Skyline;
 class Speciation;
 class Tree;
 class Treescale;
@@ -83,6 +84,7 @@ class Model {
         ExpCalib*						getActiveExpCalib(void);
         OriginTime*						getActiveOriginTime(void);
         FossilGraph*                    getActiveFossilGraph(void);
+		Skyline*						getActiveSkyline(void);
 		Parameter*						pickParmToUpdate(void);
 		void							printTis(std::ostream &) const;
 		void							setTiProb(void);

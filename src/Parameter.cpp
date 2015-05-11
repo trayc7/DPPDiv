@@ -37,6 +37,7 @@
 #include "Parameter_tree.h"
 #include "Parameter_cphyperp.h"
 #include "Parameter_treescale.h"
+#include "Parameter_skyline.h"
 #include "Parameter_speciaton.h"
 #include "Parameter_origin.h"
 
@@ -146,6 +147,14 @@ Parameter& Parameter::operator=(Parameter &p) {
         {
             FossilGraph *thatDerivedPtr = dynamic_cast<FossilGraph *>(&p);
             FossilGraph *thisDerivedPtr = dynamic_cast<FossilGraph *>(this);
+            if ( thatDerivedPtr != 0 && thisDerivedPtr != 0 ){
+                thisDerivedPtr->clone( *thatDerivedPtr );
+                goto exitOperator;
+            }
+        }
+        {
+            Skyline *thatDerivedPtr = dynamic_cast<Skyline *>(&p);
+            Skyline *thisDerivedPtr = dynamic_cast<Skyline *>(this);
             if ( thatDerivedPtr != 0 && thisDerivedPtr != 0 ){
                 thisDerivedPtr->clone( *thatDerivedPtr );
                 goto exitOperator;
