@@ -66,6 +66,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	ranPtr->getSeed(startS1, startS2);
 	runUnderPrior = false;
 	treeTimePrior = nodpr;
+	newickTreeString = ts;
 	myCurLnL = 0.0;
 	lnLGood = false;
 	calibfilen = clfn;
@@ -79,6 +80,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixSomeModParams = fxmod;
 	fixTestRun = fxtr;
 	estAbsRts = false;
+	doSkylineBDP = true;
     originMax = 100000.0;
     rho = 1.0; //rw: fixed for now
     if(treeTimePrior == 8)
@@ -89,7 +91,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	rHtO = 0.0;
 	int tsPrDist = 1;
 	rootNExpRate = -1.0;
-	bool rtCalib = false;
+	rtCalib = false;
 	if(calibfilen.empty() == false){
 		initRootH = readCalibFile();
 //        initRootH = 100.0; // TAH: DEBUG
@@ -132,22 +134,12 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		cerr << "ERROR: the prior on the mean number of tables cannot exceed the number of nodes in the tree!" << endl;
 		exit(1);
 	}
-	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, priorMeanN, cpfix);
-	ExpCalib *excal = new ExpCalib(ranPtr, this, dphpc, dphpng, initRootH, gamhp, runIndCalHP);
-	NodeRate *nr = new NodeRate(ranPtr, this, nn, ra, rb, conp->getCurrentCP(), fxclkrt, rmod);
-	for (int i=0; i<2; i++){ 
-		parms[i].push_back( new Basefreq(ranPtr, this, 4, fxmod) );					// base frequency parameter
-		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
-		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fxmod) );		// gamma shape parameter for rate variation across sites
-		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, ts, ubl, alnm, rndNo, 
-									 calibrs, initRootH, initOT, sfb, ehpc, excal, tipDates) );    // rooted phylogenetic tree
-		parms[i].push_back( nr );												// restaurant containing node rates
-		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
-		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, ehpc) ); // the tree scale prior
-		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH, rho) );												// hyper prior on diversification for cBDP speciation
-		parms[i].push_back( excal );											// hyper prior exponential node calibration parameters
-        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) ); // the origin time parameters
-	}
+	
+	if(doSkylineBDP == false) // if constant rate DPPDiv
+		initializeConstantRateDPPDiv(initRootH, bdr, bda, bds, dphpng, gamhp, hal, hbe, ra, rb, rmod, sfb, tsPrDist, ubl);
+	else
+		initializeSkylineRateDPPDiv(initRootH, bdr, bda, bds, hal, hbe, ra, rb, rmod, tsPrDist, ubl);
+	
 	numParms = (int)parms[0].size();
 	activeParm = 0;
 	for (int i=0; i<numParms; i++)
@@ -159,8 +151,6 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		
 	// initialize the probabilities for updating different parameters
 	setUpdateProbabilities(true);	
-	if(ehpc)
-		excal->getAllExpHPCalibratedNodes();
 		
 	// allocate and initialize conditional likelihoods
 	initializeConditionalLikelihoods();
@@ -248,6 +238,7 @@ Model::~Model(void) {
         }
     }
 }
+
 
 Basefreq* Model::getActiveBasefreq(void) {
 
@@ -380,6 +371,55 @@ Skyline* Model::getActiveSkyline(void) {
             return derivedPtr;
     }
     return NULL;
+}
+
+void Model::initializeConstantRateDPPDiv(double initRootH,double bdr, double bda, double bds, int dphpng, bool gamhp,
+										 double hal, double hbe, double ra, double rb, int rmod,
+										 bool sfb, int tsPrDist, bool ubl){
+	
+	int nn = 2*alignmentPtr->getNumTaxa()-1;
+	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, priorMeanN, cpfix);
+	ExpCalib *excal = new ExpCalib(ranPtr, this, exponDPMCalibHyperParm, dphpng, initRootH, gamhp, runIndCalHP);
+	NodeRate *nr = new NodeRate(ranPtr, this, nn, ra, rb, conp->getCurrentCP(), fixedClockRate, rmod);
+	for (int i=0; i<2; i++){ 
+		parms[i].push_back( new Basefreq(ranPtr, this, 4, fixSomeModParams) );					// base frequency parameter
+		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
+		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fixSomeModParams) );		// gamma shape parameter for rate variation across sites
+		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, newickTreeString, ubl, true, true, // these last two bools indicate that all nodes are moved and at random
+									 calibrs, initRootH, initOT, sfb, exponCalibHyperParm, excal, tipDates) );    // rooted phylogenetic tree
+		parms[i].push_back( nr );												// restaurant containing node rates
+		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
+		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, exponCalibHyperParm) ); // the tree scale prior
+		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH, rho) );												// hyper prior on diversification for cBDP speciation
+		parms[i].push_back( excal );											// hyper prior exponential node calibration parameters
+        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) ); // the origin time parameters
+	}
+	if(exponCalibHyperParm)
+		excal->getAllExpHPCalibratedNodes();
+
+}
+
+void Model::initializeSkylineRateDPPDiv(double initRootH,double bdr, double bda, double bds,
+										double hal, double hbe, double ra, double rb, int rmod,
+										int tsPrDist, bool ubl){
+	
+	int numIntervals = 5;
+	int nn = 2*alignmentPtr->getNumTaxa()-1;
+	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, priorMeanN, cpfix);
+	NodeRate *nr = new NodeRate(ranPtr, this, nn, ra, rb, conp->getCurrentCP(), fixedClockRate, rmod);
+	for (int i=0; i<2; i++){ 
+		parms[i].push_back( new Basefreq(ranPtr, this, 4, fixSomeModParams) );					// base frequency parameter
+		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
+		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fixSomeModParams) );		// gamma shape parameter for rate variation across sites
+		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, newickTreeString, initRootH, initOT, numIntervals, ubl,
+									 calibrs, tipDates) );    // rooted phylogenetic tree
+		parms[i].push_back( nr );												// restaurant containing node rates
+		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
+		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, false) ); // the tree scale prior
+		parms[i].push_back( new Skyline(ranPtr, this, numIntervals) );												// hyper prior on diversification for cBDP speciation
+        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) ); // the origin time parameters
+	}
+
 }
 
 
@@ -941,16 +981,34 @@ void Model::setUpdateProbabilities(bool initial) {
     }
 	
 	updateProb.clear();
-	updateProb.push_back(bfp); // 1 basefreq
-	updateProb.push_back(srp); // 2 sub rates
-	updateProb.push_back(shp); // 3 gamma shape
-	updateProb.push_back(ntp); // 4 node times
-	updateProb.push_back(dpp); // 5 dpp rates
-	updateProb.push_back(cpa); // 6 concentration parameter
-	updateProb.push_back(tsp); // 7 tree scale parameter
-	updateProb.push_back(spp); // 8 speciation parameters
-	updateProb.push_back(ehp); // 9 exponential calibration hyper priors
-    updateProb.push_back(otp); // 10 origin time parameter
+	if(doSkylineBDP == false){ // constant rate DPPDiv
+		updateProb.push_back(bfp); // 1 basefreq
+		updateProb.push_back(srp); // 2 sub rates
+		updateProb.push_back(shp); // 3 gamma shape
+		updateProb.push_back(ntp); // 4 node times
+		updateProb.push_back(dpp); // 5 dpp rates
+		updateProb.push_back(cpa); // 6 concentration parameter
+		updateProb.push_back(tsp); // 7 tree scale parameter
+		updateProb.push_back(spp); // 8 speciation parameters
+		updateProb.push_back(ehp); // 9 exponential calibration hyper priors
+		updateProb.push_back(otp); // 10 origin time parameter
+	}
+	else { //skyline
+		otp = 0.0; // this is off until a move that calcs whole FBD prob is implemented
+		double sky = 0.0; //4.0;
+		ntp = 4.0;
+		tsp = 0.0; // need a root-age aware skyline update
+		
+		updateProb.push_back(bfp); // 1 basefreq
+		updateProb.push_back(srp); // 2 sub rates
+		updateProb.push_back(shp); // 3 gamma shape
+		updateProb.push_back(ntp); // 4 node times
+		updateProb.push_back(dpp); // 5 dpp rates
+		updateProb.push_back(cpa); // 6 concentration parameter
+		updateProb.push_back(tsp); // 7 tree scale parameter
+		updateProb.push_back(sky); // 8 skyline FBD parameters
+		updateProb.push_back(otp); // 9 origin time parameter
+	}
 	double sum = 0.0;
 	for (unsigned i=0; i<updateProb.size(); i++)
 		sum += updateProb[i];

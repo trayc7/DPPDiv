@@ -52,11 +52,20 @@ Skyline::Skyline(MbRandom *rp, Model *mp, int nrts) : Parameter(rp, mp) {
 	name = "SL";
 	
 	for(int i=0; i<numRates; i++){
-		lambdas.push_back(0.5);
+		lambdas.push_back(0.4);
 		mus.push_back(0.1);
 		psis.push_back(0.05);
 	}
-	
+	lambdas[1] = 0.6;
+	lambdas[2] = 0.8;
+	lambdas[3] = 1.0;
+	lambdas[4] = 0.4;
+
+	mus[1] = 0.2;
+	mus[2] = 0.3;
+	mus[3] = 0.4;
+	mus[4] = 0.1;
+
 }
 
 Skyline::~Skyline(void) {
@@ -103,3 +112,31 @@ string Skyline::writeParam(void){
 	return ss.str();
 }
 
+
+string Skyline::writeSkylineParamLabels(void){
+	stringstream ss;
+	
+	for(int i=0; i<numRates; i++)
+		ss << "\tFBDSky.lambda[" << i << "]";
+	for(int i=0; i<numRates; i++)
+		ss << "\tFBDSky.mu[" << i << "]";
+	for(int i=0; i<numRates; i++)
+		ss << "\tFBDSky.psi[" << i << "]";
+	ss << "\tFBDSky.rho";
+	string pi = ss.str();
+	return pi;
+}
+
+string Skyline::writeSkylineParamValues(void){
+	stringstream ss;
+	
+	for(int i=0; i<numRates; i++)
+		ss << "\t" << lambdas[i];
+	for(int i=0; i<numRates; i++)
+		ss << "\t" << mus[i];
+	for(int i=0; i<numRates; i++)
+		ss << "\t" << psis[i];
+	ss << "\t" << rho;
+	string pi = ss.str();
+	return pi;
+}

@@ -62,6 +62,10 @@ class Skyline : public Parameter {
 		std::vector<double>		getSkylineDeathVec(void) { return mus; }
 		std::vector<double>		getSkylinePsiVec(void) { return psis; }
 		
+		std::string				writeSkylineParamLabels(void);
+		std::string				writeSkylineParamValues(void);
+		
+		
 	private:
 		double					rho;
 		int						numRates;

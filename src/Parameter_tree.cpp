@@ -106,6 +106,8 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	isTipCals = false; 
 	expHyperPrCal = exhpc;
 	sampleFossilAges = false;
+	skylineFBD = false;
+	numIntervals = 1;
 	buildTreeFromNewickDescription(ts); 
 	
 	nodeProposal = 2; // proposal type 1=window, 2=scale, 3=slide
@@ -156,6 +158,65 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 		calibNodes = getListOfCalibratedNodes();
 	
     cout << "TREE initialized\n";
+}
+
+Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, std::string ts, double rth, double iot, int ni,
+		   bool ubl, std::vector<Calibration *> clb, std::vector<Calibration *> tdt) : Parameter(rp, mp) {
+	
+	// This is to set up skyline model
+	skylineFBD = true;
+	numIntervals = ni;
+	
+	alignmentPtr = ap;
+	numTaxa = 0;
+	numNodes = 0;
+	nodes = NULL;
+	root = NULL;
+	downPassSequence = NULL;
+	useInputBLs = ubl;
+	calibNds = clb;
+	numCalibNds = (int)calibNds.size();
+	numAncFossilsk = 0;
+	datedTips = tdt;
+	treeScale = rth;
+    originTime = iot;
+	treeTimePrior = modelPtr->getTreeTimePriorNum(); // what number are we on at this point?
+    conditionOnOrigin = true; //modelPtr->getOriginCondition(); // TAH: some redundancy for now
+	name = "TR";
+	moveAllNodes = true;
+	randShufNdMv = true;
+	softBounds = false;
+	isCalibTree = false;
+	isTipCals = false; 
+	expHyperPrCal = false;
+	sampleFossilAges = false;
+	buildTreeFromNewickDescription(ts);
+	
+	intitializeRelativeTimePoints();
+	
+	nodeProposal = 2; // proposal type 1=window, 2=scale, 3=slide
+	tuningVal = log(8.0);
+	//cout << "input root height " << rth << endl;
+	if(rth < 5.0)
+		nodeProposal = 1;
+	
+	// assuming for now that this is always FBD (with fossils or dated tips), should make a skyline with relative ages (no fossils, just extant)
+	isCalibTree = true;
+	setUPTGSCalibrationFossils();
+	initializeCalibratedNodeDepths();
+	while(checkTreeForCalibrationCompatibility() > 0){
+		zeroNodeRedFlags();
+		initializeCalibratedNodeDepths();
+	}
+	initializeFossilSpecVariables();
+
+	setAllNodeBranchTimes();
+	
+	if(isCalibTree)
+		calibNodes = getListOfCalibratedNodes();
+	
+    cout << "TREE initialized\n";
+	
 }
 
 Tree::~Tree(void) {
@@ -777,64 +838,92 @@ double Tree::update(double &oldLnL) {
 	
     OriginTime *ot = modelPtr->getActiveOriginTime();
     originTime = ot->getOriginTime();
-
+	
+	if(skylineFBD){
+		return updateFBDSkylineTree(oldLnL);
+	}
+	
 	double lppr = 0.0;
-	double probCalMove = 0.5;
 	if(treeTimePrior == 6){
-		recountFossilAttachNums();
-		if(ranPtr->uniformRv() > probCalMove){
-			if(moveAllNodes){ 
-				if(randShufNdMv)
-					lppr = updateAllNodesRnd(oldLnL);
-				else lppr = updateAllNodes(oldLnL);
-			}	
-			else lppr = updateOneNode();
-			setAllNodeBranchTimes();
-		}
-		else{
-			updateFossilBDSSAttachmentTimePhi();
-			modelPtr->setLnLGood(true);
-			modelPtr->setMyCurrLnl(oldLnL);
-			Tree *t = modelPtr->getActiveTree();
-			t->upDateAllCls();
-			t->upDateAllTis();
-			modelPtr->setTiProb();
-			return 0.0;
-		}
-		recountFossilAttachNums();
+		lppr = updateSSBDFossTips(oldLnL);
 	}
 	else if(treeTimePrior >= 7){
-		
-		Treescale *ts = modelPtr->getActiveTreeScale();
-		setTreeScale(ts->getScaleValue());
-		
-		updateAllTGSNodes(oldLnL);
-		
-		updateFossilBDSSAttachmentTimePhi(); //rw:** might be very similar
-        treeUpdateNodeOldestBoundsAttchTimes();
-
-		for(int i=0; i<fossSpecimens.size(); i++){//rw:** for each numfossils
-			updateRJMoveAddDelEdge();//rw:**
-            treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
-		}
-		if(sampleFossilAges){
-			updateFossilAges();
-		}
-		modelPtr->setLnLGood(true);
-		modelPtr->setMyCurrLnl(oldLnL);
-		modelPtr->setTiProb();
+		updateFBDRJMCMC(oldLnL);
 		return 0.0;
 	}
 	else{ 
-		if(moveAllNodes){ 
-			updateAllNodes(oldLnL);
-		}	
-		else lppr = updateOneNode();
-		setAllNodeBranchTimes();
+		lppr = updateSimple(oldLnL);
 	}
 	return lppr;
 }
 
+double Tree::updateSimple(double &oldLnL){
+	
+	double lppr = 0.0;
+	if(moveAllNodes){ 
+			updateAllNodes(oldLnL);
+			modelPtr->setLnLGood(true);
+			modelPtr->setMyCurrLnl(oldLnL);
+			modelPtr->setTiProb();
+			lppr = 0.0;
+		}	
+		else lppr = updateOneNode();
+		setAllNodeBranchTimes();
+	return lppr;
+}
+
+double Tree::updateFBDRJMCMC(double &oldLnL){
+
+	Treescale *ts = modelPtr->getActiveTreeScale();
+	setTreeScale(ts->getScaleValue());
+	
+	updateAllTGSNodes(oldLnL);
+	
+	updateFossilBDSSAttachmentTimePhi(); //rw:** might be very similar
+	treeUpdateNodeOldestBoundsAttchTimes();
+
+	for(int i=0; i<fossSpecimens.size(); i++){//rw:** for each numfossils
+		updateRJMoveAddDelEdge();//rw:**
+		treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
+	}
+	if(sampleFossilAges){
+		updateFossilAges();
+	}
+	modelPtr->setLnLGood(true);
+	modelPtr->setMyCurrLnl(oldLnL);
+	modelPtr->setTiProb();
+
+	return 0.0;
+}
+
+double Tree::updateSSBDFossTips(double &oldLnL){
+	
+	double probCalMove = 0.5;
+	double lppr = 0.0;
+	recountFossilAttachNums();
+	if(ranPtr->uniformRv() > probCalMove){
+		if(moveAllNodes){ 
+			if(randShufNdMv)
+				lppr = updateAllNodesRnd(oldLnL);
+			else lppr = updateAllNodes(oldLnL);
+		}	
+		else lppr = updateOneNode();
+		setAllNodeBranchTimes();
+	}
+	else{
+		updateFossilBDSSAttachmentTimePhi();
+		modelPtr->setLnLGood(true);
+		modelPtr->setMyCurrLnl(oldLnL);
+		Tree *t = modelPtr->getActiveTree();
+		t->upDateAllCls();
+		t->upDateAllTis();
+		modelPtr->setTiProb();
+		return 0.0;
+	}
+	recountFossilAttachNums();
+	return lppr;
+
+}
 
 double Tree::updateFossilBDSSAttachmentTimePhi() {
 	
@@ -2183,6 +2272,11 @@ void Tree::getTreeDotFormat(int ngen, string pn) {
 double Tree::getTreeCBDNodePriorProb() {
 	
 	double nprb = 0.0;
+	
+	if(skylineFBD){
+		return getFBDSkylineProbability();
+	}
+	
 	if(treeTimePrior == 1)
 		return 0.0;
 	else if(treeTimePrior == 2){
@@ -2470,6 +2564,10 @@ double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, do
 
 
 double Tree::getTreeSpeciationProbability() {
+
+	if(skylineFBD){
+		return getFBDSkylineProbability();
+	}
 	
 	if(treeTimePrior == 1)
 		return 0.0;

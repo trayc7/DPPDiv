@@ -100,10 +100,21 @@ double Tree::getFBDSkylineProbability(void){
 
 double Tree::updateFBDSkylineTree(double &oldLnL) {
 	
-    OriginTime *ot = modelPtr->getActiveOriginTime();
-    originTime = ot->getOriginTime();
+	Treescale *ts = modelPtr->getActiveTreeScale();
+	setTreeScale(ts->getScaleValue());
+
+	updateFBDSkylineNodeAges(oldLnL);
 	
+	updateFBDSkylineFossilAttachTimes();
+	treeUpdateNodeOldestBoundsAttchTimes();
 	
+	for(int i=0; i<fossSpecimens.size(); i++){
+		updateFBDSkylineRJMoveAddDelEdge();
+		treeUpdateNodeOldestBoundsAttchTimes();
+	}
+	if(sampleFossilAges){
+		updateFBDSkylineFossilAges();
+	}
 	
 	modelPtr->setLnLGood(true);
 	modelPtr->setMyCurrLnl(oldLnL);

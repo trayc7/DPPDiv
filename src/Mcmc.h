@@ -52,6 +52,11 @@ class Mcmc {
 		void			sampleRtsFChain(int gen, std::ofstream &rOut);
 		void			printAllModelParams(std::ofstream &dOut);
 		void			writeCalibrationTree();
+		void			sampleDPPDivConstChain(int gen, std::ofstream &paraOut, 
+									std::ofstream &figTOut, std::ofstream &nodeOut, double lnl);
+		void			sampleDPPDivSkylineChain(int gen, std::ofstream &paraOut, 
+									std::ofstream &figTOut, std::ofstream &nodeOut, double lnl);
+
 		int				numCycles;
 		int				printFrequency;
 		int				sampleFrequency;
@@ -64,6 +69,7 @@ class Mcmc {
         bool            printOrigin; //RW
         bool            printAttach; //RW
         int             treeTimePr;
+		bool			isSkyMod;
 };
 
 #endif

@@ -40,6 +40,7 @@
 #include "Parameter_rate.h"
 #include "Parameter_tree.h"
 #include "Parameter_shape.h"
+#include "Parameter_skyline.h"
 #include "Parameter_speciaton.h"
 #include "Parameter_treescale.h"
 #include "util.h"
@@ -69,6 +70,7 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
     printOrigin     = po;
     printAttach     = pfat;
     treeTimePr      = mp->getTreeTimePriorNum();
+	isSkyMod		= mp->getIsSkylineModel();
     if(treeTimePr < 9)
         runChain();
     else
@@ -276,7 +278,16 @@ double Mcmc::safeExponentiation(double lnX) {
 		return exp(lnX);
 }
 
-void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut, 
+void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
+					   ofstream &nodeOut, double lnl) {
+
+	if(isSkyMod)
+		sampleDPPDivSkylineChain(gen, paraOut, figTOut, nodeOut, lnl);
+	else
+		sampleDPPDivConstChain(gen, paraOut, figTOut, nodeOut, lnl);
+}
+
+void Mcmc::sampleDPPDivConstChain(int gen, ofstream &paraOut, ofstream &figTOut,
 					   ofstream &nodeOut, double lnl) {
 
 	Basefreq *f = modelPtr->getActiveBasefreq();
@@ -310,7 +321,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 			nodeOut << "\tFBD.lambda\tFBD.mu\tFBD.prsp";
         if(treePr == 8){
             if(printOrigin)//RW
-            nodeOut << "\tFBD.OriginTime";
+				nodeOut << "\tFBD.OriginTime";
         }
 		nodeOut << "\tPr(speciation)\tave.subrate\tnum.DPMgroups\tDPM.conc";
 		if(expHPCal){
@@ -365,7 +376,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 	}
     if(treePr == 8){
         if(printOrigin)
-        nodeOut << "\t" << ot->getOriginTime();
+			nodeOut << "\t" << ot->getOriginTime();
     }
     nodeOut << "\t" << t->getTreeSpeciationProbability();
 	nodeOut << "\t" << nr->getAverageRate();
@@ -403,6 +414,84 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		figTOut << "    set scaleBar.isShown=false;\n";
 		figTOut << "end;\n";
 	}
+}
+
+void Mcmc::sampleDPPDivSkylineChain(int gen, ofstream &paraOut, ofstream &figTOut,
+					   ofstream &nodeOut, double lnl) {
+
+	Basefreq *f = modelPtr->getActiveBasefreq();
+	Exchangeability *e = modelPtr->getActiveExchangeability();
+	NodeRate *nr = modelPtr->getActiveNodeRate();
+	Tree *t = modelPtr->getActiveTree();
+	Shape *sh = modelPtr->getActiveShape();
+	Skyline *sky = modelPtr->getActiveSkyline();
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+
+	
+	if(gen == 1){ // first print labels
+		paraOut << "Gen\tlnLikelihood\tf(A)\tf(C)\tf(G)\tf(T)";
+		paraOut << "\tr(AC)\tr(AG)\tr(AT)\tr(CG)\tr(CT)\tr(GT)\tshape\n";
+		figTOut << "#NEXUS\nbegin trees;\n";
+		nodeOut << "Gen\tlnL";
+		
+		// DPP stuff
+		nodeOut << "\tave.subrate\tnum.DPMgroups\tDPM.conc";
+		
+		// FBD stuff
+		nodeOut << "\tPr(FBDSky)";
+		nodeOut << sky->writeSkylineParamLabels();
+		nodeOut << "\tnum.tip_fossils";
+		if(true)
+			nodeOut << "\tFBD.OriginTime";
+			
+		// rates and times at the end
+		nodeOut << t->getNodeInfoNames();
+		nodeOut << t->getCalBDSSNodeInfoParamNames();
+		
+		nodeOut << "\n";
+	}
+	
+	// then print values
+	paraOut << gen << "\t" << lnl;
+	for(int i=0; i<f->getNumStates(); i++)
+		paraOut << "\t" << f->getFreq(i);
+	for(int i=0; i<6; i++)
+		paraOut << "\t" << e->getRate(i);
+	paraOut << "\t" << sh->getAlphaSh();
+	paraOut << "\n";
+
+	figTOut << "  tree t" << gen << " = ";
+	figTOut << t->getFigTreeDescription() << "\n";
+
+	nodeOut << gen << "\t" << lnl;
+	
+	// DPP stuff
+	nodeOut << "\t" << nr->getAverageRate();
+	nodeOut << "\t" << nr->getNumRateGroups();
+	nodeOut << "\t" << nr->getConcenParam();
+	
+	// FBD stuff
+	nodeOut << "\t" << t->getTreeSpeciationProbability();
+	nodeOut << sky->writeSkylineParamValues();
+	nodeOut << "\t" << t->getSumIndicatorV();
+	if(true)
+		nodeOut << "\t" << ot->getOriginTime();
+	
+	// rates and times
+	nodeOut << t->getNodeInfoList();
+	nodeOut << t->getCalBDSSNodeInfoParamList();
+
+	nodeOut << "\n";
+	
+	if(gen == numCycles){
+		figTOut << "end;\n";
+		figTOut << "\nbegin figtree;\n";
+		figTOut << "    set appearance.branchColorAttribute=\"rate_cat\";\n";
+		figTOut << "    set appearance.branchLineWidth=2.0;\n";
+		figTOut << "    set scaleBar.isShown=false;\n";
+		figTOut << "end;\n";
+	}
+
 }
 
 void Mcmc::printAllModelParams(ofstream &dOut){

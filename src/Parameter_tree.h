@@ -204,6 +204,8 @@ class Tree : public Parameter {
 										Tree(MbRandom *rp, Model *mp, Alignment *ap, std::string ts, 
 											 bool ubl, bool allnm, bool rndNods, std::vector<Calibration *> clb, 
 											 double rth, double iot, bool sb, bool exhpc, ExpCalib *ec, std::vector<Calibration *> tdt);
+										Tree(MbRandom *rp, Model *mp, Alignment *ap, std::string ts, double rth, double iot, int ni,
+											 bool ubl, std::vector<Calibration *> clb, std::vector<Calibration *> tdt);
 										~Tree(void); 
 		Tree							&operator=(const Tree &t);
 		void							clone(const Tree &t);
@@ -214,6 +216,9 @@ class Tree : public Parameter {
 		int								getNumTaxa(void) { return numTaxa; }
 		Node*							getRoot(void) { return root; }
 		double							update(double &oldLnL);
+		double							updateSimple(double &oldLnL);
+		double							updateFBDRJMCMC(double &oldLnL);
+		double							updateSSBDFossTips(double &oldLnL);
 		double							updateOneNode();
 		double							updateAllNodes(double &oldLnL);
 		double							updateAllTGSNodes(double &oldLnL);
@@ -407,6 +412,7 @@ class Tree : public Parameter {
 
 		std::vector<double>				relTimePoints;
 		int								numIntervals;
+		bool							skylineFBD;
 		
 };
 

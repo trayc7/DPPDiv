@@ -112,8 +112,13 @@ class Model {
 		bool							getFixTestRun(void) { return fixTestRun; }
 		bool							getOriginCondition(void) { return conditionOnOrigin; }
 		int								getTotalUpdateWeights(void){ return totalUpdateWeights; }
+		bool							getIsSkylineModel(void) { return doSkylineBDP; }
 
 	private:
+		
+		void							initializeConstantRateDPPDiv(double initRootH,double bdr, double bda, double bds, int dphpng, bool gamhp, double hal, double hbe, double ra, double rb, int rmod, bool sfb, int tsPrDist, bool ubl);
+		void							initializeSkylineRateDPPDiv(double initRootH,double bdr, double bda, double bds, double hal, double hbe, double ra, double rb, int rmod, int tsPrDist, bool ubl);
+
 		void							initializeConditionalLikelihoods(void);
 		void							initializeTransitionProbabilityMatrices(void);
 		double							readCalibFile();
@@ -149,6 +154,7 @@ class Model {
 		bool							lnLGood;
 		int								turnedOffMove;
 		
+		std::string						newickTreeString;
 		std::string						calibfilen;
 		std::string						tipDateFileN;
 		std::vector<Calibration*>		calibrs;
@@ -173,6 +179,8 @@ class Model {
         bool                            conditionOnOrigin;
 		
 		int								totalUpdateWeights;
+		bool							rtCalib;
+		bool							doSkylineBDP;
 };
 
 #endif
