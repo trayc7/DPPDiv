@@ -77,7 +77,28 @@ class Skyline : public Parameter {
 		std::vector<double>		netDivVec;
 		std::vector<double>		turnoverVec;
 		int						parameterization;
+		
+		double					rateMax;
+		double					netDivExpPriorRt;
+		double					psiExpPriorRt;
+		std::vector<double>		updateProbs;
+		
+		void					setUpdateProbs(void);
+		
+		double					getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv);
+		double					getNewValSWindoMv(double &nv, double ov, double vmin, double vmax, double tv);
+		double					getNewValUpDownScaleMv(double &nv1, double ov1, double &nv2, double ov2, double sf);
 
+		double					udateTurnovers(Tree *t);
+		double					updateVectorScaleTurnover(Tree *t);
+		double					udateNetDivs(Tree *t);
+		double					updateVectorScaleNetDivs(Tree *t);
+		double					udatePsis(Tree *t);
+		double					updateVectorScalePsis(Tree *t);
+		
+		double					getExponentialPriorRatio(double ov, double nv, double r);
+		
+		size_t					pickUpdate(void);
 };
 
 

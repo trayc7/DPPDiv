@@ -31,7 +31,6 @@ double Tree::fbdLogQBarFxn(double b, double d, double psi, double rho, double t)
 
 void Tree::intitializeRelativeTimePoints(void){
 	
-	numIntervals = 5;
 	relTimePoints.push_back(1.0);
 	for(int i=1; i<numIntervals; i++){
 		double v = i * (1.0 / numIntervals);
@@ -60,6 +59,7 @@ double Tree::getFBDSkylineProbability(void){
 	OriginTime *ot = modelPtr->getActiveOriginTime();
 	originTime = ot->getOriginTime();
 	Skyline *sl = modelPtr->getActiveSkyline();
+	sl->setAllSkyFBDParameters();
 	vector<double> bv = sl->getSkylineBirthVec();
 	vector<double> dv = sl->getSkylineDeathVec();
 	vector<double> pv = sl->getSkylinePsiVec();
@@ -129,6 +129,7 @@ double Tree::updateFBDSkylineNodeAges(double &oldLnL) {
 	upDateAllCls(); 
 	upDateAllTis();
 	Skyline *sl = modelPtr->getActiveSkyline();
+	sl->setAllSkyFBDParameters();
 	vector<double> bv = sl->getSkylineBirthVec();
 	vector<double> dv = sl->getSkylineDeathVec();
 	vector<double> pv = sl->getSkylinePsiVec();
@@ -197,6 +198,7 @@ double Tree::updateFBDSkylineNodeAges(double &oldLnL) {
 double Tree::updateFBDSkylineFossilAttachTimes() {
 	
 	Skyline *sl = modelPtr->getActiveSkyline();
+	sl->setAllSkyFBDParameters();
 	vector<double> bv = sl->getSkylineBirthVec();
 	vector<double> dv = sl->getSkylineDeathVec();
 	vector<double> pv = sl->getSkylinePsiVec();
@@ -272,6 +274,7 @@ double Tree::updateFBDSkylineFossilAttachTimes() {
 double Tree::updateFBDSkylineFossilAges(void){
 	
 	Skyline *sl = modelPtr->getActiveSkyline();
+	sl->setAllSkyFBDParameters();
 	vector<double> bv = sl->getSkylineBirthVec();
 	vector<double> dv = sl->getSkylineDeathVec();
 	vector<double> pv = sl->getSkylinePsiVec();
@@ -337,6 +340,7 @@ void Tree::doFBDSkyAddEdgeMove(void){
 	int kN = k-1;
 
 	Skyline *sl = modelPtr->getActiveSkyline();
+	sl->setAllSkyFBDParameters();
 	vector<double> bv = sl->getSkylineBirthVec();
 	vector<double> dv = sl->getSkylineDeathVec();
 	vector<double> pv = sl->getSkylinePsiVec();
@@ -408,6 +412,7 @@ void Tree::doFBDSkyDeleteEdgeMove(void){
 	int kN = k+1;
 
 	Skyline *sl = modelPtr->getActiveSkyline();
+	sl->setAllSkyFBDParameters();
 	vector<double> bv = sl->getSkylineBirthVec();
 	vector<double> dv = sl->getSkylineDeathVec();
 	vector<double> pv = sl->getSkylinePsiVec();

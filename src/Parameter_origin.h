@@ -39,7 +39,7 @@ class Speciation;
 class OriginTime : public Parameter {
     
 public:
-    OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob);
+    OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob, bool sky=false);
     ~OriginTime(void);
     OriginTime			&operator=(const OriginTime &c);
     void				clone(const OriginTime &c);
@@ -66,15 +66,21 @@ private:
     double				numTried;
 	int					treeTimePrior;
 	double				currentFossilGraphLnL;
+	
+
 
 	
 	
 	double				updateFOFBD(void);
 	double				updateDPPDiv(void);
+	double				updateSkylineDPPDiv(void);
+	
     int                 otProposal;
     int                 otPrior;
     bool                moveOnDiff;
     double              expRate;
+	
+	bool				isSkyline;
     
 };
 

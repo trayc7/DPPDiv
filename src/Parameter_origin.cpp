@@ -43,7 +43,7 @@
 using namespace std;
 
 
-OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob) : Parameter(rp, mp) {
+OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob, bool sky) : Parameter(rp, mp) {
     oldBound = ob;
     yngBound = yb;
     originTime = sv;
@@ -56,6 +56,7 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob)
     otPrior = 1; // 1 = uniform, 2 = exponential
     moveOnDiff = false; // 1 = propose changes to the difference between the min and the ot, rather than the age of the ot
     expRate = 0.005;
+	isSkyline = sky;
     
 }
 
@@ -91,6 +92,12 @@ void OriginTime::print(std::ostream & o) const {
 double OriginTime::update(double &oldLnL) {
     
     double myPrR = 0.0;
+	if(isSkyline){
+        myPrR = updateSkylineDPPDiv();
+        modelPtr->setLnLGood(true);
+        modelPtr->setMyCurrLnl(oldLnL);
+		return myPrR;
+	}
     if(treeTimePrior < 9){
         myPrR = updateDPPDiv();
         modelPtr->setLnLGood(true);
@@ -204,6 +211,51 @@ double OriginTime::updateDPPDiv(void){
     double newOTProb = getFBDProbOriginTime(t, s);
     
     double myPrR = oldOTProb-newOTProb;
+    
+    /* uniform prior on ot*/
+    if (otPrior == 1)
+        myPrR += lnProposalRatio;
+    
+    /* exponential prior on ot */
+    else if (otPrior == 2)
+        myPrR += lnProposalRatio + lnExpOriginTimePriorRatio(newOT,oldOT,minAge,expRate);
+    
+    return myPrR;
+    
+}
+
+double OriginTime::updateSkylineDPPDiv(void){
+    
+    Tree *t = modelPtr->getActiveTree();
+    
+    double oldOT = originTime;
+    
+    double oldOTProb = t->getTreeSpeciationProbability();
+    
+    double minAge = t->getOldestTreeSpeciationTime();
+    double maxAge = oldBound;
+    
+    double newOT;
+    double lnProposalRatio = 0.0;
+    
+    double limO = oldOT + tuning;
+	double limY = oldOT - tuning;
+	
+	double u = ranPtr->uniformRv(-0.5,0.5) * (limO - limY);
+	newOT = oldOT + u;
+	
+	while(newOT < minAge || newOT > maxAge){
+		if(newOT < minAge)
+			newOT = (2 * minAge) - newOT;
+		if(newOT > maxAge)
+			newOT = (2 * maxAge) - newOT;
+	}
+    
+    
+    originTime = newOT;
+    double newOTProb = t->getTreeSpeciationProbability();
+    
+    double myPrR = newOTProb-oldOTProb;
     
     /* uniform prior on ot*/
     if (otPrior == 1)

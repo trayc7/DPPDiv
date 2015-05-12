@@ -403,7 +403,7 @@ void Model::initializeSkylineRateDPPDiv(double initRootH,double bdr, double bda,
 										double hal, double hbe, double ra, double rb, int rmod,
 										int tsPrDist, bool ubl){
 	
-	int numIntervals = 5;
+	int numIntervals = 3;
 	int nn = 2*alignmentPtr->getNumTaxa()-1;
 	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, priorMeanN, cpfix);
 	NodeRate *nr = new NodeRate(ranPtr, this, nn, ra, rb, conp->getCurrentCP(), fixedClockRate, rmod);
@@ -417,7 +417,7 @@ void Model::initializeSkylineRateDPPDiv(double initRootH,double bdr, double bda,
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, false, true) ); // the tree scale prior
 		parms[i].push_back( new Skyline(ranPtr, this, numIntervals) );												// hyper prior on diversification for cBDP speciation
-        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) ); // the origin time parameters
+        parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax, true) ); // the origin time parameters
 	}
 
 }
@@ -995,7 +995,7 @@ void Model::setUpdateProbabilities(bool initial) {
 	}
 	else { //skyline
 		otp = 0.0; // this is off until a move that calcs whole FBD prob is implemented
-		double sky = 0.0; //4.0;
+		double sky = 1.0; //4.0;
 		ntp = 4.0;
 		tsp = 1.0; 
 		
