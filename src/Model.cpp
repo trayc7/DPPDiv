@@ -58,7 +58,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr) {
+			 bool ihp, string tipdfn, bool fxtr, int sky) {
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -80,8 +80,18 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixSomeModParams = fxmod;
 	fixTestRun = fxtr;
 	estAbsRts = false;
-	doSkylineBDP = true;
-    originMax = 100000.0;
+	if(sky == 1){
+		doSkylineBDP = false;
+		numSkyInts = 1;
+	}
+	else if(sky > 1){
+		doSkylineBDP = true;
+		numSkyInts = sky;
+	}
+	else{
+		cerr << "ERROR: the number of skyline intervals must be greater than 0" << endl;
+		exit(1);
+	}
     rho = 1.0; //rw: fixed for now
     if(treeTimePrior == 8)
         conditionOnOrigin = true; // some redundancy for now
@@ -110,6 +120,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			tsPrDist = 2;
 		}
 	}
+    originMax = initOT * 5.0;
     if(conditionOnOrigin)
         rHtO = initOT;
     else rHtO = originMax;
@@ -403,7 +414,6 @@ void Model::initializeSkylineRateDPPDiv(double initRootH,double bdr, double bda,
 										double hal, double hbe, double ra, double rb, int rmod,
 										int tsPrDist, bool ubl){
 	
-	int numIntervals = 3;
 	int nn = 2*alignmentPtr->getNumTaxa()-1;
 	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, priorMeanN, cpfix);
 	NodeRate *nr = new NodeRate(ranPtr, this, nn, ra, rb, conp->getCurrentCP(), fixedClockRate, rmod);
@@ -411,12 +421,12 @@ void Model::initializeSkylineRateDPPDiv(double initRootH,double bdr, double bda,
 		parms[i].push_back( new Basefreq(ranPtr, this, 4, fixSomeModParams) );					// base frequency parameter
 		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
 		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fixSomeModParams) );		// gamma shape parameter for rate variation across sites
-		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, newickTreeString, initRootH, initOT, numIntervals, ubl,
+		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, newickTreeString, initRootH, initOT, numSkyInts, ubl,
 									 calibrs, tipDates) );    // rooted phylogenetic tree
 		parms[i].push_back( nr );												// restaurant containing node rates
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, false, true) ); // the tree scale prior
-		parms[i].push_back( new Skyline(ranPtr, this, numIntervals) );												// hyper prior on diversification for cBDP speciation
+		parms[i].push_back( new Skyline(ranPtr, this, numSkyInts, true) );												// hyper prior on diversification for cBDP speciation
         parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax, true) ); // the origin time parameters
 	}
 
@@ -981,23 +991,12 @@ void Model::setUpdateProbabilities(bool initial) {
     }
 	
 	updateProb.clear();
-	if(doSkylineBDP == false){ // constant rate DPPDiv
-		updateProb.push_back(bfp); // 1 basefreq
-		updateProb.push_back(srp); // 2 sub rates
-		updateProb.push_back(shp); // 3 gamma shape
-		updateProb.push_back(ntp); // 4 node times
-		updateProb.push_back(dpp); // 5 dpp rates
-		updateProb.push_back(cpa); // 6 concentration parameter
-		updateProb.push_back(tsp); // 7 tree scale parameter
-		updateProb.push_back(spp); // 8 speciation parameters
-		updateProb.push_back(ehp); // 9 exponential calibration hyper priors
-		updateProb.push_back(otp); // 10 origin time parameter
-	}
-	else { //skyline
+	if(doSkylineBDP) { //skyline
 		otp = 0.0; // this is off until a move that calcs whole FBD prob is implemented
-		double sky = 1.0; //4.0;
-		ntp = 4.0;
-		tsp = 1.0; 
+		double sky = 4.0; //4.0;
+		ntp = 0.0;
+		tsp = 0.0;
+		dpp = 2.0;
 		
 		updateProb.push_back(bfp); // 1 basefreq
 		updateProb.push_back(srp); // 2 sub rates
@@ -1008,6 +1007,19 @@ void Model::setUpdateProbabilities(bool initial) {
 		updateProb.push_back(tsp); // 7 tree scale parameter
 		updateProb.push_back(sky); // 8 skyline FBD parameters
 		updateProb.push_back(otp); // 9 origin time parameter
+	}
+	else{
+		updateProb.push_back(bfp); // 1 basefreq
+		updateProb.push_back(srp); // 2 sub rates
+		updateProb.push_back(shp); // 3 gamma shape
+		updateProb.push_back(ntp); // 4 node times
+		updateProb.push_back(dpp); // 5 dpp rates
+		updateProb.push_back(cpa); // 6 concentration parameter
+		updateProb.push_back(tsp); // 7 tree scale parameter
+		updateProb.push_back(spp); // 8 speciation parameters
+		updateProb.push_back(ehp); // 9 exponential calibration hyper priors
+		updateProb.push_back(otp); // 10 origin time parameter
+	
 	}
 	double sum = 0.0;
 	for (unsigned i=0; i<updateProb.size(); i++)

@@ -33,7 +33,7 @@
 class MbRandom;
 class Model;
 class ExpCalib;
-class FossilGraph; //rw
+class FossilGraph; 
 class Tree;
 class Speciation;
 class OriginTime : public Parameter {

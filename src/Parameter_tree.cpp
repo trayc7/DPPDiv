@@ -157,6 +157,8 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	if(isCalibTree)
 		calibNodes = getListOfCalibratedNodes();
 	
+	setUpdateProbs();
+	
     cout << "TREE initialized\n";
 }
 
@@ -214,6 +216,8 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, std::string ts, double rth, d
 	
 	if(isCalibTree)
 		calibNodes = getListOfCalibratedNodes();
+	
+	setUpdateProbs();
 	
     cout << "TREE initialized\n";
 	
@@ -877,18 +881,22 @@ double Tree::updateFBDRJMCMC(double &oldLnL){
 	Treescale *ts = modelPtr->getActiveTreeScale();
 	setTreeScale(ts->getScaleValue());
 	
-	updateAllTGSNodes(oldLnL);
-	
-	updateFossilBDSSAttachmentTimePhi(); //rw:** might be very similar
-	treeUpdateNodeOldestBoundsAttchTimes();
+	size_t updateNum = pickUpdate();
+	if(updateNum == 0)
+		updateAllTGSNodes(oldLnL);
+	else if (updateNum == 1){
+		updateFossilBDSSAttachmentTimePhi();
+		treeUpdateNodeOldestBoundsAttchTimes();
+	}
+	else if (updateNum == 2){
+		for(int i=0; i<fossSpecimens.size(); i++){
+			updateRJMoveAddDelEdge();
+			treeUpdateNodeOldestBoundsAttchTimes();
+		}
+	}
+	else if (updateNum == 3)
+			updateFossilAges();
 
-	for(int i=0; i<fossSpecimens.size(); i++){//rw:** for each numfossils
-		updateRJMoveAddDelEdge();//rw:**
-		treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
-	}
-	if(sampleFossilAges){
-		updateFossilAges();
-	}
 	modelPtr->setLnLGood(true);
 	modelPtr->setMyCurrLnl(oldLnL);
 	modelPtr->setTiProb();

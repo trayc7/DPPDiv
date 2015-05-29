@@ -300,6 +300,11 @@ class Tree : public Parameter {
         double                          getOldestTreeSpeciationTime(void);
 		bool							getEstimateFossilAges(void){ return sampleFossilAges; }
 
+		// skyline
+		double							getFBDSkylineProbability(void);
+		double							getFBDSkylineProbability(double ot);
+		double							getFBDSkylineProbability(std::vector<double> bv,std::vector<double> dv,std::vector<double> pv, double r);
+
     
 	private:
 		void							buildTreeFromNewickDescription(std::string ts);
@@ -365,17 +370,21 @@ class Tree : public Parameter {
 		double							fbdLogQBarFxn(double b, double d, double psi, double rho, double t);
 		void							intitializeRelativeTimePoints(void);
 		int								getSkylineIndexForTime(double ot, double tt);
-		double							getFBDSkylineProbability(void);
+		double							calcFBDSkylineProbability(void);
 		
 		double							updateFBDSkylineTree(double &oldLnL);
-		double							updateFBDSkylineNodeAges(double &oldLnL);
-		double							updateFBDSkylineFossilAttachTimes(void);
-		double							updateFBDSkylineFossilAges(void);
-		double							updateFBDSkylineRJMoveAddDelEdge(void);
+		double							updateFBDSkylineNodeAges(double &oldLnL); // 0
+		double							updateFBDSkylineFossilAttachTimes(void); // 1
+		double							updateFBDSkylineFossilAges(void); // 2
+		double							updateFBDSkylineRJMoveAddDelEdge(void); // 3
 		void							doFBDSkyAddEdgeMove(void);
 		void							doFBDSkyDeleteEdgeMove(void);
 		
-		double							lnPrRatioNodeAgeMoveFBDSky(double newD, double oldD, double newG, double oldG, std::vector<double> bv, std::vector<double> dv, std::vector<double> pv, double rho);
+		double							lnPrRatioNodeAgeMoveFBDSky(double newD, double oldD, double newG, double oldG);
+		
+		void							setUpdateProbs(void);
+		size_t							pickUpdate(void);
+		
 		
 		Alignment						*alignmentPtr;
 		int								numTaxa;
@@ -409,11 +418,16 @@ class Tree : public Parameter {
 		bool							autotune;
 		bool							sampleFossilAges;
 
-
+		//skyline
 		std::vector<double>				relTimePoints;
+		std::vector<double>				lambdaV;
+		std::vector<double>				muV;
+		std::vector<double>				psiV;
+		double							rho;
+		
 		int								numIntervals;
 		bool							skylineFBD;
-		
+		std::vector<double>				updateProbs;
 };
 
 

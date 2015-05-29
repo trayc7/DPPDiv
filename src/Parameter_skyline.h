@@ -48,7 +48,7 @@ class Tree;
 class Skyline : public Parameter {
 	
 	public:
-								Skyline(MbRandom *rp, Model *mp, int nrts); //rw:
+								Skyline(MbRandom *rp, Model *mp, int nrts, bool tree);
 								~Skyline(void);
 		Skyline					&operator=(const Skyline &c);
 		void					clone(const Skyline &c);
@@ -83,22 +83,30 @@ class Skyline : public Parameter {
 		double					psiExpPriorRt;
 		std::vector<double>		updateProbs;
 		
+		bool					isTreeModel;
+		
 		void					setUpdateProbs(void);
 		
 		double					getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv);
 		double					getNewValSWindoMv(double &nv, double ov, double vmin, double vmax, double tv);
 		double					getNewValUpDownScaleMv(double &nv1, double ov1, double &nv2, double ov2, double sf);
-
+		
+		double					updateTreeSkyParams(double &oldLnL);
 		double					udateTurnovers(Tree *t);
 		double					updateVectorScaleTurnover(Tree *t);
 		double					udateNetDivs(Tree *t);
 		double					updateVectorScaleNetDivs(Tree *t);
 		double					udatePsis(Tree *t);
 		double					updateVectorScalePsis(Tree *t);
+		double					updateRandTurnover(Tree *t);
+		double					updateRandNetDiv(Tree *t);
+		double					updateRandPsi(Tree *t);
 		
 		double					getExponentialPriorRatio(double ov, double nv, double r);
 		
 		size_t					pickUpdate(void);
+		double					getTreeSpeciationProb(Tree *t);
+		void					initializeAsEqual(void);
 };
 
 

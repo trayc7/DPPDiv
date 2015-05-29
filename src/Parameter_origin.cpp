@@ -230,7 +230,7 @@ double OriginTime::updateSkylineDPPDiv(void){
     
     double oldOT = originTime;
     
-    double oldOTProb = t->getTreeSpeciationProbability();
+    double oldOTProb = t->getFBDSkylineProbability(oldOT);
     
     double minAge = t->getOldestTreeSpeciationTime();
     double maxAge = oldBound;
@@ -253,7 +253,7 @@ double OriginTime::updateSkylineDPPDiv(void){
     
     
     originTime = newOT;
-    double newOTProb = t->getTreeSpeciationProbability();
+    double newOTProb = t->getFBDSkylineProbability(newOT);
     
     double myPrR = newOTProb-oldOTProb;
     

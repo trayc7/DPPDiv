@@ -59,25 +59,71 @@ double Tree::getFBDSkylineProbability(void){
 	OriginTime *ot = modelPtr->getActiveOriginTime();
 	originTime = ot->getOriginTime();
 	Skyline *sl = modelPtr->getActiveSkyline();
-	sl->setAllSkyFBDParameters();
-	vector<double> bv = sl->getSkylineBirthVec();
-	vector<double> dv = sl->getSkylineDeathVec();
-	vector<double> pv = sl->getSkylinePsiVec();
-	double rho = sl->getSkylineRhoVal();
+//	sl->setAllSkyFBDParameters();
+	lambdaV = sl->getSkylineBirthVec();
+	muV = sl->getSkylineDeathVec();
+	psiV = sl->getSkylinePsiVec();
+	rho = sl->getSkylineRhoVal();
 	
+	nprb = calcFBDSkylineProbability();
+
+	return nprb;
+}
+
+double Tree::getFBDSkylineProbability(double ot){
+
+	double nprb = 0.0;
+	
+	originTime = ot;
+	Skyline *sl = modelPtr->getActiveSkyline();
+//	sl->setAllSkyFBDParameters();
+	lambdaV = sl->getSkylineBirthVec();
+	muV = sl->getSkylineDeathVec();
+	psiV = sl->getSkylinePsiVec();
+	rho = sl->getSkylineRhoVal();
+	
+	nprb = calcFBDSkylineProbability();
+
+	return nprb;
+}
+
+
+
+double Tree::getFBDSkylineProbability(vector<double> bv, vector<double> dv, vector<double> pv, double r){
+
+	double nprb = 0.0;
+	
+	OriginTime *ot = modelPtr->getActiveOriginTime();
+	originTime = ot->getOriginTime();
+	lambdaV = bv;
+	muV = dv;
+	psiV = pv;
+	rho = r;
+	
+	nprb = calcFBDSkylineProbability();
+
+	return nprb;
+}
+
+
+
+double Tree::calcFBDSkylineProbability(void){
+
+	double nprb = 0.0;
+		
 	int numFossils = (int)fossSpecimens.size();
 	
-	double qBarOT = fbdLogQBarFxn(bv[0],dv[0],pv[0],rho,originTime);
+	double qBarOT = fbdLogQBarFxn(lambdaV[0],muV[0],psiV[0],rho,originTime);
 	nprb = -(MbMath::lnFactorial(numTaxa + numFossils));
-	nprb += (log(rho) + qBarOT) - log(1.0-bdssP0HatFxn(bv[0],dv[0],rho,originTime));
+	nprb += (log(rho) + qBarOT) - log(1.0-bdssP0HatFxn(lambdaV[0],muV[0],rho,originTime));
 	
 	for(int i=0; i<numNodes; i++){
 		Node *p = &nodes[i];
 		if(!p->getIsLeaf()){
 			double xi = p->getNodeDepth() * treeScale;
 			int pIdx = getSkylineIndexForTime(originTime, xi);
-			double qBarXi = fbdLogQBarFxn(bv[pIdx],dv[pIdx],pv[pIdx],rho,xi);
-			nprb += log(2.0*bv[pIdx]*rho) + qBarXi;
+			double qBarXi = fbdLogQBarFxn(lambdaV[pIdx],muV[pIdx],psiV[pIdx],rho,xi);
+			nprb += log(2.0*lambdaV[pIdx]*rho) + qBarXi;
 		}
 	}
 	
@@ -85,38 +131,50 @@ double Tree::getFBDSkylineProbability(void){
 		Fossil *f = fossSpecimens[i];
 		double yf = f->getFossilAge();
 		int yIdx = getSkylineIndexForTime(originTime, yf);
-		nprb += log(pv[yIdx]) + log(f->getFossilFossBrGamma());
+		nprb += log(psiV[yIdx]) + log(f->getFossilFossBrGamma());
 		
 		if(f->getFossilIndicatorVar()){
 			double zf = f->getFossilSppTime() * treeScale;
 			int zIdx = getSkylineIndexForTime(originTime, zf);
-			double qBarYf = fbdLogQBarFxn(bv[yIdx],dv[yIdx],pv[yIdx],rho,yf);
-			double qBarZf = fbdLogQBarFxn(bv[zIdx],dv[zIdx],pv[zIdx],rho,zf);
-			double pFxnYf = bdssP0Fxn(bv[yIdx],dv[yIdx],pv[yIdx],rho,yf);
-			nprb += log(2.0 * bv[zIdx]) + qBarZf;
+			double qBarYf = fbdLogQBarFxn(lambdaV[yIdx],muV[yIdx],psiV[yIdx],rho,yf);
+			double qBarZf = fbdLogQBarFxn(lambdaV[zIdx],muV[zIdx],psiV[zIdx],rho,zf);
+			double pFxnYf = bdssP0Fxn(lambdaV[yIdx],muV[yIdx],psiV[yIdx],rho,yf);
+			nprb += log(2.0 * lambdaV[zIdx]) + qBarZf;
 			nprb += log(pFxnYf) - qBarYf;
 		}
 	}
 	return nprb;
 }
 
+
 double Tree::updateFBDSkylineTree(double &oldLnL) {
 	
 	Treescale *ts = modelPtr->getActiveTreeScale();
 	setTreeScale(ts->getScaleValue());
-
-	updateFBDSkylineNodeAges(oldLnL);
+	OriginTime *ot = modelPtr->getActiveOriginTime();
+	originTime = ot->getOriginTime();
+	Skyline *sl = modelPtr->getActiveSkyline();
+	sl->setAllSkyFBDParameters();
+	lambdaV = sl->getSkylineBirthVec();
+	muV = sl->getSkylineDeathVec();
+	psiV = sl->getSkylinePsiVec();
+	rho = sl->getSkylineRhoVal();
 	
-	updateFBDSkylineFossilAttachTimes();
-	treeUpdateNodeOldestBoundsAttchTimes();
-	
-	for(int i=0; i<fossSpecimens.size(); i++){
-		updateFBDSkylineRJMoveAddDelEdge();
+	size_t updateNum = pickUpdate();
+	if(updateNum == 0)
+		updateFBDSkylineNodeAges(oldLnL);
+	else if (updateNum == 1){
+		updateFBDSkylineFossilAttachTimes();
 		treeUpdateNodeOldestBoundsAttchTimes();
 	}
-	if(sampleFossilAges){
-		updateFBDSkylineFossilAges();
+	else if (updateNum == 2){
+		for(int i=0; i<fossSpecimens.size(); i++){
+			updateFBDSkylineRJMoveAddDelEdge();
+			treeUpdateNodeOldestBoundsAttchTimes();
+		}
 	}
+	else if (updateNum == 3)
+		updateFBDSkylineFossilAges();
 	
 	modelPtr->setLnLGood(true);
 	modelPtr->setMyCurrLnl(oldLnL);
@@ -128,12 +186,6 @@ double Tree::updateFBDSkylineNodeAges(double &oldLnL) {
 		
 	upDateAllCls(); 
 	upDateAllTis();
-	Skyline *sl = modelPtr->getActiveSkyline();
-	sl->setAllSkyFBDParameters();
-	vector<double> bv = sl->getSkylineBirthVec();
-	vector<double> dv = sl->getSkylineDeathVec();
-	vector<double> pv = sl->getSkylinePsiVec();
-	double rho = sl->getSkylineRhoVal();
 
 	double oldLike = oldLnL;
 	Node *p = NULL;
@@ -168,7 +220,7 @@ double Tree::updateFBDSkylineNodeAges(double &oldLnL) {
 				
 				p->setNodeDepth(newNodeDepth/treeScale);
 				double newSumLogGammas = getSumLogAllAttachNums();
-				double lnPrRatio = lnPrRatioNodeAgeMoveFBDSky(newNodeDepth, currDepth, newSumLogGammas, oldSumLogGammas, bv, dv, pv, rho);
+				double lnPrRatio = lnPrRatioNodeAgeMoveFBDSky(newNodeDepth, currDepth, newSumLogGammas, oldSumLogGammas);
 
 				flipToRootClsTis(p);
 				updateToRootClsTis(p);
@@ -197,13 +249,6 @@ double Tree::updateFBDSkylineNodeAges(double &oldLnL) {
 
 double Tree::updateFBDSkylineFossilAttachTimes() {
 	
-	Skyline *sl = modelPtr->getActiveSkyline();
-	sl->setAllSkyFBDParameters();
-	vector<double> bv = sl->getSkylineBirthVec();
-	vector<double> dv = sl->getSkylineDeathVec();
-	vector<double> pv = sl->getSkylinePsiVec();
-	double rho = sl->getSkylineRhoVal();
-
 	vector<int> rndFossIDs;
 	for(int i=0; i<fossSpecimens.size(); i++)
 		rndFossIDs.push_back(i);
@@ -251,8 +296,8 @@ double Tree::updateFBDSkylineFossilAttachTimes() {
 			int oldIdx = getSkylineIndexForTime(originTime, oldPhi);
 
 			double lnPriorRat = 0.0;
-			double v1 = log(bv[newIdx]) + fbdLogQBarFxn(bv[newIdx],dv[newIdx],pv[newIdx],rho,newPhi) + newSumLogGammas;
-			double v2 = log(bv[oldIdx]) + fbdLogQBarFxn(bv[oldIdx],dv[oldIdx],pv[oldIdx],rho,oldPhi) + oldSumLogGammas;
+			double v1 = log(lambdaV[newIdx]) + fbdLogQBarFxn(lambdaV[newIdx],muV[newIdx],psiV[newIdx],rho,newPhi) + newSumLogGammas;
+			double v2 = log(lambdaV[oldIdx]) + fbdLogQBarFxn(lambdaV[oldIdx],muV[oldIdx],psiV[oldIdx],rho,oldPhi) + oldSumLogGammas;
 			lnPriorRat = (v1 - v2);
 			
 			
@@ -273,13 +318,6 @@ double Tree::updateFBDSkylineFossilAttachTimes() {
 
 double Tree::updateFBDSkylineFossilAges(void){
 	
-	Skyline *sl = modelPtr->getActiveSkyline();
-	sl->setAllSkyFBDParameters();
-	vector<double> bv = sl->getSkylineBirthVec();
-	vector<double> dv = sl->getSkylineDeathVec();
-	vector<double> pv = sl->getSkylinePsiVec();
-	double rho = sl->getSkylineRhoVal();
-
 	vector<int> rndFossIDs;
 	for(int i=0; i<fossSpecimens.size(); i++)
 		rndFossIDs.push_back(i);
@@ -297,11 +335,11 @@ double Tree::updateFBDSkylineFossilAges(void){
 			int newIdx = getSkylineIndexForTime(originTime, newAge);
 			int oldIdx = getSkylineIndexForTime(originTime, oldAge);
 			
-			double prOld = log(pv[oldIdx]) + (log(bdssP0Fxn(bv[oldIdx],dv[oldIdx],pv[oldIdx],rho,oldAge)) - fbdLogQBarFxn(bv[oldIdx],dv[oldIdx],pv[oldIdx],rho,oldAge)) + oldSumLogGammas;
+			double prOld = log(psiV[oldIdx]) + (log(bdssP0Fxn(lambdaV[oldIdx],muV[oldIdx],psiV[oldIdx],rho,oldAge)) - fbdLogQBarFxn(lambdaV[oldIdx],muV[oldIdx],psiV[oldIdx],rho,oldAge)) + oldSumLogGammas;
 			f->setFossilAge(newAge);
 			double newSumLogGammas = getSumLogAllAttachNums();
 
-			double prNew = log(pv[newIdx]) + (log(bdssP0Fxn(bv[newIdx],dv[newIdx],pv[newIdx],rho,newAge)) - fbdLogQBarFxn(bv[newIdx],dv[newIdx],pv[newIdx],rho,newAge)) + newSumLogGammas;
+			double prNew = log(psiV[newIdx]) + (log(bdssP0Fxn(lambdaV[newIdx],muV[newIdx],psiV[newIdx],rho,newAge)) - fbdLogQBarFxn(lambdaV[newIdx],muV[newIdx],psiV[newIdx],rho,newAge)) + newSumLogGammas;
 			double prRatio = prNew - prOld;
 			double r = modelPtr->safeExponentiation(prRatio);
 			
@@ -339,12 +377,6 @@ void Tree::doFBDSkyAddEdgeMove(void){
 	int m = numCalibNds;
 	int kN = k-1;
 
-	Skyline *sl = modelPtr->getActiveSkyline();
-	sl->setAllSkyFBDParameters();
-	vector<double> bv = sl->getSkylineBirthVec();
-	vector<double> dv = sl->getSkylineDeathVec();
-	vector<double> pv = sl->getSkylinePsiVec();
-	double rho = sl->getSkylineRhoVal();
 
 	double lnHastings, lnJacobian, lnPriorR;
 
@@ -382,8 +414,8 @@ void Tree::doFBDSkyAddEdgeMove(void){
 	
 	int newYIdx = getSkylineIndexForTime(originTime, yf);
 	int newZIdx = getSkylineIndexForTime(originTime, zf);
-	double prNew = log(2.0) + log(bv[newZIdx]) + fbdLogQBarFxn(bv[newZIdx],dv[newZIdx],pv[newZIdx],rho,zf);
-	prNew += log(bdssP0Fxn(bv[newYIdx],dv[newYIdx],pv[newYIdx],rho,yf)) - fbdLogQBarFxn(bv[newYIdx],dv[newYIdx],pv[newYIdx],rho,yf);
+	double prNew = log(2.0) + log(lambdaV[newZIdx]) + fbdLogQBarFxn(lambdaV[newZIdx],muV[newZIdx],psiV[newZIdx],rho,zf);
+	prNew += log(bdssP0Fxn(lambdaV[newYIdx],muV[newYIdx],psiV[newYIdx],rho,yf)) - fbdLogQBarFxn(lambdaV[newYIdx],muV[newYIdx],psiV[newYIdx],rho,yf);
 	prNew += newSumLogGammas;
 	
 	lnPriorR = prNew - oldSumLogGammas;
@@ -410,13 +442,6 @@ void Tree::doFBDSkyDeleteEdgeMove(void){
 	int k = numAncFossilsk;
 	int m = numCalibNds;
 	int kN = k+1;
-
-	Skyline *sl = modelPtr->getActiveSkyline();
-	sl->setAllSkyFBDParameters();
-	vector<double> bv = sl->getSkylineBirthVec();
-	vector<double> dv = sl->getSkylineDeathVec();
-	vector<double> pv = sl->getSkylinePsiVec();
-	double rho = sl->getSkylineRhoVal();
 
 	double lnHastings, lnJacobian, lnPriorR;
 
@@ -448,8 +473,8 @@ void Tree::doFBDSkyDeleteEdgeMove(void){
 	lnHastings = log(alD) + (log(m-k) - log(k+1));
 	lnJacobian = -(log(cf - yf));
 	
-	double prOld = log(2.0) + log(bv[oldZIdx]) + fbdLogQBarFxn(bv[oldZIdx],dv[oldZIdx],pv[oldZIdx],rho,oldZf);
-	prOld += log(bdssP0Fxn(bv[oldYIdx],dv[oldYIdx],pv[oldYIdx],rho,yf)) - fbdLogQBarFxn(bv[oldYIdx],dv[oldYIdx],pv[oldYIdx],rho,yf);
+	double prOld = log(2.0) + log(lambdaV[oldZIdx]) + fbdLogQBarFxn(lambdaV[oldZIdx],muV[oldZIdx],psiV[oldZIdx],rho,oldZf);
+	prOld += log(bdssP0Fxn(lambdaV[oldYIdx],muV[oldYIdx],psiV[oldYIdx],rho,yf)) - fbdLogQBarFxn(lambdaV[oldYIdx],muV[oldYIdx],psiV[oldYIdx],rho,yf);
 	prOld += oldSumLogGammas;
 		
 	lnPriorR = newSumLogGammas - prOld;
@@ -471,16 +496,63 @@ void Tree::doFBDSkyDeleteEdgeMove(void){
 }
 
 
-double Tree::lnPrRatioNodeAgeMoveFBDSky(double newD, double oldD, double newG, double oldG, vector<double> bv, vector<double> dv, vector<double> pv, double rho){
+double Tree::lnPrRatioNodeAgeMoveFBDSky(double newD, double oldD, double newG, double oldG){
 	
 	int newIdx = getSkylineIndexForTime(originTime, newD);
 	int oldIdx = getSkylineIndexForTime(originTime, oldD);
-	double v1 = log(bv[newIdx]) + fbdLogQBarFxn(bv[newIdx],dv[newIdx],pv[newIdx],rho,newD) + newG;
-	double v2 = log(bv[oldIdx]) + fbdLogQBarFxn(bv[oldIdx],dv[oldIdx],pv[oldIdx],rho,oldD) + oldG;
+	double v1 = log(lambdaV[newIdx]) + fbdLogQBarFxn(lambdaV[newIdx],muV[newIdx],psiV[newIdx],rho,newD) + newG;
+	double v2 = log(lambdaV[oldIdx]) + fbdLogQBarFxn(lambdaV[oldIdx],muV[oldIdx],psiV[oldIdx],rho,oldD) + oldG;
 	
 	return v1 - v2;
 }
 
+
+void Tree::setUpdateProbs(void){
+
+	updateProbs.clear();
+	if(skylineFBD){
+		updateProbs.push_back(1.0); // 0 = updateFBDSkylineNodeAges
+		updateProbs.push_back(1.0); // 1 = updateFBDSkylineFossilAttachTimes
+		updateProbs.push_back(1.0); // 2 = updateFBDSkylineRJMoveAddDelEdge
+		updateProbs.push_back(0.0); // 3 = updateFBDSkylineFossilAges
+		
+		if(sampleFossilAges)
+			updateProbs[3] = 1.0;
+	}
+	else{
+		updateProbs.push_back(1.0); // 0 = updateAllTGSNodes
+		updateProbs.push_back(1.0); // 1 = updateFossilBDSSAttachmentTimePhi
+		updateProbs.push_back(1.0); // 2 = updateRJMoveAddDelEdge
+		updateProbs.push_back(0.0); // 3 = updateFossilAges
+		
+		if(sampleFossilAges)
+			updateProbs[3] = 1.0;
+	}
+	
+	double sum = 0.0;
+	for(size_t i=0; i<updateProbs.size(); i++){
+		sum += updateProbs[i];
+	}
+	for(size_t i=0; i<updateProbs.size(); i++){
+		updateProbs[i] /= sum;
+	}
+	
+}
+
+size_t Tree::pickUpdate(void){
+	
+	double u = ranPtr->uniformRv();
+	double sum = 0.0;
+	size_t n = 10;
+	for (size_t i=0; i<updateProbs.size(); i++){
+		sum += updateProbs[i];
+		if ( u < sum ){
+			n = i;
+			break;
+		}
+	}
+	return n;
+}
 
 
 

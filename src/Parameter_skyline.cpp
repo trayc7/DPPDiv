@@ -44,9 +44,9 @@
 
 using namespace std;
 
-Skyline::Skyline(MbRandom *rp, Model *mp, int nrts) : Parameter(rp, mp) {
+Skyline::Skyline(MbRandom *rp, Model *mp, int nrts, bool tree) : Parameter(rp, mp) {
 	
-	
+	isTreeModel = tree;
 	rho = 1.0;
 	numRates = nrts; // this is the number of rates, which is 1 less than the number of time points
 	name = "SL";
@@ -55,9 +55,9 @@ Skyline::Skyline(MbRandom *rp, Model *mp, int nrts) : Parameter(rp, mp) {
 	psiExpPriorRt = 100.0;
 	
 	for(int i=0; i<numRates; i++){
-		lambdas.push_back(0.4);
-		mus.push_back(0.1);
-		psis.push_back(0.05);
+		lambdas.push_back(ranPtr->exponentialRv(1.0));
+		mus.push_back(ranPtr->exponentialRv(10.0));
+		psis.push_back(ranPtr->exponentialRv(10.0));
 	}
 //	lambdas[1] = 0.6;
 //	lambdas[2] = 0.8;
@@ -70,12 +70,15 @@ Skyline::Skyline(MbRandom *rp, Model *mp, int nrts) : Parameter(rp, mp) {
 //	mus[4] = 0.1;
 
 	for(int i=0; i<numRates; i++){
-		netDivVec.push_back(0.4);
-		turnoverVec.push_back(0.1);
+		netDivVec.push_back(ranPtr->exponentialRv(5.0));
+		turnoverVec.push_back(ranPtr->betaRv(2.0, 5.0));
 	}
+	
 	
 
 	parameterization = 2; // 1 = lambda, mu, psi; 2 = r, d, psi
+	
+	initializeAsEqual();
 	
 	setAllSkyFBDParameters();
 	
@@ -114,25 +117,8 @@ double Skyline::update(double &oldLnL) {
 	
 	double lnR = 0.0;
 	
-	size_t updateNum = pickUpdate();
-	
-	Tree *t = modelPtr->getActiveTree();
-	if(updateNum == 0)
-		udateTurnovers(t);
-	else if (updateNum == 1)
-		updateVectorScaleTurnover(t);
-	else if (updateNum == 2)
-		udateNetDivs(t);
-	else if (updateNum == 3)
-		updateVectorScaleNetDivs(t);
-	else if (updateNum == 4)
-		udatePsis(t);
-	else if (updateNum == 5)
-		updateVectorScalePsis(t);
-	
-	setAllSkyFBDParameters();
-	modelPtr->setLnLGood(true);
-	modelPtr->setMyCurrLnl(oldLnL);
+	if(isTreeModel)
+		lnR = updateTreeSkyParams(oldLnL);
 	return lnR;
 }
 
@@ -174,6 +160,7 @@ string Skyline::writeSkylineParamLabels(void){
 string Skyline::writeSkylineParamValues(void){
 	stringstream ss;
 	
+	setAllSkyFBDParameters();
 	for(int i=0; i<numRates; i++)
 		ss << "\t" << lambdas[i];
 	for(int i=0; i<numRates; i++)
@@ -208,12 +195,15 @@ void Skyline::setAllSkyFBDParameters(void){
 void Skyline::setUpdateProbs(void){
 	
 	updateProbs.clear();
-	updateProbs.push_back(1.0); // 0 = update all turnovers
-	updateProbs.push_back(1.0); // 1 = scale all turnovers
-	updateProbs.push_back(1.0); // 2 = update all net divs
-	updateProbs.push_back(1.0); // 3 = scale all net divs
-	updateProbs.push_back(1.0); // 4 = update all psis
-	updateProbs.push_back(1.0); // 5 = scale all psis
+	updateProbs.push_back(0.0); // 0 = update all turnovers
+	updateProbs.push_back(0.0); // 1 = scale all turnovers
+	updateProbs.push_back(0.0); // 2 = update all net divs
+	updateProbs.push_back(0.0); // 3 = scale all net divs
+	updateProbs.push_back(0.0); // 4 = update all psis
+	updateProbs.push_back(0.0); // 5 = scale all psis
+	updateProbs.push_back(1.0); // 6 = scale random turnover
+	updateProbs.push_back(1.0); // 7 = scale random net div
+	updateProbs.push_back(1.0); // 8 = scale random psi
 	
 	double sum = 0.0;
 	for(size_t i=0; i<updateProbs.size(); i++){
@@ -269,6 +259,39 @@ double Skyline::getNewValUpDownScaleMv(double &nv1, double ov1, double &nv2, dou
 	return 0.0;
 }
 
+double Skyline::updateTreeSkyParams(double &oldLnL) {
+	
+	double lnR = 0.0;
+	
+	size_t updateNum = pickUpdate();
+	
+	Tree *t = modelPtr->getActiveTree();
+	if(updateNum == 0)
+		udateTurnovers(t);
+	else if (updateNum == 1)
+		updateVectorScaleTurnover(t);
+	else if (updateNum == 2)
+		udateNetDivs(t);
+	else if (updateNum == 3)
+		updateVectorScaleNetDivs(t);
+	else if (updateNum == 4)
+		udatePsis(t);
+	else if (updateNum == 5)
+		updateVectorScalePsis(t);
+	else if (updateNum == 6)
+		updateRandTurnover(t);
+	else if (updateNum == 7)
+		updateRandNetDiv(t);
+	else if (updateNum == 8)
+		updateRandPsi(t);
+	
+	setAllSkyFBDParameters();
+	modelPtr->setLnLGood(true);
+	modelPtr->setMyCurrLnl(oldLnL);
+	return lnR;
+}
+
+
 double Skyline::udateTurnovers(Tree *t){
 	
 	double delta = 0.3;
@@ -280,11 +303,11 @@ double Skyline::udateTurnovers(Tree *t){
 	for(int i=0; i<numRates; i++){
 		int vecIDX = tmp[i];
 		double oldTO = turnoverVec[vecIDX];
-		double oldFBDProb = t->getTreeSpeciationProbability();
+		double oldFBDProb = getTreeSpeciationProb(t);
 		double newTO;
 		double propRto = getNewValScaleMv(newTO, oldTO, 0.000001, 0.99999, delta);
 		turnoverVec[vecIDX] = newTO;
-		double newFBDProb = t->getTreeSpeciationProbability();
+		double newFBDProb = getTreeSpeciationProb(t);
 		double prR = (newFBDProb - oldFBDProb) + propRto;
 		double r = modelPtr->safeExponentiation(prR);
 		if(ranPtr->uniformRv() < r){
@@ -304,7 +327,7 @@ double Skyline::udateTurnovers(Tree *t){
 double Skyline::updateVectorScaleTurnover(Tree *t){
 	
 	double delta = 0.1;
-	double oldFBDProb = t->getTreeSpeciationProbability();
+	double oldFBDProb = getTreeSpeciationProb(t);
 	vector<double> stored;
 	for(int i=0; i<numRates; i++)
 		stored.push_back(turnoverVec[i]);
@@ -327,7 +350,7 @@ double Skyline::updateVectorScaleTurnover(Tree *t){
 	else{
 		double hr = (double)numRates * log(sf);
 		setAllSkyFBDParameters();
-		double newFBDProb = t->getTreeSpeciationProbability();
+		double newFBDProb = getTreeSpeciationProb(t);
 		double prR = (newFBDProb - oldFBDProb) + hr;
 		double r = modelPtr->safeExponentiation(prR);
 		if(ranPtr->uniformRv() > r){ //reject
@@ -351,11 +374,11 @@ double Skyline::udateNetDivs(Tree *t){
 	for(int i=0; i<numRates; i++){
 		int vecIDX = tmp[i];
 		double oldND = netDivVec[vecIDX];
-		double oldFBDProb = t->getTreeSpeciationProbability();
+		double oldFBDProb = getTreeSpeciationProb(t);
 		double newND;
 		double propRto = getNewValScaleMv(newND, oldND, 0.000001, rateMax, delta);
 		netDivVec[vecIDX] = newND;
-		double newFBDProb = t->getTreeSpeciationProbability();
+		double newFBDProb = getTreeSpeciationProb(t);
 		double prR = (newFBDProb - oldFBDProb) + propRto;
 		prR += getExponentialPriorRatio(oldND, newND, netDivExpPriorRt);
 		double r = modelPtr->safeExponentiation(prR);
@@ -377,7 +400,7 @@ double Skyline::updateVectorScaleNetDivs(Tree *t){
 	
 	double delta = 0.1;
 	double expPrioR = 0.0;
-	double oldFBDProb = t->getTreeSpeciationProbability();
+	double oldFBDProb = getTreeSpeciationProb(t);
 	vector<double> stored;
 	for(int i=0; i<numRates; i++)
 		stored.push_back(netDivVec[i]);
@@ -401,7 +424,7 @@ double Skyline::updateVectorScaleNetDivs(Tree *t){
 	else{
 		double hr = (double)numRates * log(sf);
 		setAllSkyFBDParameters();
-		double newFBDProb = t->getTreeSpeciationProbability();
+		double newFBDProb = getTreeSpeciationProb(t);
 		double prR = (newFBDProb - oldFBDProb) + hr;
 		prR += expPrioR;
 		double r = modelPtr->safeExponentiation(prR);
@@ -426,11 +449,11 @@ double Skyline::udatePsis(Tree *t){
 	for(int i=0; i<numRates; i++){
 		int vecIDX = tmp[i];
 		double oldPsi = psis[vecIDX];
-		double oldFBDProb = t->getTreeSpeciationProbability();
+		double oldFBDProb = getTreeSpeciationProb(t);
 		double newPsi;
 		double propRto = getNewValScaleMv(newPsi, oldPsi, 0.000001, rateMax, delta);
 		psis[vecIDX] = newPsi;
-		double newFBDProb = t->getTreeSpeciationProbability();
+		double newFBDProb = getTreeSpeciationProb(t);
 		double prR = (newFBDProb - oldFBDProb) + propRto;
 		prR += getExponentialPriorRatio(oldPsi, newPsi, psiExpPriorRt);
 		double r = modelPtr->safeExponentiation(prR);
@@ -446,7 +469,7 @@ double Skyline::updateVectorScalePsis(Tree *t){
 	
 	double delta = 0.1;
 	double expPrioR = 0.0;
-	double oldFBDProb = t->getTreeSpeciationProbability();
+	double oldFBDProb = getTreeSpeciationProb(t);
 	vector<double> stored;
 	for(int i=0; i<numRates; i++)
 		stored.push_back(psis[i]);
@@ -470,7 +493,7 @@ double Skyline::updateVectorScalePsis(Tree *t){
 	else{
 		double hr = (double)numRates * log(sf);
 		setAllSkyFBDParameters();
-		double newFBDProb = t->getTreeSpeciationProbability();
+		double newFBDProb = getTreeSpeciationProb(t);
 		double prR = (newFBDProb - oldFBDProb) + hr;
 		prR += expPrioR;
 		double r = modelPtr->safeExponentiation(prR);
@@ -482,6 +505,78 @@ double Skyline::updateVectorScalePsis(Tree *t){
 	}
 	
 	return 0.0;
+}
+
+double Skyline::updateRandTurnover(Tree *t){
+	
+	double delta = 0.3;
+	int vecIDX = (int)(ranPtr->uniformRv() * numRates);
+	double ov = turnoverVec[vecIDX];
+	double oldFBDProb = getTreeSpeciationProb(t);
+	double nv;
+	double propRto = getNewValScaleMv(nv, ov, 0.000001, 0.99999, delta);
+	turnoverVec[vecIDX] = nv;
+	double newFBDProb = getTreeSpeciationProb(t);
+	double prR = (newFBDProb - oldFBDProb) + propRto;
+	double r = modelPtr->safeExponentiation(prR);
+	if(ranPtr->uniformRv() < r){
+		lambdas[vecIDX] = netDivVec[vecIDX] / (1.0 - turnoverVec[vecIDX]);
+		mus[vecIDX] = (turnoverVec[vecIDX] * netDivVec[vecIDX]) / (1.0 - turnoverVec[vecIDX]);
+	}
+	else{
+		turnoverVec[vecIDX] = ov;
+		lambdas[vecIDX] = netDivVec[vecIDX] / (1.0 - turnoverVec[vecIDX]);
+		mus[vecIDX] = (turnoverVec[vecIDX] * netDivVec[vecIDX]) / (1.0 - turnoverVec[vecIDX]);
+	}
+	return 0.0;
+}
+
+double Skyline::updateRandNetDiv(Tree *t){
+	
+	double delta = 0.3;
+	int vecIDX = (int)(ranPtr->uniformRv() * numRates);
+	double ov = netDivVec[vecIDX];
+	double oldFBDProb = getTreeSpeciationProb(t);
+	double nv;
+	double propRto = getNewValScaleMv(nv, ov, 0.000001, rateMax, delta);
+	netDivVec[vecIDX] = nv;
+	double newFBDProb = getTreeSpeciationProb(t);
+	double prR = (newFBDProb - oldFBDProb) + propRto;
+	double r = modelPtr->safeExponentiation(prR);
+	if(ranPtr->uniformRv() < r){
+		lambdas[vecIDX] = netDivVec[vecIDX] / (1.0 - turnoverVec[vecIDX]);
+		mus[vecIDX] = (turnoverVec[vecIDX] * netDivVec[vecIDX]) / (1.0 - turnoverVec[vecIDX]);
+	}
+	else{
+		netDivVec[vecIDX] = ov;
+		lambdas[vecIDX] = netDivVec[vecIDX] / (1.0 - turnoverVec[vecIDX]);
+		mus[vecIDX] = (turnoverVec[vecIDX] * netDivVec[vecIDX]) / (1.0 - turnoverVec[vecIDX]);
+	}
+	return 0.0;
+}
+
+double Skyline::updateRandPsi(Tree *t){
+	
+	double delta = 0.3;
+	int vecIDX = (int)(ranPtr->uniformRv() * numRates);
+	double ov = turnoverVec[vecIDX];
+	double oldFBDProb = getTreeSpeciationProb(t);
+	double nv;
+	double propRto = getNewValScaleMv(nv, ov, 0.000001, rateMax, delta);
+	psis[vecIDX] = nv;
+	double newFBDProb = getTreeSpeciationProb(t);
+	double prR = (newFBDProb - oldFBDProb) + propRto;
+	double r = modelPtr->safeExponentiation(prR);
+	if(ranPtr->uniformRv() > r){
+		psis[vecIDX] = ov;
+	}
+	return 0.0;
+}
+
+
+double Skyline::getExponentialPriorRatio(double ov, double nv, double r) {
+    
+	return (ranPtr->lnExponentialPdf(r, nv)) - (ranPtr->lnExponentialPdf(r, ov));
 }
 
 
@@ -500,12 +595,32 @@ size_t Skyline::pickUpdate(void){
 	return n;
 }
 
-double Skyline::getExponentialPriorRatio(double ov, double nv, double r) {
-    
-	return (ranPtr->lnExponentialPdf(r, nv)) - (ranPtr->lnExponentialPdf(r, ov));
+double Skyline::getTreeSpeciationProb(Tree *t){
+
+	double pr;
+	setAllSkyFBDParameters();
+	pr = t->getFBDSkylineProbability(lambdas, mus, psis, rho);
+	return pr;
 }
 
-
+void Skyline::initializeAsEqual(void){
+	
+	// for debugging
+	if(parameterization == 1){
+		for(int i=0; i<numRates; i++){
+			lambdas[i] = 0.5;
+			mus[i] = 0.1;
+			psis[i] = 0.05;
+		}
+	}
+	else if(parameterization == 2){
+		for(int i=0; i<numRates; i++){
+			netDivVec[i] = 0.5;
+			turnoverVec[i] = 0.1;
+			psis[i] = 0.05;
+		}
+	}
+}
 
 
 
