@@ -4,7 +4,7 @@ ARCH_AVX = -O2 -mavx -D_TOM_AVX
 ARCH_SSE = -O2 -msse3 -D_TOM_SSE3
 PAR_OMP  = -fopenmp
 ASM_DBG  = -D_ASM_DEBUG
-OBJS 	 = dppdiv.o Alignment.o MbEigensystem.o MbMath.o MbRandom.o MbTransitionMatrix.o Mcmc.o Parameter.o Parameter_basefreq.o Parameter_exchangeability.o Parameter_fossilgraph.o Parameter_origin.o Parameter_rate.o Parameter_shape.o Parameter_tree.o Parameter_cphyperp.o Parameter_treescale.o Parameter_speciaton.o Parameter_expcalib.o Calibration.o Model.o
+OBJS 	 = dppdiv.o Alignment.o MbEigensystem.o MbMath.o MbRandom.o MbTransitionMatrix.o Mcmc.o Parameter.o Parameter_basefreq.o Parameter_exchangeability.o Parameter_fossilgraph.o Parameter_origin.o Parameter_rate.o Parameter_shape.o Parameter_tree.o Parameter_cphyperp.o Parameter_treescale.o Parameter_speciaton.o Parameter_skyline.o Parameter_skytree.o Parameter_expcalib.o Calibration.o Model.o
 RM 	 = rm -f
 PROF	 = -pg
 DEBUG    = -DDEBUG -g -O2 -fomit-frame-pointer -funroll-loops
@@ -45,7 +45,7 @@ asm-seq-sse: Model_likelihood.cpp
 dppdiv-prof-seq: $(OBJS) Model_likelihood-seq.o
 	$(CC) $(PROF) -o $@ $+
 
-dppdiv-debug: Alignment.cpp Calibration.cpp dppdiv.cpp MbEigensystem.cpp MbMath.cpp MbRandom.cpp MbTransitionMatrix.cpp Mcmc.cpp Model-old.cpp Parameter_basefreq.cpp Parameter_cphyperp.cpp Parameter.cpp Parameter_exchangeability.cpp Parameter_fossilgraph.cpp Parameter_origin.cpp Parameter_expcalib.cpp Parameter_rate.cpp Parameter_shape.cpp Parameter_speciaton.cpp Parameter_tree.cpp Parameter_treescale.cpp
+dppdiv-debug: Alignment.cpp Calibration.cpp dppdiv.cpp MbEigensystem.cpp MbMath.cpp MbRandom.cpp MbTransitionMatrix.cpp Mcmc.cpp Parameter_basefreq.cpp Parameter_cphyperp.cpp Parameter.cpp Parameter_exchangeability.cpp Parameter_fossilgraph.cpp Parameter_origin.cpp Parameter_expcalib.cpp Parameter_rate.cpp Parameter_shape.cpp Parameter_skyline.cpp Parameter_skytree.cpp Parameter_speciaton.cpp Parameter_tree.cpp Parameter_treescale.cpp
 	$(CC) $(DEBUG) -o $@ $+
 
 
@@ -76,6 +76,8 @@ Parameter_fossilgraph.o: Parameter_fossilgraph.cpp
 Parameter_origin.o: Parameter_origin.cpp
 Parameter_rate.o: Parameter_rate.cpp
 Parameter_shape.o: Parameter_shape.cpp
+Parameter_skyline.o: Parameter_skyline.cpp
+Parameter_skytree.o: Parameter_skytree.cpp
 Parameter_tree.o: Parameter_tree.cpp
 Parameter_cphyperp.o: Parameter_cphyperp.cpp
 Parameter_speciaton.o: Parameter_speciaton.cpp

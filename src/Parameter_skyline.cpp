@@ -39,6 +39,7 @@
 #include <iomanip>
 #include <sstream>
 #include <vector>
+#include <algorithm>
 
 //#include <unistd.h>//rw: remember to remove
 
