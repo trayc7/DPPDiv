@@ -3203,7 +3203,7 @@ void Tree::treeUpdateNodeOldestBoundsAttchTimes(){
 //	for(vector<Node *>::iterator v = calibNodes.begin(); v != calibNodes.end(); v++){
 //		setNodeOldestAttchBranchTime((*v));
 //	}
-    for(int i; i<numNodes; i++){
+    for(int i=0; i<numNodes; i++){
         Node *p = &nodes[i];
         if(!p->getIsLeaf())
             setNodeOldestAttchBranchTime(p);
