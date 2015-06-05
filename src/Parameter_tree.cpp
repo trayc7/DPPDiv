@@ -2634,7 +2634,7 @@ void Tree::setNodeRateValues() {
 		}
 		else{
 			p->setRtGrpVal(0.0);
-			p->setRtGrpIdx(0.0);
+			p->setRtGrpIdx(0);
 		}
 #	endif
 	}

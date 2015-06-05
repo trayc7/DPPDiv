@@ -109,10 +109,7 @@ void Mcmc::runChain(void) {
 	
 	int timeSt = (int)time(NULL);
 	bool testLnL = false;
-	int modifyUProbsGen = (int)numCycles * 0.5;
 	for (int n=1; n<=numCycles; n++){
-		if(modUpdateProbs && n == modifyUProbsGen)
-			modelPtr->setUpdateProbabilities(false);
 
 		modelPtr->switchActiveParm();
 		Parameter *parm = modelPtr->pickParmToUpdate();
@@ -223,10 +220,8 @@ void Mcmc::runFOFBDChain() {
     }
     
     int timeSt = (int)time(NULL);
-    int modifyUProbsGen = (int)numCycles * 0.5;
     for (int n=1; n<=numCycles; n++){
-        if(modUpdateProbs && n == modifyUProbsGen)
-            modelPtr->setUpdateProbabilities(false);
+        
         double prevlnl = oldLnLikelihood;
 		double newLnLikelihood = 0.0;
 		
