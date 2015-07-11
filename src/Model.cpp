@@ -123,7 +123,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
     originMax = initOT * 5.0;
     if(conditionOnOrigin)
         rHtO = initOT;
-    else rHtO = originMax;
+    else rHtO = initRootH * 5.0;
     
 	cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
 	
@@ -754,9 +754,15 @@ double Model::readCalibFile(void) {
 			}
 		}
 		//else if(rooCal->getPriorDistributionType() == 2){
-		else if(rooCal->getPriorDistributionType() > 1){
+		else if(rooCal->getPriorDistributionType() == 2){
 			fixRootHeight = false;
 			yb = rooCal->getYngTime();
+			double expMean = yb * 0.2;
+			initTScale = yb + ranPtr->exponentialRv(1 / expMean);
+		}
+		else if(rooCal->getPriorDistributionType() > 2){
+			fixRootHeight = false;
+			yb = rooCal->getOldTime();
 			double expMean = yb * 0.2;
 			initTScale = yb + ranPtr->exponentialRv(1 / expMean);
 		}
@@ -983,7 +989,7 @@ void Model::setUpdateProbabilities(bool initial) {
 		//ntp = 0.0;
 	}
     
-    if(true){ // TAH: fixing for test
+    if(false){ // TAH: fixing for test
         ntp = 0.5;
         tsp = 0.5;
         spp = 0.5;

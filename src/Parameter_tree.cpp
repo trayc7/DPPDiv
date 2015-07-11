@@ -133,12 +133,13 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	else if(treeTimePrior > 5){ 
 		isCalibTree = true;
 		setUPTGSCalibrationFossils();
+		calibNodes = getListOfCalibratedNodes();
         cout << "setUPTGSCalibrationFossils\n"; // This is debugging code, leave in for now. [Some odd behavior with initialization (check into this)]
-		initializeCalibratedNodeDepths();
+		initializeTGSCalibratedNodeDepths();
         cout << "initializeCalibratedNodeDepths\n";
 		while(checkTreeForCalibrationCompatibility() > 0){
 			zeroNodeRedFlags();
-			initializeCalibratedNodeDepths();
+			initializeTGSCalibratedNodeDepths();
 		}
 		initializeFossilSpecVariables();
 
@@ -604,6 +605,68 @@ void Tree::initializeCalibratedNodeDepths(void) {
 	while(!goodinit){
 		for(vector<Calibration *>::iterator v = calibNds.begin(); v != calibNds.end(); v++){
 			Node *p = &nodes[(*v)->getNodeIndex()];
+			if(p != root){
+				Node *anc, *ldes, *rdes;
+				anc = p->getAnc();
+				ldes = p->getLft();
+				rdes = p->getRht();
+				double ltime = ldes->getNodeDepth();
+				double rtime = rdes->getNodeDepth();
+				double atime = anc->getNodeDepth();
+				double oldbound = 0.0;
+				double yngbound = p->getNodeYngTime() / treeScale;
+				if(p->getNodeCalibPrDist() == 1)
+					oldbound = p->getNodeOldTime() / treeScale;
+				else
+					oldbound = getTemporaryNodeMaxBound(p) / treeScale;
+				if(p->getNodeOldTime() == p->getNodeYngTime()){
+					double newNodeDepth = yngbound;
+					p->setNodeDepth(newNodeDepth);
+					goodinit = true;
+				}
+				else{
+					if(ltime > 0.0 || rtime > 0.0){
+						if(rtime > ltime){
+							if(rtime > yngbound)
+								yngbound = rtime;
+						}
+						else{
+							if(ltime > yngbound)
+								yngbound = ltime;
+						}
+					}
+					if(atime > 0.0){
+						if(atime < oldbound)
+							oldbound = atime;
+					}
+					if(oldbound > root->getNodeDepth())
+						oldbound = root->getNodeDepth();
+					if(yngbound > oldbound){
+						goodinit = false;
+						break;
+					}
+					else{
+						double newNodeDepth = yngbound + ranPtr->uniformRv()*(oldbound-yngbound);
+						p->setNodeDepth(newNodeDepth);
+						goodinit = true;
+					}
+				}
+			}
+			else
+				goodinit = true;
+		}
+	}
+	setNodesNumberDecendantTaxa(root);
+	int nnc = 0;
+	recursiveNodeDepthInitialization(root, nnc, 1.0);
+}
+
+void Tree::initializeTGSCalibratedNodeDepths(void) {
+	root->setNodeDepth(1.0);
+	bool goodinit = false;
+	while(!goodinit){
+		for(int i=0; i<calibNodes.size(); i++){
+			Node *p = calibNodes[i];
 			if(p != root){
 				Node *anc, *ldes, *rdes;
 				anc = p->getAnc();
@@ -2926,6 +2989,7 @@ void Tree::setUPTGSCalibrationFossils() { // definitely have to change for FBDS
 		int calbNo = -1;
 		calbNo = findCalibNode((*v)->getTxN1(), (*v)->getTxN2());
 		Node *p = &nodes[calbNo];
+		p->setIsCalibratedDepth(true);
 		double fAge = (*v)->getYngTime();
 		double ageMin = 0.0, ageMax = 0.0;
 		bool sampleFAge =(*v)->getIsSampledAge();

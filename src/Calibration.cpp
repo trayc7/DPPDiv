@@ -132,6 +132,7 @@ void Calibration::initializeNodeCalibration(string calstr){
 			if(isSampledAge){
 				oldtime = atof(tmp.c_str());
 			}
+			else oldtime = youngtime;
             cout << "   Calibrate Birth-Death Prior on MRCA[" << txn1 << ", " << txn2 << "] --> (offset="
             << youngtime << ")" << endl;
         }
@@ -141,6 +142,7 @@ void Calibration::initializeNodeCalibration(string calstr){
 			if(isSampledAge){
 				oldtime = atof(tmp.c_str());
 			}
+			else oldtime = youngtime;
             cout << "   Calibrate Birth-Death Prior on MRCA[" << txn1 << ", " << txn2 << "] --> (offset="
             << youngtime << ")" << endl;
         }
