@@ -341,7 +341,8 @@ int main (int argc, char * const argv[]) {
         Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc,
                       hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN,
                       treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
-                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, numIntervals);
+                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, numIntervals,
+					  runPrior);
         if(doAbsRts)
             myModel.setEstAbsRates(true);
         if(runPrior)

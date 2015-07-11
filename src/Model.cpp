@@ -58,7 +58,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr, int sky) {
+			 bool ihp, string tipdfn, bool fxtr, int sky, bool runPr) {
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -80,6 +80,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixSomeModParams = fxmod;
 	fixTestRun = fxtr;
 	estAbsRts = false;
+	runUnderPrior = runPr;
 	if(sky == 1){
 		doSkylineBDP = false;
 		numSkyInts = 1;
@@ -161,7 +162,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	
 		
 	// initialize the probabilities for updating different parameters
-	setUpdateProbabilities(true);	
+	setUpdateProbabilities(true);
 		
 	// allocate and initialize conditional likelihoods
 	initializeConditionalLikelihoods();
@@ -171,6 +172,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	
 	// instantiate the transition probability calculator
 	tiCalculator = new MbTransitionMatrix( getActiveExchangeability()->getRate(), getActiveBasefreq()->getFreq(), true );
+	cout << "here" << endl;
 	
 	setTiProb();
 	myCurLnL = lnLikelihood();

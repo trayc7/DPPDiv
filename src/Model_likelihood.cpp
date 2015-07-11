@@ -60,11 +60,12 @@ double Model::lnLikelihood(void) {
         double * clL;
         double * clR;
 
-
+	
 	if(runUnderPrior){
 		myCurLnL = 0.0;
 		return 0.0;
 	}
+
 	Tree *t = getActiveTree();
 	MbMatrix<double> *tL = new MbMatrix<double>[numGammaCats];
 	MbMatrix<double> *tR = new MbMatrix<double>[numGammaCats];
