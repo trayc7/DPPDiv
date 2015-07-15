@@ -52,7 +52,7 @@ OriginTime::OriginTime(MbRandom *rp, Model *mp, double sv, double yb, double ob,
     treeTimePrior = mp->getTreeTimePriorNum();
     currentFossilGraphLnL = 0.0;
     cout << "ob = " << oldBound << endl;
-    otProposal = 1; // 1 = sliding window, 2 = scale move
+    otProposal = 2; // 1 = sliding window, 2 = scale move
     otPrior = 1; // 1 = uniform, 2 = exponential
     moveOnDiff = false; // 1 = propose changes to the difference between the min and the ot, rather than the age of the ot
     expRate = 0.005;

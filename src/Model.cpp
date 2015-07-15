@@ -58,7 +58,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr, int sky, bool runPr) {
+			 bool ihp, string tipdfn, bool fxtr, int sky, double omx, bool runPr) {
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -121,7 +121,13 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			tsPrDist = 2;
 		}
 	}
-    originMax = initOT * 5.0;
+	if(omx > 0.0){
+		originMax = omx;
+		initOT = initRootH + (ranPtr->uniformRv() * (originMax - initRootH));
+	}
+	else
+		originMax = initOT * 3.0;
+	
     if(conditionOnOrigin)
         rHtO = initOT;
     else rHtO = initRootH * 5.0;
@@ -989,6 +995,9 @@ void Model::setUpdateProbabilities(bool initial) {
 		spp = 0.0;
 		//tsp = 0.0;
 		//ntp = 0.0;
+	}
+	if(conditionOnOrigin){
+		otp = 0.5;
 	}
     
     if(false){ // TAH: fixing for test
