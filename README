@@ -13,10 +13,10 @@ Details about this program are available in the following papers:
 *Darriba, Aberer, Flouri, Heath, Izquierdo-Carrasco, Stamatakis: "Boosting the performance of Bayesian divergence time estimation with the Phylogenetic Likelihood Library", accepted for publication at IPDPS 2013, Boston, USA, 2013. (peer-reviewed conference paper) 
 
 Links to these papers can be found here: 
-http://phylo.bio.ku.edu/content/tracy-heath-dppdiv
+http://phyloworks.org/publications.html
 
 The DPPDiv users discussion group: 
 https://groups.google.com/forum/#!forum/dppdiv-users
 
-This version of DPPDiv includes a new fossil calibration model called the 'fossilized birth-death' (FBD) process.
+This version of DPPDiv includes a fossil calibration model called the 'fossilized birth-death' (FBD) process.
 (Work by Tracy Heath, John Huelsenbeck, and Tanja Stadler)
