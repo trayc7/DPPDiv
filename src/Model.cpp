@@ -89,7 +89,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	int tsPrDist = 1;
 	rootNExpRate = -1.0;
 	bool rtCalib = false;
-    fbdsExperimentalMode = 1;//rw: experimental mode = 1: fix user specified branch lengths; = 2 fix user specified branch lengths and ignore the calibrations
+    fbdsExperimentalMode = 2;//rw: experimental mode = 1: fix user specified branch lengths; = 2 fix user specified branch lengths and ignore the calibrations
     
 	if(calibfilen.empty() == false){
 		initRootH = readCalibFile();
@@ -570,7 +570,6 @@ void Model::setNodeRateGrpIndxs(void) {
 	}
 }
 
-
 void Model::updateAccepted(void) {
 
 	int from = activeParm, to;
@@ -707,6 +706,11 @@ double Model::readCalibFile(void) {
                 initOT = initTScale * 2.0;
             }
         }
+    }
+    
+    if(!rootDone && fbdsExperimentalMode > 0) {
+        cerr << "ERROR: You need to specify the age of the root in experiemental mode 1 or 2. Use -x root <age> in the calibration file." << endl;
+        exit(1);
     }
     
     if(!rootDone){
