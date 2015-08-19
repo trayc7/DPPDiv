@@ -152,6 +152,7 @@ class Model {
 		std::string						tipDateFileN;
 		std::vector<Calibration*>		calibrs;
 		std::vector<Calibration*>		tipDates;
+        std::vector<Calibration*>		fixedNodes;
 		bool							fixRootHeight;
 		int								treeTimePrior;
         int                             numFossils;

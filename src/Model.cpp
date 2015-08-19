@@ -656,6 +656,7 @@ double Model::readCalibFile(void) {
 	Calibration *rooCal;
 	string ln = getLineFromFile(calibfilen, 1);
     string tg = "-s"; //RW total group fossil indicator
+    string fx = "-x"; //RW fix node age
     int nlins = atoi(ln.c_str());
 	int nnodes = alignmentPtr->getNumTaxa() - 1;
 	string *calList = new string[nlins];
@@ -667,60 +668,93 @@ double Model::readCalibFile(void) {
                 exit(1);
             }
         }
-		Calibration *cal = new Calibration(calList[i], 0);
-		calibrs.push_back(cal);
-		if(cal->getIsRootCalib()){
-			rooCal = cal;
-			rootIs = true;
-		}
+        
+        if (calList[i].find(fx) != string::npos) {
+            Calibration *cal = new Calibration(calList[i], 3);
+            fixedNodes.push_back(cal);
+            //rooCal = cal;
+            //rootIs = true; // I dont know if we want to do this here
+        }
+        else if (fbdsExperimentalMode != 2)  {
+            Calibration *cal = new Calibration(calList[i], 0);
+            calibrs.push_back(cal);
+            if(cal->getIsRootCalib()){
+                rooCal = cal;
+                rootIs = true;
+            }
+        }
 	}
 	delete [] calList;
 
 	double initTScale = 1.0;
 	double yb = 0.0;
 	double ob = 0.0;
+    
+    bool rootDone = false;
+    
     // Put initialization of the origin time here
-	if(rootIs){
-		if(rooCal->getPriorDistributionType() == 1){
-			yb = rooCal->getYngTime();
-			ob = rooCal->getOldTime();
-			if(yb == ob){
-				initTScale = yb;
-				fixRootHeight = true;
-			}
-			else{
-				initTScale = yb + (ranPtr->uniformRv() * (ob - yb));
-				fixRootHeight = false;
-			}
-		}
-		//else if(rooCal->getPriorDistributionType() == 2){
-		else if(rooCal->getPriorDistributionType() > 1){
-			fixRootHeight = false;
-			yb = rooCal->getYngTime();
-			double expMean = yb * 0.2;
-			initTScale = yb + ranPtr->exponentialRv(1 / expMean);
-		}
-	}
-	else{
-		yb = 0.0;
-		fixRootHeight = false;
-		for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
-			double tmpv;
-			if((*v)->getPriorDistributionType() == 1)
-				tmpv = (*v)->getOldTime();
-			//else if((*v)->getPriorDistributionType() == 2)
-			else if((*v)->getPriorDistributionType() > 1)
-				tmpv = (*v)->getYngTime() * 1.1;
-			if(tmpv > yb)
-				yb = tmpv;
-		}
-		ob = yb + (yb * 2);
-		double tsc = yb + (ranPtr->uniformRv() * (ob - yb));
-		initTScale = tsc;
-		rHtY = yb;
-		rHtO = ob;
-        initOT = tsc * 2.0;
-	}
+    
+    if(!fixedNodes.empty()){
+        for(vector<Calibration *>::iterator v = fixedNodes.begin(); v != fixedNodes.end(); v++){
+            if((*v)->getIsRootCalib()){
+                fixRootHeight = true;
+                yb = (*v)->getYngTime();
+                initTScale = yb;
+                ob = yb;
+                rootDone = true;
+                rHtY = yb;
+                rHtO = ob;
+                initOT = initTScale * 2.0;
+            }
+        }
+    }
+    
+    if(!rootDone){
+        if(rootIs){
+            if(rooCal->getPriorDistributionType() == 1){
+                yb = rooCal->getYngTime();
+                ob = rooCal->getOldTime();
+                if(yb == ob){
+                    initTScale = yb;
+                    fixRootHeight = true;
+                }
+                else{
+                    initTScale = yb + (ranPtr->uniformRv() * (ob - yb));
+                    fixRootHeight = false;
+                }
+            }
+            //else if(rooCal->getPriorDistributionType() == 2){
+            else if(rooCal->getPriorDistributionType() > 1){
+                fixRootHeight = false;
+                yb = rooCal->getYngTime();
+                double expMean = yb * 0.2;
+                initTScale = yb + ranPtr->exponentialRv(1 / expMean);
+            }
+            rHtY = yb;
+            rHtO = ob;
+            initOT = initTScale * 2.0; //rw: I dont understand why these werent previously defined here
+        }
+        else{
+            yb = 0.0;
+            fixRootHeight = false;
+            for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
+                double tmpv;
+                if((*v)->getPriorDistributionType() == 1)
+                    tmpv = (*v)->getOldTime();
+                //else if((*v)->getPriorDistributionType() == 2)
+                else if((*v)->getPriorDistributionType() > 1)
+                    tmpv = (*v)->getYngTime() * 1.1;
+                if(tmpv > yb)
+                    yb = tmpv;
+            }
+            ob = yb + (yb * 2);
+            double tsc = yb + (ranPtr->uniformRv() * (ob - yb));
+            initTScale = tsc;
+            rHtY = yb;
+            rHtO = ob;
+            initOT = tsc * 2.0;
+        }
+    }
 	
 	if(nlins == nnodes){
 		bool fixall = true;
