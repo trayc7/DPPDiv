@@ -44,7 +44,9 @@ Calibration::Calibration(string calstr, int tip){
 		initialzeTipCalibration(calstr);
     else if (tip==2)
         initializeOccurrence(calstr);
-        
+    else if (tip == 3)
+        initializeFixedNodeAge(calstr);
+
 }
 
 
@@ -162,6 +164,45 @@ void Calibration::initializeNodeCalibration(string calstr){
 		<< youngtime << ", " << oldtime << ")" << endl;
 	}
 
+}
+
+void Calibration::initializeFixedNodeAge(string calstr){
+    
+    isRootCal = false;
+    isFixedAge = false;
+    
+    stringstream ss;
+    string tmp = "";
+    ss << calstr;
+    ss >> tmp;
+    if(tmp[0] == '-'){
+        if(tmp[1] == 'X' || tmp[1] == 'x') { // fix the age of the node
+            isFixedAge=true;
+        }
+        else{
+            cerr << "ERROR: There's a problem with the calibration file " << endl;
+            exit(1);
+        }
+        cout << tmp[2] << endl;
+        
+        ss >> txn1;
+        if(txn1 != "root")
+            ss >> txn2;
+        else {
+            isRootCal = true;
+            txn2 = "root";
+        }
+        ss >> tmp;
+        
+        youngtime = atof(tmp.c_str());
+        ss >> tmp;
+        oldtime = youngtime;
+        if(isRootCal)
+            cout << "   Fix node age on MRCA[" << txn1 << "] --> (age="<< youngtime << ")" << endl;
+        else
+            cout << "   Fix node age on MRCA[" << txn1 << ", " << txn2 << "] --> (age="<< youngtime << ")" << endl;
+    }
+    
 }
 
 void Calibration::initialzeTipCalibration(string calstr){

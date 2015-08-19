@@ -45,8 +45,7 @@ class Calibration {
         bool            isStem;
         bool            isOrigin;
 		bool			isSampledAge;
-		
-		
+        bool            isFixedAge; //rw: for -x in the calibration file
 		
 	public:
 						Calibration(std::string calstr, int tip);
@@ -66,10 +65,12 @@ class Calibration {
         void			setIsOriginFossil(bool b) { isOrigin = b; }
         bool			setIsOriginFossil() { return isOrigin; }
 		bool			getIsSampledAge(void) { return isSampledAge; }
+        bool            getIsFixedAge(void) { return isFixedAge; }
 		
 		void			initializeNodeCalibration(std::string calstr);
 		void			initialzeTipCalibration(std::string calstr);
         void            initializeOccurrence(std::string calstr);
+        void            initializeFixedNodeAge(std::string calstr);
 };
 
 
