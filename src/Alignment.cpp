@@ -1,7 +1,7 @@
-/* 
+/*
  * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
  * Copyright 2009-2013
- * Tracy Heath(1,2,3) 
+ * Tracy Heath(1,2,3)
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
@@ -39,14 +39,14 @@
 using namespace std;
 
 Alignment::Alignment(string fn) {
-	
+
 	numTaxa = numChar = numPatterns = 0;
 	matrix = compressedMatrix = NULL;
 	patternCount = NULL;
 	isCompressed = false;
 
 	ifstream seqStream(fn.c_str());
-	if (!seqStream) 
+	if (!seqStream)
 		{
 		cerr << "Cannot open file \"" + fn + "\"\n";
 		exit(1);
@@ -78,7 +78,7 @@ Alignment::Alignment(string fn) {
 				else
 					numChar = x;
 				if (numTaxa > 0 && numChar > 0 && matrix == NULL)
-					{	
+					{
 					cout << "   Number of taxa  = " << numTaxa << '\n';
 					cout << "   Number of sites = " << numChar << '\n';
 					cout.flush();
@@ -104,7 +104,7 @@ Alignment::Alignment(string fn) {
 						}
 					}
 				}
-			} while ( (ch=linestream.get()) != EOF );		
+			} while ( (ch=linestream.get()) != EOF );
 		lineNum++;
 		}
 	seqStream.close();
@@ -160,13 +160,13 @@ void Alignment::compress(void) {
 					}
 				}
 			}
-		
+
 		compressedMatrix = new int*[numTaxa];
 		compressedMatrix[0] = new int[numTaxa * numPatterns];
 		for (int i=1; i<numTaxa; i++)
 			compressedMatrix[i] = compressedMatrix[i-1] + numPatterns;
 		patternCount = new int[numPatterns];
-		
+
 		for (int i=0, j=0; i<numChar; i++)
 			{
 			if (tempCnt[i] > 0)
@@ -177,9 +177,9 @@ void Alignment::compress(void) {
 				j++;
 				}
 			}
-		
+
 		isCompressed = true;
-		
+
 		delete[] tempCnt;
 		}
 }
@@ -221,13 +221,13 @@ int Alignment::getNumSitesOfPattern(int i) {
 
 /*-------------------------------------------------------------------
 |
-|   GetPossibleNucs: 
+|   GetPossibleNucs:
 |
 |   This function initializes a vector, nuc[MAX_NUM_STATES]. The four elements
 |   of nuc correspond to the four nucleotides in alphabetical order.
 |   We are assuming that the nucCode is a binary representation of
 |   the nucleotides that are consistent with the observation. For
-|   example, if we observe an A, then the nucCode is 1 and the 
+|   example, if we observe an A, then the nucCode is 1 and the
 |   function initalizes nuc[0] = 1 and the other elements of nuc
 |   to be 0.
 |
@@ -381,32 +381,32 @@ bool Alignment::isTaxonPresent(string nm) {
 
 /*-------------------------------------------------------------------
 |
-|   NucID: 
+|   NucID:
 |
 |   Take a character, nuc, and return an integer:
 |
 |       nuc        returns
-|        A            1 
-|        C            2     
-|        G            4      
-|        T U          8     
-|        R            5      
-|        Y           10       
-|        M            3      
-|        K           12   
-|        S            6     
-|        W            9      
-|        H           11      
-|        B           14     
-|        V            7      
-|        D           13  
-|        N - ?       15       
+|        A            1
+|        C            2
+|        G            4
+|        T U          8
+|        R            5
+|        Y           10
+|        M            3
+|        K           12
+|        S            6
+|        W            9
+|        H           11
+|        B           14
+|        V            7
+|        D           13
+|        N - ?       15
 |
 -------------------------------------------------------------------*/
 int Alignment::nucID(char nuc) {
 
 	char		n;
-	
+
 	if (nuc == 'U' || nuc == 'u')
 		n = 'T';
 	else
@@ -513,4 +513,10 @@ void Alignment::print(std::ostream & o) const {
 			}
 		}
 	o.flush();
+}
+
+// New functions for partitioned/morphological data
+PartitionedMatrix::fillPartitions(unsigned index, const unsigned **mat) {
+			unsigned **part = this->matrices[index];
+			part
 }

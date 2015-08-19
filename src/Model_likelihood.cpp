@@ -1,7 +1,7 @@
-/* 
+/*
  * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
  * Copyright 2009-2013
- * Tracy Heath(1,2,3) 
+ * Tracy Heath(1,2,3)
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
@@ -55,12 +55,16 @@
 
 using namespace std;
 double Model::lnLikelihood(void) {
-        
+
         double * clP;
         double * clL;
         double * clR;
 
-	
+
+  if (dataIsPartitioned) {
+    // do partitioned procedure
+  }
+
 	if(runUnderPrior){
 		myCurLnL = 0.0;
 		return 0.0;
@@ -84,7 +88,7 @@ double Model::lnLikelihood(void) {
 // parallelisation
 			#pragma omp parallel for
 			for (int c=0; c<numPatterns; c++) {
-// parallelisation                      
+// parallelisation
                                 int p = c * numGammaCats * 4;
 				for (int k=0; k<numGammaCats; k++) {
 
@@ -109,50 +113,50 @@ double Model::lnLikelihood(void) {
                                         p1 = _mm_mul_pd ( _mm_load_pd ( tL[k][0] ), cll0 );       // tL[k][0][0] * clL[p + 0], tL[k][0][1] * clL[p + 1]
                                         p2 = _mm_mul_pd ( _mm_load_pd ( tL[k][1] ), cll0 );       // tL[k][1][0] * clL[p + 0], tL[k][1][1] * clL[p + 1]
                                         s1 = _mm_hadd_pd ( p1, p2 );                                                     // tL[k][0][0] * clL[p + 0] + tL[k][0][1] * clL[p + 1], tL[k][1][0] * clL[p + 0] + tL[k][1][1] * clL[p + 1]
-                                        
-                                        
+
+
                                         p1 = _mm_mul_pd ( _mm_load_pd ( tL[k][0] + 2 ), cll2 );   // tL[k][0][2] * clL[p + 2], tL[k][0][3] * clL[p + 3]
                                         p2 = _mm_mul_pd ( _mm_load_pd ( tL[k][1] + 2 ), cll2 );   // tL[k][1][2] * clL[p + 2], tL[k][1][3] * clL[p + 3]
                                         s2 = _mm_hadd_pd ( p1, p2 );                                                     // tL[k][0][2] * clL[p + 2] + tL[k][0][3] * clL[p + 3], tL[k][1][2] * clL[p + 2] + tL[k][1][3] * clL[p + 3]
-                                        
+
                                         /*  tL[k][0][0] * clL[p + 0] + tL[k][0][1] * clL[p + 1] + tL[k][0][2] * clL[p + 2] + tL[k][0][3] * clL[p + 3],
                                          *  tL[k][1][0] * clL[p + 0] + tL[k][1][1] * clL[p + 1] + tL[k][1][2] * clL[p + 2] + tL[k][1][3] * clL[p + 3]
                                          */
-                                        sl = _mm_add_pd ( s1, s2 );                                                  
-                                        
+                                        sl = _mm_add_pd ( s1, s2 );
+
                                         p1 = _mm_mul_pd ( _mm_load_pd ( tR[k][0] ), clr0 );
                                         p2 = _mm_mul_pd ( _mm_load_pd ( tR[k][1] ), clr0 );
                                         s1 = _mm_hadd_pd ( p1, p2 );
-                                        
+
                                         p1 = _mm_mul_pd ( _mm_load_pd ( tR[k][0] + 2 ), clr2 );
                                         p2 = _mm_mul_pd ( _mm_load_pd ( tR[k][1] + 2 ), clr2 );
                                         s2 = _mm_hadd_pd ( p1, p2 );
-                                        
+
                                         sr = _mm_add_pd ( s1, s2 );
-                                        
+
                                         _mm_store_pd ( clP + p, _mm_mul_pd ( sl, sr ) );
-                                        
+
                                         /* Compute clP[p + 2] and clP[p + 3] */
                                         p1 = _mm_mul_pd ( _mm_load_pd ( tL[k][2] ), cll0 );       // tL[k][0][0] * clL[p + 0], tL[k][0][1] * clL[p + 1]
                                         p2 = _mm_mul_pd ( _mm_load_pd ( tL[k][3] ), cll0 );       // tL[k][1][0] * clL[p + 0], tL[k][1][1] * clL[p + 1]
                                         s1 = _mm_hadd_pd ( p1, p2 );
-                                        
+
                                         p1 = _mm_mul_pd ( _mm_load_pd ( tL[k][2] + 2 ), cll2 );   // tL[k][0][2] * clL[p + 2], tL[k][0][3] * clL[p + 3]
                                         p2 = _mm_mul_pd ( _mm_load_pd ( tL[k][3] + 2 ), cll2 );   // tL[k][1][2] * clL[p + 2], tL[k][1][3] * clL[p + 3]
                                         s2 = _mm_hadd_pd ( p1, p2 );
-                                        
+
                                         sl = _mm_add_pd ( s1, s2 );
-                                        
+
                                         p1 = _mm_mul_pd ( _mm_load_pd ( tR[k][2] ), clr0 );
                                         p2 = _mm_mul_pd ( _mm_load_pd ( tR[k][3] ), clr0 );
                                         s1 = _mm_hadd_pd ( p1, p2 );
-                                        
+
                                         p1 = _mm_mul_pd ( _mm_load_pd ( tR[k][2] + 2 ), clr2 );
                                         p2 = _mm_mul_pd ( _mm_load_pd ( tR[k][3] + 2 ), clr2 );
                                         s2 = _mm_hadd_pd ( p1, p2 );
-                                        
+
                                         sr = _mm_add_pd ( s1, s2 );
-                                        
+
                                         _mm_store_pd ( clP + p + 2, _mm_mul_pd ( sl, sr ) );
                                         #ifdef _ASM_DEBUG
                                         __asm__ ( "int $0x3" );
@@ -187,7 +191,7 @@ double Model::lnLikelihood(void) {
 
                                         blnd = _mm256_blend_pd ( l12, l34, 0b1100 );
                                         perm = _mm256_permute2f128_pd ( l12, l34, 0x21 );
-                                        l1234 = _mm256_add_pd ( perm, blnd ); 
+                                        l1234 = _mm256_add_pd ( perm, blnd );
 
                                         // Compute sumR rows
 
@@ -201,7 +205,7 @@ double Model::lnLikelihood(void) {
 
                                         blnd = _mm256_blend_pd ( r12, r34, 0b1100 );
                                         perm = _mm256_permute2f128_pd ( r12, r34, 0x21 );
-                                        r1234 = _mm256_add_pd ( perm, blnd ); 
+                                        r1234 = _mm256_add_pd ( perm, blnd );
 
                                         r = _mm256_mul_pd ( l1234, r1234 );
 
@@ -217,17 +221,17 @@ double Model::lnLikelihood(void) {
 					sumL += tL[k][0][0] * clL[p + 0] + tL[k][0][1] * clL[p + 1] + tL[k][0][2] * clL[p + 2] +tL[k][0][3] * clL[p + 3];
 					sumR += tR[k][0][0] * clR[p + 0] + tR[k][0][1] * clR[p + 1] + tR[k][0][2] * clR[p + 2] +tR[k][0][3] * clR[p + 3];
 					clP[p + 0] = sumL * sumR;
-					
+
 					sumL = 0.0, sumR = 0.0;
 					sumL += tL[k][1][0] * clL[p + 0] + tL[k][1][1] * clL[p + 1] + tL[k][1][2] * clL[p + 2] + tL[k][1][3] * clL[p + 3];
 					sumR += tR[k][1][0] * clR[p + 0] + tR[k][1][1] * clR[p + 1] + tR[k][1][2] * clR[p + 2] + tR[k][1][3] * clR[p + 3];
 					clP[p + 1] = sumL * sumR;
-					
+
 					sumL = 0.0, sumR = 0.0;
 					sumL += tL[k][2][0] * clL[p + 0] + tL[k][2][1] * clL[p + 1] + tL[k][2][2] * clL[p + 2] +tL[k][2][3] * clL[p + 3];
 					sumR += tR[k][2][0] * clR[p + 0] + tR[k][2][1] * clR[p + 1] + tR[k][2][2] * clR[p + 2] +tR[k][2][3] * clR[p + 3];
 					clP[p + 2] = sumL * sumR;
-					
+
 					sumL = 0.0, sumR = 0.0;
 					sumL += tL[k][3][0] * clL[p + 0] + tL[k][3][1] * clL[p + 1] + tL[k][3][2] * clL[p + 2] +tL[k][3][3] * clL[p + 3];
 					sumR += tR[k][3][0] * clR[p + 0] + tR[k][3][1] * clR[p + 1] + tR[k][3][2] * clR[p + 2] +tR[k][3][3] * clR[p + 3];
@@ -241,13 +245,13 @@ double Model::lnLikelihood(void) {
 */
 // parallelisation
                                         p += 4;
-					
+
 				}
 			}
 			p->setIsClDirty(false);
 		}
 	}
-		
+
 	Node *r = t->getRoot();
 	MbVector<double> f = getActiveBasefreq()->getFreq();
 	//double *clP = clPtr[r->getActiveCl()][r->getIdx()];
@@ -322,7 +326,7 @@ double Model::lnLikelihood(void) {
                         p1, p2, p3, p4;
 
                 m = _mm256_set_pd ( f[3], f[2], f[1], f[0] );
-                
+
                 p1 = _mm256_mul_pd ( _mm256_load_pd ( clP + p ), m );
                 p2 = _mm256_mul_pd ( _mm256_load_pd ( clP + p + 4 ), m );
                 p3 = _mm256_mul_pd ( _mm256_load_pd ( clP + p + 8 ), m );
@@ -331,7 +335,7 @@ double Model::lnLikelihood(void) {
 
                 p1 = _mm256_hadd_pd ( p1, p2 );
                 p2 = _mm256_hadd_pd ( p3, p4 );
-                
+
                 p1 = _mm256_hadd_pd ( p1, p2 );
 
                 p1 = _mm256_add_pd ( p1, _mm256_permute2f128_pd ( p1 , p1 , 1)  );

@@ -1,7 +1,7 @@
-/* 
+/*
  * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
  * Copyright 2009-2013
- * Tracy Heath(1,2,3) 
+ * Tracy Heath(1,2,3)
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
@@ -41,10 +41,10 @@ using namespace std;
 
 void printHelp(bool files);
 
-void printHelp(bool files) 
+void printHelp(bool files)
 {
 	if(files){
-		
+
 		cout << "*****\n";
 		cout << "\nFile formats: \n\n";
 		cout << "Tree file (newick format)\n";
@@ -115,7 +115,7 @@ void printHelp(bool files)
 int main (int argc, char * const argv[]) {
 
 	// read user settings
-	
+
 	seedType s1			= 0;
 	seedType s2			= 0;
 	string dataFileName	= "";
@@ -132,7 +132,7 @@ int main (int argc, char * const argv[]) {
 	double relDeath		= -1.0;		// initial relative death rate (mu / lambda)
 	double ssbdPrS		= -1.0;
 	double fixclokrt	= -1.0;		// fix the clock rate to this
-    double rho          = 1.0;      //rw: extant species sampling
+	double rho          = 1.0;      //rw: extant species sampling
 	int offmove			= 0;		// used to turn off one particular move
 	int printFreq		= 100;
 	int sampleFreq		= 100;
@@ -164,7 +164,9 @@ int main (int argc, char * const argv[]) {
     bool printAttach    = false;     //rw: maybe issue a warning if cal file is large & printAttach = true
 	int numIntervals	= 1;
 	double originMax		= 0.0;
-	
+
+	bool isPartitioned 	= false		// true when different data partitions present (e.g. morphological datasets)
+
 	if(argc > 1){
 		for (int i = 1; i < argc; i++){
 			char *curArg = argv[i];
@@ -225,19 +227,19 @@ int main (int argc, char * const argv[]) {
 					treeNodePrior = 6;
 				else if(!strcmp(curArg, "-tga"))		// set treeNodePrior to do calibrated birth-death with ancestor fossils
 					treeNodePrior = 7;
-                else if(!strcmp(curArg, "-fbds")) // condition fbd on the age of the origin
-                    treeNodePrior = 8;
-                else if(!strcmp(curArg, "-fofbd")) // fossil only fossilised birth death process
-                    treeNodePrior = 9;
-				else if(!strcmp(curArg, "-bdr"))	// (lambda - mu)
+				else if(!strcmp(curArg, "-fbds")) 		// condition fbd on the age of the origin
+					treeNodePrior = 8;
+				else if(!strcmp(curArg, "-fofbd")) 		// fossil only fossilised birth death process
+					treeNodePrior = 9;
+				else if(!strcmp(curArg, "-bdr"))		// (lambda - mu)
 					netDiv = atof(argv[i+1]);
-				else if(!strcmp(curArg, "-bda"))	// (mu / lambda)
+				else if(!strcmp(curArg, "-bda"))		// (mu / lambda)
 					relDeath = atof(argv[i+1]);
-				else if(!strcmp(curArg, "-bds"))	// (mu / lambda) //rw: is this correct, is this not psi? how do these flags work?
+				else if(!strcmp(curArg, "-bds"))		// (mu / lambda) //rw: is this correct, is this not psi? how do these flags work?
 					ssbdPrS = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-rho"))	//rw: extant species sampling
-                    rho = atof(argv[i+1]);
-				else if(!strcmp(curArg, "-fix")){	// fix clock
+				else if(!strcmp(curArg, "-rho"))		//rw: extant species sampling
+					rho = atof(argv[i+1]);
+				else if(!strcmp(curArg, "-fix")){		// fix clock
 					fixclokrt = atof(argv[i+1]);
 					fixClockToR = true;
 				}
@@ -247,11 +249,11 @@ int main (int argc, char * const argv[]) {
 					printalign = false;
 				else if(!strcmp(curArg, "-soft"))
 					softbnd = true;
-				else if(!strcmp(curArg, "-clok")){  // run under strict clock
+				else if(!strcmp(curArg, "-clok")){  		// run under strict clock
 					if(!fixClockToR) fixclokrt = -1.0;
 					modelType = 2;
 				}
-				else if(!strcmp(curArg, "-urg"))  // run under uncorrelated-gamma rates
+				else if(!strcmp(curArg, "-urg"))  		// run under uncorrelated-gamma rates
 					modelType = 3;
 				else if(!strcmp(curArg, "-exhp"))
 					calibHyP = true;
@@ -283,17 +285,19 @@ int main (int argc, char * const argv[]) {
 					printHelp(true);
 					return 0;
 				}
-                else if(!strcmp(curArg, "-po")){//RW
-                    printOrigin = true;
-                }
-                else if(!strcmp(curArg, "-pfat")){//RW
-                    printAttach = true;
-                }
-                else if(!strcmp(curArg, "-omax")){//RW
-                    originMax = atof(argv[i+1]);
-                }
+				else if(!strcmp(curArg, "-po")){//RW
+					printOrigin = true;
+				}
+				else if(!strcmp(curArg, "-pfat")){//RW
+					printAttach = true;
+				}
+				else if(!strcmp(curArg, "-omax")){//RW
+					originMax = atof(argv[i+1]);
+				}
 				else if(!strcmp(curArg, "-sky"))
 					numIntervals = atoi(argv[i+1]);
+				else if(!strcmp(curArg, "-part"))		// partitioned dataset
+					isPartitioned = true;
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -304,7 +308,7 @@ int main (int argc, char * const argv[]) {
 			}
 		}
 	}
-	
+
 	else {
 		cout << "\n############################ !!! ###########################\n";
 		cout << "\n\n\tPlease specify data and tree files, here are the \n\tavailable options:\n";
@@ -312,7 +316,7 @@ int main (int argc, char * const argv[]) {
 		cout << "\n############################ !!! ###########################\n";
 		return 0;
 	}
-	
+
     //rw: suppress tree requirement
     if(treeNodePrior != 9) {
         if(dataFileName.empty() || treeFileName.empty()){
@@ -323,10 +327,10 @@ int main (int argc, char * const argv[]) {
             return 0;
         }
     }
-    
+
     MbRandom myRandom;
     myRandom.setSeed(s1, s2);
-	
+
     if(treeNodePrior == 9){
         Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
@@ -346,7 +350,7 @@ int main (int argc, char * const argv[]) {
                       hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN,
                       treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
                       dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, numIntervals,
-					  originMax, runPrior);
+					  originMax, runPrior, isPartitioned);
         if(doAbsRts)
             myModel.setEstAbsRates(true);
         if(runPrior)
@@ -357,7 +361,6 @@ int main (int argc, char * const argv[]) {
         }
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach); //RW:
     }
-	
+
     return 0;
 }
-

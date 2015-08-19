@@ -1,7 +1,7 @@
-/* 
+/*
  * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
  * Copyright 2009-2013
- * Tracy Heath(1,2,3) 
+ * Tracy Heath(1,2,3)
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
@@ -55,7 +55,7 @@ class OriginTime;
 class FossilGraph;
 class Model {
 
-	enum TreeDirection 
+	enum TreeDirection
 		{
 		DOWN_TREE_DIR = 0,
 		LEFT_TREE_DIR = 1,
@@ -63,9 +63,9 @@ class Model {
 		DIRTY_FLAG = 3
 		};
 	public:
-										Model(MbRandom *rp, Alignment *ap, std::string ts, double pm, 
-											  double ra, double rb, double hal, double hbe, bool ubl, 
-											  bool alnm, int offmv, bool rndNo, std::string clfn, int nodpr, 
+										Model(MbRandom *rp, Alignment *ap, std::string ts, double pm,
+											  double ra, double rb, double hal, double hbe, bool ubl,
+											  bool alnm, int offmv, bool rndNo, std::string clfn, int nodpr,
 											  double bdr, double bda, double bds, double fxclkrt, bool roofix,
 											  bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod,
 											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr, int sky, double omx, bool runPr);
@@ -115,7 +115,7 @@ class Model {
 		bool							getIsSkylineModel(void) { return doSkylineBDP; }
 
 	private:
-		
+
 		void							initializeConstantRateDPPDiv(double initRootH,double bdr, double bda, double bds, int dphpng, bool gamhp, double hal, double hbe, double ra, double rb, int rmod, bool sfb, int tsPrDist, bool ubl);
 		void							initializeSkylineRateDPPDiv(double initRootH,double bdr, double bda, double bds, double hal, double hbe, double ra, double rb, int rmod, int tsPrDist, bool ubl);
 
@@ -124,9 +124,10 @@ class Model {
 		double							readCalibFile();
         void							readOccurrenceFile();
 		Calibration*					getRootCalibration();
-		
+
 		MbRandom						*ranPtr;
 		Alignment						*alignmentPtr;
+		MorphData						*morphDataPtr;
 		int								numGammaCats;
 		std::vector<Parameter *>		parms[2];
 		double							*cls;
@@ -140,20 +141,21 @@ class Model {
 		double							priorMeanN;
 		seedType						startS1, startS2;
 		bool							runUnderPrior;
+		bool 								dataIsPartitioned;
 		double							fixedClockRate;
-		
+
 		typedef double ** TransitionMat;
 		typedef TransitionMat * TransitionMatArray;
 		TransitionMatArray * tiMatArrays;
 		TreeDirection * tiMatFlags;
-		
+
 		void							readTipDateFile(void);
-		
-		
+
+
 		double							myCurLnL;
 		bool							lnLGood;
 		int								turnedOffMove;
-		
+
 		std::string						newickTreeString;
 		std::string						calibfilen;
 		std::string						tipDateFileN;
@@ -177,7 +179,7 @@ class Model {
 		bool							estAbsRts;
 		bool							fixTestRun;
         bool                            conditionOnOrigin;
-		
+
 		int								totalUpdateWeights;
 		bool							rtCalib;
 		bool							doSkylineBDP;

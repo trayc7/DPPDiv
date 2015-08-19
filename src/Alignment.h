@@ -1,7 +1,7 @@
-/* 
+/*
  * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
  * Copyright 2009-2013
- * Tracy Heath(1,2,3) 
+ * Tracy Heath(1,2,3)
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
@@ -38,7 +38,7 @@
 class Alignment {
 
 	public:
-									Alignment(std::string fn); 
+									Alignment(std::string fn);
 									~Alignment(void);
 		void						compress(void);
 		int							getNumTaxa(void) { return numTaxa; }
@@ -63,5 +63,36 @@ class Alignment {
 		bool						isCompressed;
 		std::vector<std::string>	taxonNames;
 };
+
+// Class for holding partitioned data
+// For general MK model for multi-state morph data need partition for each stateset size
+class PartitionedMatrix {
+	public:
+									PartitionedMatrix(unsigned numTaxa,);
+									~PartitionedMatrix();
+	  unsigned			getNParts() (return nPartitions);
+		unsigned 			getNumCharsVec() {return numCharsPerPart};
+		void  				fillPartitions(unsigned index, const unsigned **mat);
+
+	private:
+		unsigned 									nPartitions;
+		std::vector<unsigned**>		matrices;
+		std::vector<unsigned**>		compressedMatrices;
+		unsigned									*numCharsPerPart;
+}
+
+// Class to hold partitioned data and related variables for morphological data
+// Analogous to Alignment class for nucleotide data
+class MorphData: public Alignment {
+
+	public:
+									MorphData();
+									~MorphData(void);
+		unsigned 			getNumPartitions() {return numPartitions);
+
+	private:
+		unsigned 									numPartitions;
+		PartitionedMatrix					partMat;
+		std::vector<std::string>  rawData;
 
 #endif

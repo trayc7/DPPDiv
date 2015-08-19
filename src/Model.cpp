@@ -1,7 +1,7 @@
-/* 
+/*
  * DPPDiv version 1.1b source code (https://github.com/trayc7/FDPPDIV)
  * Copyright 2009-2013
- * Tracy Heath(1,2,3) 
+ * Tracy Heath(1,2,3)
  * Mark Holder(1)
  * John Huelsenbeck(2)
  *
@@ -54,11 +54,11 @@
 
 using namespace std;
 
-Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, double rb, 
-			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
+Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, double rb,
+			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo,
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr, int sky, double omx, bool runPr) {
+			 bool ihp, string tipdfn, bool fxtr, int sky, double omx, bool runPr, bool part) {
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -78,6 +78,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	turnedOffMove = offmv;
 	fixedClockRate = fxclkrt;
 	fixSomeModParams = fxmod;
+	dataIsPartitioned = part;
 	fixTestRun = fxtr;
 	estAbsRts = false;
 	runUnderPrior = runPr;
@@ -127,18 +128,18 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	}
 	else
 		originMax = initOT * 3.0;
-	
+
     if(conditionOnOrigin)
         rHtO = initOT;
     else rHtO = initRootH * 5.0;
-    
+
 	cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
-	
+
 	// ...and initialize some important variables
-    
+
 	numGammaCats = 4;
 	numPatterns  = alignmentPtr->getNumChar();
-	
+
 	cpfix = false;
 	if(turnedOffMove == 5)
 		cpfix = true;
@@ -152,12 +153,12 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		cerr << "ERROR: the prior on the mean number of tables cannot exceed the number of nodes in the tree!" << endl;
 		exit(1);
 	}
-	
+
 	if(doSkylineBDP == false) // if constant rate DPPDiv
 		initializeConstantRateDPPDiv(initRootH, bdr, bda, bds, dphpng, gamhp, hal, hbe, ra, rb, rmod, sfb, tsPrDist, ubl);
 	else
 		initializeSkylineRateDPPDiv(initRootH, bdr, bda, bds, hal, hbe, ra, rb, rmod, tsPrDist, ubl);
-	
+
 	numParms = (int)parms[0].size();
 	activeParm = 0;
 	for (int i=0; i<numParms; i++)
@@ -165,21 +166,21 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 
 	for (int i=0; i<numParms; i++)
 		parms[0][i]->print(std::cout);
-	
-		
+
+
 	// initialize the probabilities for updating different parameters
 	setUpdateProbabilities(true);
-		
+
 	// allocate and initialize conditional likelihoods
 	initializeConditionalLikelihoods();
-	
+
 	// allocate the transition probability matrices
 	initializeTransitionProbabilityMatrices();
-	
+
 	// instantiate the transition probability calculator
 	tiCalculator = new MbTransitionMatrix( getActiveExchangeability()->getRate(), getActiveBasefreq()->getFreq(), true );
 	cout << "here" << endl;
-	
+
 	setTiProb();
 	myCurLnL = lnLikelihood();
 	cout << "lnL = " << myCurLnL << endl;
@@ -187,7 +188,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 }
 
 Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
-    
+
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
     treeTimePrior = nodpr;
@@ -200,7 +201,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
         exit(1);
     }
-    
+
     // RW initialization stuff ******
     if(calibfilen.empty() == false){
         readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
@@ -208,26 +209,26 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
 
     originMax = initOT * 2.5;
     //originMax = 500.0;
-    
+
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
-    
+
 	FossilGraph *fg = new FossilGraph(ranPtr, this, numFossils, initOT, calibrs, runUnderPrior);
 	OriginTime *ot = new OriginTime(ranPtr, this, initOT, rHtY, originMax);
-	Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho); 
+	Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho);
     for (int i=0; i<2; i++){
         parms[i].push_back( ot );
         parms[i].push_back( sp ); //rw: bdr = netDiversificaton, bda = relativeDeath, bds = probSpeciationS, initRootH, rho
         parms[i].push_back( fg );
-        
+
     }
     numParms = (int)parms[0].size();
     activeParm = 0;
     for (int i=0; i<numParms; i++)
         *parms[0][i] = *parms[1][i];
-    
+
     for (int i=0; i<numParms; i++)
         parms[0][i]->print(std::cout);
-    
+
     updateProb.clear();
     updateProb.push_back(0.0); // 1 origin time
     updateProb.push_back(3.0); // 2 speciation
@@ -237,9 +238,9 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         sum += updateProb[i];
     for (unsigned i=0; i<updateProb.size(); i++)
         updateProb[i] /= sum;
-    
+
 	totalUpdateWeights = (int)sum;
-	
+
     myCurLnL = this->getActiveFossilGraph()->getActiveFossilGraphProb();
     cout << "lnL = " << myCurLnL << endl;
 
@@ -282,7 +283,7 @@ Tree* Model::getActiveTree(void) {
 }
 
 Treescale* Model::getActiveTreeScale(void) {
-	
+
 	for (int i=0; i<numParms; i++){
 		Parameter *p = parms[activeParm][i];
 		Treescale *derivedPtr = dynamic_cast<Treescale *>(p);
@@ -327,7 +328,7 @@ NodeRate* Model::getActiveNodeRate(void) {
 }
 
 Speciation* Model::getActiveSpeciation(void) {
-	
+
 	for (int i=0; i<numParms; i++){
 		Parameter *p = parms[activeParm][i];
 		Speciation *derivedPtr = dynamic_cast<Speciation *>(p);
@@ -338,7 +339,7 @@ Speciation* Model::getActiveSpeciation(void) {
 }
 
 Cphyperp* Model::getActiveCphyperp(void) {
-	
+
 	for (int i=0; i<numParms; i++){
 		Parameter *p = parms[activeParm][i];
 		Cphyperp *derivedPtr = dynamic_cast<Cphyperp *>(p);
@@ -349,7 +350,7 @@ Cphyperp* Model::getActiveCphyperp(void) {
 }
 
 ExpCalib* Model::getActiveExpCalib(void) {
-	
+
 	for (int i=0; i<numParms; i++){
 		Parameter *p = parms[activeParm][i];
 		ExpCalib *derivedPtr = dynamic_cast<ExpCalib *>(p);
@@ -360,7 +361,7 @@ ExpCalib* Model::getActiveExpCalib(void) {
 }
 
 OriginTime* Model::getActiveOriginTime(void) {
-    
+
     for (int i=0; i<numParms; i++){
         Parameter *p = parms[activeParm][i];
         OriginTime *derivedPtr = dynamic_cast<OriginTime *>(p);
@@ -371,7 +372,7 @@ OriginTime* Model::getActiveOriginTime(void) {
 }
 
 FossilGraph* Model::getActiveFossilGraph(void) {
-    
+
     for (int i=0; i<numParms; i++){
         Parameter *p = parms[activeParm][i];
         FossilGraph *derivedPtr = dynamic_cast<FossilGraph *>(p);
@@ -382,7 +383,7 @@ FossilGraph* Model::getActiveFossilGraph(void) {
 }
 
 Skyline* Model::getActiveSkyline(void) {
-    
+
     for (int i=0; i<numParms; i++){
         Parameter *p = parms[activeParm][i];
         Skyline *derivedPtr = dynamic_cast<Skyline *>(p);
@@ -395,12 +396,12 @@ Skyline* Model::getActiveSkyline(void) {
 void Model::initializeConstantRateDPPDiv(double initRootH,double bdr, double bda, double bds, int dphpng, bool gamhp,
 										 double hal, double hbe, double ra, double rb, int rmod,
 										 bool sfb, int tsPrDist, bool ubl){
-	
+
 	int nn = 2*alignmentPtr->getNumTaxa()-1;
 	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, priorMeanN, cpfix);
 	ExpCalib *excal = new ExpCalib(ranPtr, this, exponDPMCalibHyperParm, dphpng, initRootH, gamhp, runIndCalHP);
 	NodeRate *nr = new NodeRate(ranPtr, this, nn, ra, rb, conp->getCurrentCP(), fixedClockRate, rmod);
-	for (int i=0; i<2; i++){ 
+	for (int i=0; i<2; i++){
 		parms[i].push_back( new Basefreq(ranPtr, this, 4, fixSomeModParams) );					// base frequency parameter
 		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
 		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fixSomeModParams) );		// gamma shape parameter for rate variation across sites
@@ -421,11 +422,11 @@ void Model::initializeConstantRateDPPDiv(double initRootH,double bdr, double bda
 void Model::initializeSkylineRateDPPDiv(double initRootH,double bdr, double bda, double bds,
 										double hal, double hbe, double ra, double rb, int rmod,
 										int tsPrDist, bool ubl){
-	
+
 	int nn = 2*alignmentPtr->getNumTaxa()-1;
 	Cphyperp *conp = new Cphyperp(ranPtr, this, hal, hbe, nn, priorMeanN, cpfix);
 	NodeRate *nr = new NodeRate(ranPtr, this, nn, ra, rb, conp->getCurrentCP(), fixedClockRate, rmod);
-	for (int i=0; i<2; i++){ 
+	for (int i=0; i<2; i++){
 		parms[i].push_back( new Basefreq(ranPtr, this, 4, fixSomeModParams) );					// base frequency parameter
 		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
 		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fixSomeModParams) );		// gamma shape parameter for rate variation across sites
@@ -457,7 +458,7 @@ void Model::initializeConditionalLikelihoods(void) {
 		for (int j=0; j<nNodes; j++)
 			clPtr[i][j] = &cls[ i * sizeOneSpace + j * sizeOneNode ];
 		}
-		
+
 	// initialize the tip conditional likelihoods
 	for (int i=0; i<alignmentPtr->getNumTaxa(); i++)
 		{
@@ -537,7 +538,7 @@ void Model::printTis(std::ostream & o) const {
 			o << '\n';
 			}
 		}
-	o.flush();	
+	o.flush();
 }
 
 double Model::safeExponentiation(double lnX) {
@@ -558,7 +559,7 @@ void Model::setTiProb(void) {
 	for (int n=0; n<t->getNumNodes(); n++)
 		{
 		Node *p = t->getDownPassNode(n);
-		if (p->getAnc() != NULL && p->getIsTiDirty() == true) 
+		if (p->getAnc() != NULL && p->getIsTiDirty() == true)
 			{
 			setTiProb(p, s, r);
 			p->setIsTiDirty(false);
@@ -586,14 +587,14 @@ void Model::setTiProb(Node *p, Shape *s, NodeRate *r) {
 #	else
 	double v = branchProportion * rP;
 #	endif
-	
+
 	if(rP == 0.0){
-		// then this means that this is calculating the lnl for nodes that are not assigned to 
+		// then this means that this is calculating the lnl for nodes that are not assigned to
 		// RateGroups in currentRateGroups
 		cerr << "ERROR: Problem rP = 0" << endl;
 		exit(1);
 	}
-	
+
 #	if 0
 	for (int k=0; k<4; k++){
 		double rt = s->getRate(k);
@@ -602,13 +603,13 @@ void Model::setTiProb(Node *p, Shape *s, NodeRate *r) {
 #	else
 	double rt = s->getRate(0);
 	tis[activeTi][idx][0] = tiCalculator->tiProbs( v*rt, tis[activeTi][idx][0] );
-	
+
 	rt = s->getRate(1);
 	tis[activeTi][idx][1] = tiCalculator->tiProbs( v*rt, tis[activeTi][idx][1] );
-	
+
 	rt = s->getRate(2);
 	tis[activeTi][idx][2] = tiCalculator->tiProbs( v*rt, tis[activeTi][idx][2] );
-	
+
 	rt = s->getRate(3);
 	tis[activeTi][idx][3] = tiCalculator->tiProbs( v*rt, tis[activeTi][idx][3] );
 #	endif
@@ -618,7 +619,7 @@ void Model::setTiProb(Node *p, Shape *s, NodeRate *r) {
 }
 
 void Model::setNodeRateGrpIndxs(void) {
-	
+
 	Tree *t     = getActiveTree();
 	NodeRate *r = getActiveNodeRate();
 #	if ASSIGN_ROOT
@@ -669,7 +670,7 @@ void Model::upDateRateMatrix(void) {
 }
 
 void Model::writeUnifTreetoFile(void) {
-	
+
 	Tree *t = getActiveTree();
 	t->checkNodeCalibrationCompatibility();
 	t->setAllNodeBranchTimes();
@@ -693,7 +694,7 @@ void Model::writeUnifTreetoFile(void) {
 }
 
 double Model::getMyCurrLnL(void) {
-	
+
 	if(lnLGood){
 		lnLGood = false;
 		return myCurLnL;
@@ -704,21 +705,21 @@ double Model::getMyCurrLnL(void) {
 
 
 double Model::readCalibFile(void) {
-	
+
 	/*
 	3
 	T1	T3	0.4	0.8
 	T6	T7	0.1	0.2
 	T10 T9  0.9	0.9
 	*/
-	
+
 	/*
 	TAH
 	This also initializes the root height parameter
 	I'm not sure how best to do this
-	
+
 	*/
-	
+
 	cout << "\nCalibrations:" << endl;
 	bool rootIs = false;
 	Calibration *rooCal;
@@ -795,7 +796,7 @@ double Model::readCalibFile(void) {
 		rHtO = ob;
         initOT = tsc * 2.0;
 	}
-	
+
 	if(nlins == nnodes){
 		bool fixall = true;
 		for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
@@ -820,18 +821,18 @@ double Model::readCalibFile(void) {
 		}
 		zeroNodeTimeMove = fixall;
 	}
-	
+
 	cout << "\nInitial root height : " << initTScale <<  " [" << yb << ", " << ob << "]" << endl;
 	return initTScale;
 }
 
 void Model::readTipDateFile(void){
-	
+
 	/*
 	    3
 		X50    20.4
 		X59    40.1
-		
+
 	*/
 	string ln = getLineFromFile(tipDateFileN, 1);
 	int nlins = atoi(ln.c_str());
@@ -841,20 +842,20 @@ void Model::readTipDateFile(void){
 		Calibration *cal = new Calibration(calList[i], 1);
 		tipDates.push_back(cal);
 	}
-    
+
 	delete [] calList;
 
 }
 
 void Model::readOccurrenceFile(void){
-    
+
     /*
 	    3
      20.4
      40.1
      90.0
      */
-    
+
     // initialize occurrences
     cout << "\nOccurrences:" << endl;
     string ln = getLineFromFile(calibfilen, 1);
@@ -867,11 +868,11 @@ void Model::readOccurrenceFile(void){
         calibrs.push_back(cal);
     }
     delete [] calList;
-    
+
     // initialize origin time
     double yb = 0.0;
     double ob = 0.0;
-    
+
     for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
         double tmpv;
         tmpv = (*v)->getYngTime() * 1.1;
@@ -881,7 +882,7 @@ void Model::readOccurrenceFile(void){
     ob = yb + (yb * 1.2);
     initOT = yb + (ranPtr->uniformRv() * (ob - yb));
     rHtY = yb;
-    
+
     // initialize terminal time
     for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
         double yt;
@@ -890,11 +891,11 @@ void Model::readOccurrenceFile(void){
             yb = yt;
     }
     rHtY = yb;
-    
+
     cout << "\nTotal number of occurrences: " << numFossils << endl;
     cout << "\nInitial origin time: " << initOT <<  " [" << yb << ", " << ob << "]" << endl;
     cout << "\nTerminal time: " << rHtY << endl;
-    
+
 }
 
 
@@ -976,10 +977,10 @@ void Model::setUpdateProbabilities(bool initial) {
 		bfp = 0.0;
 		shp = 0.0;
 	}
-	
+
 	if(treeTimePrior > 3) // might want to change this
 		spp = 0.5;
-	
+
 	if(treeTimePrior > 5){
 		ntp = 0.8;
 		fcp = 0.4;
@@ -989,7 +990,7 @@ void Model::setUpdateProbabilities(bool initial) {
 		dpp = 0.0;
 		//spp = 0.0;
 	}
-	
+
 	// TAH: FIXING 6 Feb
 	if(fixTestRun){
 		spp = 0.0;
@@ -999,14 +1000,14 @@ void Model::setUpdateProbabilities(bool initial) {
 	if(conditionOnOrigin){
 		otp = 0.5;
 	}
-    
+
     if(false){ // TAH: fixing for test
         ntp = 0.5;
         tsp = 0.5;
         spp = 0.5;
         otp = 0.5; // set to 0.0 to fix origin to initOT
     }
-	
+
 	updateProb.clear();
 	if(doSkylineBDP) { //skyline
 		otp = 0.0; // this is off until a move that calcs whole FBD prob is implemented
@@ -1014,7 +1015,7 @@ void Model::setUpdateProbabilities(bool initial) {
 		ntp = 0.0;
 		tsp = 0.0;
 		dpp = 2.0;
-		
+
 		updateProb.push_back(bfp); // 1 basefreq
 		updateProb.push_back(srp); // 2 sub rates
 		updateProb.push_back(shp); // 3 gamma shape
@@ -1036,7 +1037,7 @@ void Model::setUpdateProbabilities(bool initial) {
 		updateProb.push_back(spp); // 8 speciation parameters
 		updateProb.push_back(ehp); // 9 exponential calibration hyper priors
 		updateProb.push_back(otp); // 10 origin time parameter
-	
+
 	}
 	double sum = 0.0;
 	for (unsigned i=0; i<updateProb.size(); i++)
@@ -1049,6 +1050,3 @@ void Model::setUpdateProbabilities(bool initial) {
 
 
 // end model
-
-
-
