@@ -67,7 +67,7 @@ class Model {
 											  bool alnm, int offmv, bool rndNo, std::string clfn, int nodpr, 
 											  double bdr, double bda, double bds, double fxclkrt, bool roofix,
 											  bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod,
-											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr);
+											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr, int expmo);
                                         Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp); // model overload constructor for fofbd
 										~Model(void);
 		double							lnLikelihood(void);
@@ -110,6 +110,7 @@ class Model {
 		bool							getFixTestRun(void) { return fixTestRun; }
 		bool							getOriginCondition(void) { return conditionOnOrigin; }
 		int								getTotalUpdateWeights(void){ return totalUpdateWeights; }
+        int                             getFBDSExperimentalMode() { return fbdsExperimentalMode; }//rw:
 
 	private:
 		void							initializeConditionalLikelihoods(void);
@@ -169,6 +170,7 @@ class Model {
 		bool							estAbsRts;
 		bool							fixTestRun;
         bool                            conditionOnOrigin;
+        int                             fbdsExperimentalMode;//rw:
 		
 		int								totalUpdateWeights;
 };

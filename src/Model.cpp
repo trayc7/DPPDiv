@@ -57,7 +57,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr) {
+			 bool ihp, string tipdfn, bool fxtr, int expmo) {
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -89,6 +89,8 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	int tsPrDist = 1;
 	rootNExpRate = -1.0;
 	bool rtCalib = false;
+    fbdsExperimentalMode = 1;//rw: experimental mode = 1: fix user specified branch lengths; = 2 fix user specified branch lengths and ignore the calibrations
+    
 	if(calibfilen.empty() == false){
 		initRootH = readCalibFile();
 //        initRootH = 100.0; // TAH: DEBUG
@@ -926,6 +928,20 @@ void Model::setUpdateProbabilities(bool initial) {
         tsp = 0.5;
         spp = 0.5;
         otp = 0.5; // set to 0.0 to fix origin to initOT
+    }
+    
+    if(fbdsExperimentalMode > 0){
+        bfp = 0.0;
+        srp = 0.0;
+        shp = 0.0;
+        ntp = 0.4;
+        dpp = 0.0;
+        cpa = 0.0;
+        tsp = 0.0;
+        spp = 0.4;
+        ehp = 0.0;
+        fcp = 0.0;
+        otp = 0.0;
     }
 	
 	updateProb.clear();
