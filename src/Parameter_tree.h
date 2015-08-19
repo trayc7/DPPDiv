@@ -203,7 +203,7 @@ class Tree : public Parameter {
 	public:
 										Tree(MbRandom *rp, Model *mp, Alignment *ap, std::string ts, 
 											 bool ubl, bool allnm, bool rndNods, std::vector<Calibration *> clb, 
-											 double rth, double iot, bool sb, bool exhpc, ExpCalib *ec, std::vector<Calibration *> tdt);
+											 double rth, double iot, bool sb, bool exhpc, ExpCalib *ec, std::vector<Calibration *> tdt, int expmo);
 										~Tree(void); 
 		Tree							&operator=(const Tree &t);
 		void							clone(const Tree &t);
@@ -355,6 +355,7 @@ class Tree : public Parameter {
 		
 		double							computeLogFirstProductFBDSProb(double b, double d, double rho, double tt);
 		
+        int                             fbdsExperimentalMode;//rw:
 		
 		Alignment						*alignmentPtr;
 		int								numTaxa;

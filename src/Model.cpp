@@ -141,7 +141,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
 		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fxmod) );		// gamma shape parameter for rate variation across sites
 		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, ts, ubl, alnm, rndNo, 
-									 calibrs, initRootH, initOT, sfb, ehpc, excal, tipDates) );    // rooted phylogenetic tree
+									 calibrs, initRootH, initOT, sfb, ehpc, excal, tipDates, fbdsExperimentalMode) );    // rooted phylogenetic tree
 		parms[i].push_back( nr );												// restaurant containing node rates
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, ehpc) ); // the tree scale prior

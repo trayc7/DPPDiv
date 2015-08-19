@@ -80,7 +80,7 @@ Node::Node(void) {
 
 Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool allnm, 
 		   bool rndNods, vector<Calibration *> clb, double rth, double iot, bool sb, bool exhpc,
-		   ExpCalib *ec, vector<Calibration *> tdt) : Parameter(rp, mp) {
+		   ExpCalib *ec, vector<Calibration *> tdt, int expmo) : Parameter(rp, mp) {
 
 	alignmentPtr = ap;
 	numTaxa = 0;
@@ -105,7 +105,8 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	isTipCals = false; 
 	expHyperPrCal = exhpc;
 	sampleFossilAges = false;
-	buildTreeFromNewickDescription(ts); 
+	buildTreeFromNewickDescription(ts);
+    fbdsExperimentalMode = expmo;
 	
 	nodeProposal = 2; // proposal type 1=window, 2=scale, 3=slide
 	tuningVal = log(8.0);
@@ -131,12 +132,18 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 		isCalibTree = true;
 		setUPTGSCalibrationFossils();
         cout << "setUPTGSCalibrationFossils\n"; // This is debugging code, leave in for now. [Some odd behavior with initialization (check into this)]
-		initializeCalibratedNodeDepths();
-        cout << "initializeCalibratedNodeDepths\n";
-		while(checkTreeForCalibrationCompatibility() > 0){
-			zeroNodeRedFlags();
-			initializeCalibratedNodeDepths();
-		}
+        
+        if(fbdsExperimentalMode > 0){
+            initializeNodeDepthsFromUserBL();
+        }
+        else {
+            initializeCalibratedNodeDepths();
+            cout << "initializeCalibratedNodeDepths\n";
+            while(checkTreeForCalibrationCompatibility() > 0){
+                zeroNodeRedFlags();
+                initializeCalibratedNodeDepths();
+            }
+        }
 		initializeFossilSpecVariables();
 
 	}
