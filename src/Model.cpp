@@ -57,7 +57,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr, int expmo) {
+			 bool ihp, string tipdfn, bool fxtr, int expmo, bool igfoss) {
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -89,7 +89,9 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	int tsPrDist = 1;
 	rootNExpRate = -1.0;
 	bool rtCalib = false;
-    fbdsExperimentalMode = 2;//rw: experimental mode = 1: fix user specified branch lengths; = 2 fix user specified branch lengths and ignore the calibrations
+    cout << "expmo" << expmo << endl;
+    fbdsExperimentalMode = expmo;//rw: experimental mode = 1: fix user specified branch lengths; = 2 fix user specified branch lengths and ignore the calibrations
+    ignoreFossils = igfoss;
     
 	if(calibfilen.empty() == false){
 		initRootH = readCalibFile();
@@ -674,7 +676,7 @@ double Model::readCalibFile(void) {
             //rooCal = cal;
             //rootIs = true; // I dont know if we want to do this here
         }
-        else if (fbdsExperimentalMode != 2)  {
+        else if (fbdsExperimentalMode != 2 or ignoreFossils)  {
             Calibration *cal = new Calibration(calList[i], 0);
             calibrs.push_back(cal);
             if(cal->getIsRootCalib()){

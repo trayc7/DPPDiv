@@ -57,7 +57,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     extantSampleRate = 1.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
-	parameterization = 1;
+	parameterization = 2;
 	if(treeTimePrior == 9){
 		parameterization = 3;
 		extantSampleRate = 0.0;

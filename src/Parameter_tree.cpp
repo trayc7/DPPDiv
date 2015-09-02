@@ -814,7 +814,8 @@ double Tree::update(double &oldLnL) {
 		Treescale *ts = modelPtr->getActiveTreeScale();
 		setTreeScale(ts->getScaleValue());
 		
-		updateAllTGSNodes(oldLnL);
+        if(fbdsExperimentalMode == 0)
+            updateAllTGSNodes(oldLnL);
 		
 		updateFossilBDSSAttachmentTimePhi(); //rw:** might be very similar
         treeUpdateNodeOldestBoundsAttchTimes();

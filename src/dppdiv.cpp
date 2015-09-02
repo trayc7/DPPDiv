@@ -163,6 +163,7 @@ int main (int argc, char * const argv[]) {
     bool printOrigin    = false;    //rw: print origin to log file
     bool printAttach    = false;     //rw: maybe issue a warning if cal file is large & printAttach = true
     int expMode         = 0;        //rw: experimental mode for testing the fbds model and extensions. 1: fix branch lengths; 2: fix branch lengths & ignore calibrations
+    bool igfoss         = false;
 	
 	if(argc > 1){
 		for (int i = 1; i < argc; i++){
@@ -289,7 +290,10 @@ int main (int argc, char * const argv[]) {
                     printAttach = true;
                 }
                 else if(!strcmp(curArg, "-expmo")){//RW
-                    expMode = true;
+                    expMode = atof(argv[i+1]);
+                }
+                else if(!strcmp(curArg, "-igf")){//RW
+                    igfoss = true;
                 }
 				else {
 					cout << "\n############################ !!! ###########################\n";
@@ -342,7 +346,7 @@ int main (int argc, char * const argv[]) {
         Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc,
                       hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN,
                       treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
-                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest,expMode);
+                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, expMode, igfoss);
         if(doAbsRts)
             myModel.setEstAbsRates(true);
         if(runPrior)
