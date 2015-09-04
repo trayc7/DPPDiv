@@ -215,7 +215,6 @@ double Speciation::updateTreeBDParams(double &oldLnL) {
 			}
 			else if(v == 1){
 				updateDeathRate(t); // mu
-				
 			}
 			else {
 				updatePsiRate(t); // psi
