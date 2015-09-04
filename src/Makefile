@@ -1,4 +1,4 @@
-CC = g++ #-4.8
+CC = g++ 
 CXXFLAGS = -DHAVE_CONFIG_H -O2 -fomit-frame-pointer -funroll-loops
 ARCH_AVX = -O2 -mavx -D_TOM_AVX
 ARCH_SSE = -O2 -msse3 -D_TOM_SSE3
