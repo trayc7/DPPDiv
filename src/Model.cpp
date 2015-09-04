@@ -81,6 +81,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixTestRun = fxtr;
 	estAbsRts = false;
 	runUnderPrior = runPr;
+	originMax = omx;
 	if(sky == 1){
 		doSkylineBDP = false;
 		numSkyInts = 1;
@@ -122,7 +123,6 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		}
 	}
 	if(omx > 0.0){
-		originMax = omx;
 		initOT = initRootH + (ranPtr->uniformRv() * (originMax - initRootH));
 	}
 	else
@@ -229,7 +229,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         parms[0][i]->print(std::cout);
     
     updateProb.clear();
-    updateProb.push_back(0.0); // 1 origin time
+    updateProb.push_back(2.0); // 1 origin time
     updateProb.push_back(3.0); // 2 speciation
     updateProb.push_back(4.0); // 3 fossil graph
     double sum = 0.0;
@@ -788,7 +788,14 @@ double Model::readCalibFile(void) {
 			if(tmpv > yb)
 				yb = tmpv;
 		}
-		ob = yb + (yb * 2);
+		if(originMax > 0.0){
+			if(originMax < yb){
+				cerr << "ERROR: the origin maximum (-omax) must be greater than the oldest fossil occurrence time!" << endl;
+				exit(1);
+			}
+			ob = originMax;
+		}
+		else ob = yb + (yb * 2);
 		double tsc = yb + (ranPtr->uniformRv() * (ob - yb));
 		initTScale = tsc;
 		rHtY = yb;
