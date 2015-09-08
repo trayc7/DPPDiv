@@ -57,7 +57,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     extantSampleRate = 1.0; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
-	parameterization = 1;
+	parameterization = 2;
 	if(treeTimePrior == 9){
 		parameterization = 3;
 		extantSampleRate = 0.0;
@@ -67,8 +67,8 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     // priors on birth death paras
     deathRatePrior = 2; // 1 = unifrom prior, 2 = exponential prior
     birthRatePrior = 2;
-    fossilSamplingRatePrior = 2;
-    netDivRatePrior = 2;
+    fossilSamplingRatePrior = 1;
+    netDivRatePrior = 1;
     deathRateExpRate = 10.0;
     birthRateExpRate = 10.0;
     fossilSamplingRateExpRate = 50.0;
