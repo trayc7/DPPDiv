@@ -818,11 +818,11 @@ double Tree::update(double &oldLnL) {
             updateAllTGSNodes(oldLnL);
 		
 		updateFossilBDSSAttachmentTimePhi(); //rw:** might be very similar
-        treeUpdateNodeOldestBoundsAttchTimes();
+        if(fbdsExperimentalMode == 0) treeUpdateNodeOldestBoundsAttchTimes();
 
 		for(int i=0; i<fossSpecimens.size(); i++){//rw:** for each numfossils
 			updateRJMoveAddDelEdge();//rw:**
-            treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
+            if(fbdsExperimentalMode == 0) treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
 		}
 		if(sampleFossilAges){
 			updateFossilAges();
