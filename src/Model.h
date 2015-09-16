@@ -142,6 +142,7 @@ class Model {
 		TreeDirection * tiMatFlags;
 		
 		void							readTipDateFile(void);
+		void							updateTreeRates (void);
 		
 		
 		double							myCurLnL;
@@ -175,6 +176,7 @@ class Model {
         bool                            ignoreFossils;
 		
 		int								totalUpdateWeights;
+	
 };
 
 #endif

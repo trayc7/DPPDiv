@@ -159,7 +159,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	for (int i=0; i<numParms; i++)
 		parms[0][i]->print(std::cout);
 	
-		
+	updateTreeRates();
 	// initialize the probabilities for updating different parameters
 	setUpdateProbabilities(true);	
 	if(ehpc)
@@ -1000,6 +1000,22 @@ void Model::setUpdateProbabilities(bool initial) {
 		sum += updateProb[i];
 	for (unsigned i=0; i<updateProb.size(); i++)
 		updateProb[i] /= sum;
+}
+
+void Model::updateTreeRates(void){
+	
+	for (int i=0; i<numParms; i++){
+		Parameter *p1 = parms[0][i];
+		Tree *dp1 = dynamic_cast<Tree *>(p1);
+		if ( dp1 != 0 ){
+			dp1->setNodeRateValues();
+		}
+		Parameter *p2 = parms[1][i];
+		Tree *dp2 = dynamic_cast<Tree *>(p2);
+		if ( dp2 != 0 ){
+			dp2->setNodeRateValues();
+		}
+	}
 }
 
 

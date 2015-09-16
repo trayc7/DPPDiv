@@ -50,7 +50,7 @@
 
 
 
-//#include <omp.h>
+#include <omp.h>
 
 
 using namespace std;
@@ -61,7 +61,7 @@ double Model::lnLikelihood(void) {
         double * clR;
 
 
-	if(runUnderPrior){
+	if(runUnderPrior || fbdsExperimentalMode > 0){
 		myCurLnL = 0.0;
 		return 0.0;
 	}
