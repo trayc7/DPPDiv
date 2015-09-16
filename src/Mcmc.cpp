@@ -155,7 +155,7 @@ void Mcmc::runChain(void) {
 			modelPtr->setTiProb();
 		}
 		
-		if(n < 100){ 
+		if(n < 100){
 			Tree *t = modelPtr->getActiveTree(); 
 			t->setNodeRateValues();
 		}
