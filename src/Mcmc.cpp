@@ -77,13 +77,19 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
 
 void Mcmc::runChain(void) {
 	
+	int expMode = modelPtr->getFBDSExperimentalMode();
+	
 	string pFile = fileNamePref + ".p"; // parameter file name
 	string figTFile = fileNamePref + ".ant.tre"; // write to a file with the nodes colored by their rate classes
 	string dFile = fileNamePref + ".info.out";
 	string ndFile = fileNamePref + ".nodes.out"; // info about nodes
 	string mtxFile = fileNamePref + ".rates.out"; // info about nodes
-	ofstream pOut(pFile.c_str(), ios::out);
-	ofstream fTOut(figTFile.c_str(), ios::out);
+	ofstream pOut;
+	ofstream fTOut;
+	if(expMode == 0){
+		pOut.open(pFile.c_str(), ios::out);
+		fTOut.open(figTFile.c_str(), ios::out);
+	}
 	ofstream nOut(ndFile.c_str(), ios::out);
 	ofstream mxOut;
 	ofstream dOut;
@@ -162,7 +168,10 @@ void Mcmc::runChain(void) {
 		
 		// sample chain
 		if ( n % sampleFrequency == 0 || n == 1){
-			sampleChain(n, pOut, fTOut, nOut, oldLnLikelihood);
+			if(expMode == 0)
+				sampleChain(n, pOut, fTOut, nOut, oldLnLikelihood);
+			else if(expMode > 0)
+				sampleFBDExpChain(n, nOut, oldLnLikelihood);
 			//sampleRtsFChain(n, mxOut);
 		}
 		
@@ -404,6 +413,82 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		figTOut << "end;\n";
 	}
 }
+
+void Mcmc::sampleFBDExpChain(int gen, std::ofstream &nodeOut, double lnl) {
+
+	NodeRate *nr = modelPtr->getActiveNodeRate();
+	Tree *t = modelPtr->getActiveTree();
+	Speciation *sp = modelPtr->getActiveSpeciation();
+	Treescale *ts = modelPtr->getActiveTreeScale();
+    OriginTime *ot = modelPtr->getActiveOriginTime();
+	sp->setAllBDFossParams();
+	int treePr = modelPtr->getTreeTimePriorNum();
+	
+	if(gen == 1){
+		nodeOut << "Gen\tlnL";
+		nodeOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)";
+		if(treePr > 3)
+			nodeOut << "\tFBD.psi\tFBD.rho";
+		if(treePr == 4)
+			nodeOut << "\tbdss.torig";
+		if(treePr > 5)
+			nodeOut << "\tFBD.lambda\tFBD.mu\tFBD.prsp";
+        if(treePr == 8){
+            if(printOrigin)//RW
+            nodeOut << "\tFBD.OriginTime";
+        }
+		nodeOut << "\tPr(speciation)\tave.subrate\tnum.DPMgroups\tDPM.conc";
+		
+		nodeOut << t->getNodeInfoNames();
+		
+		if(treePr > 5){
+			nodeOut << t->getCalBDSSNodeInfoParamNames();
+		}
+		if(treePr >= 7){
+//			nodeOut << t->getCalBDSSNodeInfoIndicatorNames();
+			nodeOut << "\tnum.tip_fossils";
+		}
+		
+		nodeOut << "\n";
+	}
+	// then print stuff
+	
+	nodeOut << gen << "\t" << lnl;
+	nodeOut << "\t" << sp->getNetDiversification();
+	nodeOut << "\t" << sp->getRelativeDeath();
+	if(treePr > 3){
+		nodeOut << "\t" << sp->getBDSSFossilSampRatePsi();
+		nodeOut << "\t" << sp->getBDSSSppSampRateRho();
+	}
+	if(treePr == 4)
+		nodeOut << "\t" << ts->getTreeOriginTime();
+	if(treePr > 5){
+		nodeOut << "\t" << sp->getBDSSSpeciationRateLambda();
+		nodeOut << "\t" << sp->getBDSSExtinctionRateMu();
+		nodeOut << "\t" << sp->getBDSSFossilSampProbS();
+	}
+    if(treePr == 8){
+        if(printOrigin)
+        nodeOut << "\t" << ot->getOriginTime();
+    }
+    nodeOut << "\t" << t->getTreeSpeciationProbability();
+	nodeOut << "\t" << nr->getAverageRate();
+	nodeOut << "\t" << nr->getNumRateGroups();
+	nodeOut << "\t" << nr->getConcenParam();
+	nodeOut << t->getNodeInfoList();
+
+
+	if(treePr > 5){
+		nodeOut << t->getCalBDSSNodeInfoParamList();
+	}
+	if(treePr >= 7){
+//		nodeOut << t->getCalBDSSNodeInfoIndicatorList();
+		nodeOut << "\t" << t->getSumIndicatorV();
+	}
+	nodeOut << "\n";
+	
+}
+
 
 void Mcmc::printAllModelParams(ofstream &dOut){
 	

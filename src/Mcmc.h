@@ -49,6 +49,7 @@ class Mcmc {
 		void			sampleChain(int gen, std::ofstream &paraOut, 
 									std::ofstream &figTOut, std::ofstream &nodeOut, double lnl);
         void			sampleChain(int gen, std::ofstream &occOut, double lnl); //rw: sample chain overload fxn for fofbd
+		void			sampleFBDExpChain(int gen, std::ofstream &nodeOut, double lnl);
 		void			sampleRtsFChain(int gen, std::ofstream &rOut);
 		void			printAllModelParams(std::ofstream &dOut);
 		void			writeCalibrationTree();

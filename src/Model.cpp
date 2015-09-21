@@ -694,7 +694,14 @@ double Model::readCalibFile(void) {
     bool rootDone = false;
     
     // Put initialization of the origin time here
-    
+	
+	double oldest = 0.0;
+	for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
+		double fa = (*v)->getYngTime();
+		if(fa > oldest)
+			oldest = fa;
+	}
+	
     if(!fixedNodes.empty()){
         for(vector<Calibration *>::iterator v = fixedNodes.begin(); v != fixedNodes.end(); v++){
             if((*v)->getIsRootCalib()){
@@ -785,6 +792,11 @@ double Model::readCalibFile(void) {
 			}
 		}
 		zeroNodeTimeMove = fixall;
+	}
+	
+	if(initOT < oldest){
+		double oMxTmp = oldest * 4.0;
+		initOT = oldest + (ranPtr->uniformRv() * (oMxTmp - oldest));
 	}
 	
 	cout << "\nInitial root height : " << initTScale <<  " [" << yb << ", " << ob << "]" << endl;
