@@ -96,7 +96,7 @@ void printHelp(bool files)
 		cout << "\t\t-npr  : 1=uniform, 2=yule, 3=cbd, 4=cbd fix with given vals\n";
 		cout << "\t\t-bdr  : initial diversification rate (lambda - mu)\n";
 		cout << "\t\t-bda  : initial relative death rate (mu / lambda)\n"; // what about bds?
-        //cout << "\t\t-rho  : extant species sampling (fixed) -fofbd only\n"; //rw: probably should be fixed
+        cout << "\t\t-rho  : extant species sampling (fixed) \n"; //rw: only active in experimental mode
 		cout << "\t\t-soft : turn on soft bounds on calibrated nodes\n";
 		cout << "\t\t-clok : run under strict clock (and estimate substitution rate)\n";
 		cout << "\t\t-urg  : run under uncorrelated gamma-distributed rates\n";
@@ -346,7 +346,7 @@ int main (int argc, char * const argv[]) {
         Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc,
                       hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN,
                       treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
-                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, expMode, igfoss);
+                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, expMode, igfoss, rho);
         if(doAbsRts)
             myModel.setEstAbsRates(true);
         if(runPrior)

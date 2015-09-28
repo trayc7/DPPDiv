@@ -57,7 +57,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr, int expmo, bool igfoss) {
+			 bool ihp, string tipdfn, bool fxtr, int expmo, bool igfoss, double rh) {
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -79,7 +79,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixTestRun = fxtr;
 	estAbsRts = false;
     originMax = 100000.0;
-    rho = 1.0; //rw: fixed for now
+    rho = rh; //rw: only active in experimental mode
     if(treeTimePrior == 8)
         conditionOnOrigin = true; // some redundancy for now
 	double initRootH = 1.0;

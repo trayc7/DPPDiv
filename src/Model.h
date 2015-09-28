@@ -67,7 +67,7 @@ class Model {
 											  bool alnm, int offmv, bool rndNo, std::string clfn, int nodpr, 
 											  double bdr, double bda, double bds, double fxclkrt, bool roofix,
 											  bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod,
-											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr, int expmo, bool igfoss);
+											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr, int expmo, bool igfoss, double rh);
                                         Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp); // model overload constructor for fofbd
 										~Model(void);
 		double							lnLikelihood(void);
