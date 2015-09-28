@@ -129,7 +129,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		cpfix = true;
 	if(rmod > 1)
 		cpfix = true;
-
+    
 	int nn = 2*alignmentPtr->getNumTaxa()-1;
 	if(pm > nn - 1){
 		cerr << "ERROR: the prior on the mean number of tables cannot exceed the number of nodes in the tree!" << endl;

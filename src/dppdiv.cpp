@@ -291,6 +291,7 @@ int main (int argc, char * const argv[]) {
                 }
                 else if(!strcmp(curArg, "-expmo")){//RW
                     expMode = atof(argv[i+1]);
+                    priorMean = 2;
                 }
                 else if(!strcmp(curArg, "-igf")){//RW
                     igfoss = true;
