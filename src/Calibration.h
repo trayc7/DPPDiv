@@ -38,6 +38,8 @@ class Calibration {
 	private:
 		std::string		txn1, txn2;
 		double			youngtime, oldtime;
+        //double			lineageStart, lineageStop;
+        double			firstAppearance, lastAppearance;
 		int				nodeIDX;
 		bool			isRootCal;
 		int				prDistType; // 1 = Uniform, 2 = offset Exp, 3 = TGS
@@ -46,6 +48,8 @@ class Calibration {
         bool            isOrigin;
 		bool			isSampledAge;
         bool            isFixedAge; //rw: for -x in the calibration file
+        bool            isExtant; //rw: fossil range taxa that are also extant
+        bool            isExtantOnly; //rw: lineages only sampled at the present
 		
 	public:
 						Calibration(std::string calstr, int tip);
@@ -71,6 +75,13 @@ class Calibration {
 		void			initialzeTipCalibration(std::string calstr);
         void            initializeOccurrence(std::string calstr);
         void            initializeFixedNodeAge(std::string calstr);
+        void            initializeFossilRange(std::string calstr);
+    
+        //rw: for the fossil range graph model
+        double			getFirstAppearance() { return firstAppearance; }
+        double			getLastAppearance() { return lastAppearance; }
+        bool			getIsExtant(void) { return isExtant; }
+        bool            getIsExtantOnly(void) { return isExtantOnly; }
 };
 
 

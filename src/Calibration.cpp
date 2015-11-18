@@ -46,7 +46,8 @@ Calibration::Calibration(string calstr, int tip){
         initializeOccurrence(calstr);
     else if (tip == 3)
         initializeFixedNodeAge(calstr);
-
+    else if (tip == 4)
+        initializeFossilRange(calstr);
 }
 
 
@@ -227,6 +228,28 @@ void Calibration::initializeOccurrence(string calstr){
     ss >> tmp;
     youngtime = atof(tmp.c_str());
     cout << "Occurrence age " << youngtime << endl;
+    
+}
+
+void Calibration::initializeFossilRange(string calstr){
+    
+    isExtant = false;
+    isExtantOnly = false;
+    
+    stringstream ss;
+    string tmp = "";
+    ss << calstr;
+    ss >> tmp;
+    lastAppearance = atof(tmp.c_str());
+    ss >> tmp;
+    firstAppearance = atof(tmp.c_str());
+    
+    if(firstAppearance == 0)
+        isExtant = true;
+    if(lastAppearance == 0)
+        isExtantOnly = true;
+    
+    cout << firstAppearance << " - " << lastAppearance << endl;
     
 }
 

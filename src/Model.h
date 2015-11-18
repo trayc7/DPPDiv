@@ -52,6 +52,7 @@ class Cphyperp;
 class ExpCalib;
 class OriginTime;
 class FossilGraph;
+class FossilRangeGraph;
 class Model {
 
 	enum TreeDirection 
@@ -83,6 +84,7 @@ class Model {
         ExpCalib*						getActiveExpCalib(void);
         OriginTime*						getActiveOriginTime(void);
         FossilGraph*                    getActiveFossilGraph(void);
+        FossilRangeGraph*               getActiveFossilRangeGraph(void);
 		Parameter*						pickParmToUpdate(void);
 		void							printTis(std::ostream &) const;
 		void							setTiProb(void);
@@ -117,6 +119,7 @@ class Model {
 		void							initializeTransitionProbabilityMatrices(void);
 		double							readCalibFile();
         void							readOccurrenceFile();
+        void                            readFossilRangeFile();
 		Calibration*					getRootCalibration();
 		
 		MbRandom						*ranPtr;
@@ -174,6 +177,7 @@ class Model {
         bool                            conditionOnOrigin;
         int                             fbdsExperimentalMode;//rw:
         bool                            ignoreFossils;
+        int                             numLineages;
 		
 		int								totalUpdateWeights;
 	

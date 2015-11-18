@@ -37,6 +37,7 @@
 #include "Parameter_exchangeability.h"
 #include "Parameter_expcalib.h"
 #include "Parameter_fossilgraph.h"
+#include "Parameter_fossilrangegraph.h"
 #include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_shape.h"
@@ -189,7 +190,6 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
     numFossils = 0;
 	runUnderPrior = rnp;
     rho = rh; //rw: if rho is 0, I think the likelihood will always = NaN
-    //if(rho <= 0.0 || rho > 1.0) {
     if(rho < 0.0 || rho > 1.0) {
         cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
         exit(1);
@@ -197,46 +197,84 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
     
     // RW initialization stuff ******
     if(calibfilen.empty() == false){
-        readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
+        if(treeTimePrior == 9)
+            readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
+        else if (treeTimePrior == 10)
+            readFossilRangeFile();
     }
 
-    originMax = initOT * 2.5;
+    //originMax = initOT * 2.5;
     //originMax = 500.0;
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
-	FossilGraph *fg = new FossilGraph(ranPtr, this, numFossils, initOT, calibrs, runUnderPrior);
-	OriginTime *ot = new OriginTime(ranPtr, this, initOT, rHtY, originMax);
-	Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho); 
-    for (int i=0; i<2; i++){
-        parms[i].push_back( ot );
-        parms[i].push_back( sp ); //rw: bdr = netDiversificaton, bda = relativeDeath, bds = probSpeciationS, initRootH, rho
-        parms[i].push_back( fg );
+    if(treeTimePrior == 9){
+        FossilGraph *fg = new FossilGraph(ranPtr, this, numFossils, initOT, calibrs, runUnderPrior);
+        OriginTime *ot = new OriginTime(ranPtr, this, initOT, rHtY, originMax);
+        Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho); 
+        for (int i=0; i<2; i++){
+            parms[i].push_back( ot );
+            parms[i].push_back( sp ); //rw: bdr = netDiversificaton, bda = relativeDeath, bds = probSpeciationS, initRootH, rho
+            parms[i].push_back( fg );
+            
+        }
+        numParms = (int)parms[0].size();
+        activeParm = 0;
+        for (int i=0; i<numParms; i++)
+            *parms[0][i] = *parms[1][i];
         
+        for (int i=0; i<numParms; i++)
+            parms[0][i]->print(std::cout);
+        
+        updateProb.clear();
+        updateProb.push_back(0.0); // 1 origin time
+        updateProb.push_back(3.0); // 2 speciation
+        updateProb.push_back(4.0); // 3 fossil graph
+        double sum = 0.0;
+        for (unsigned i=0; i<updateProb.size(); i++)
+            sum += updateProb[i];
+        for (unsigned i=0; i<updateProb.size(); i++)
+            updateProb[i] /= sum;
+        
+        totalUpdateWeights = (int)sum;
+        
+        myCurLnL = this->getActiveFossilGraph()->getActiveFossilGraphProb();
+        cout << "lnL = " << myCurLnL << endl;
     }
-    numParms = (int)parms[0].size();
-    activeParm = 0;
-    for (int i=0; i<numParms; i++)
-        *parms[0][i] = *parms[1][i];
     
-    for (int i=0; i<numParms; i++)
-        parms[0][i]->print(std::cout);
+    if(treeTimePrior == 10){
+        FossilRangeGraph *frg = new FossilRangeGraph(ranPtr, this, numFossils, numLineages, calibrs, runUnderPrior);
+        Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho);
+        for (int i=0; i<2; i++){
+            parms[i].push_back( sp );
+            parms[i].push_back( frg );
+        }
+        numParms = (int)parms[0].size();
+        activeParm = 0;
+        for (int i=0; i<numParms; i++)
+            *parms[0][i] = *parms[1][i];
+        
+        for (int i=0; i<numParms; i++)
+            parms[0][i]->print(std::cout);
+        
+        updateProb.clear();
+        updateProb.push_back(3.0); // 1 speciation
+        updateProb.push_back(4.0); // 2 fossil graph
+        
+        double sum = 0.0;
+        for (unsigned i=0; i<updateProb.size(); i++)
+            sum += updateProb[i];
+        for (unsigned i=0; i<updateProb.size(); i++)
+            updateProb[i] /= sum;
+        
+        totalUpdateWeights = (int)sum;
+        
+        myCurLnL = this->getActiveFossilRangeGraph()->getActiveFossilRangeGraphProb();
+        cout << "lnL = " << myCurLnL << endl;
+        cout << "Terminating...\nFossil range graph model not fully implemented." << endl;
+        exit(1);
+    }
     
-    updateProb.clear();
-    updateProb.push_back(0.0); // 1 origin time
-    updateProb.push_back(3.0); // 2 speciation
-    updateProb.push_back(4.0); // 3 fossil graph
-    double sum = 0.0;
-    for (unsigned i=0; i<updateProb.size(); i++)
-        sum += updateProb[i];
-    for (unsigned i=0; i<updateProb.size(); i++)
-        updateProb[i] /= sum;
-    
-	totalUpdateWeights = (int)sum;
-	
-    myCurLnL = this->getActiveFossilGraph()->getActiveFossilGraphProb();
-    cout << "lnL = " << myCurLnL << endl;
-
 }
 
 Model::~Model(void) {
@@ -368,6 +406,17 @@ FossilGraph* Model::getActiveFossilGraph(void) {
     for (int i=0; i<numParms; i++){
         Parameter *p = parms[activeParm][i];
         FossilGraph *derivedPtr = dynamic_cast<FossilGraph *>(p);
+        if ( derivedPtr != 0 )
+            return derivedPtr;
+    }
+    return NULL;
+}
+
+FossilRangeGraph* Model::getActiveFossilRangeGraph(void) {
+    
+    for (int i=0; i<numParms; i++){
+        Parameter *p = parms[activeParm][i];
+        FossilRangeGraph *derivedPtr = dynamic_cast<FossilRangeGraph *>(p);
         if ( derivedPtr != 0 )
             return derivedPtr;
     }
@@ -875,6 +924,42 @@ void Model::readOccurrenceFile(void){
     
 }
 
+
+void Model::readFossilRangeFile(void){
+    /*
+    <lineages total> (inc. extant) <fossils total> (ignore extant)
+    <first> <last> (lineage 1)
+    <first> <last> (lineage 2) etc.
+    */
+    
+    cout << "\nFossil ranges:" << endl;
+    string ln = getLineFromFile(calibfilen, 1);
+    int nlins = atoi(ln.c_str());
+    
+    // fetch the number of lineages and fossils
+    stringstream ss;
+    string tmp = "";
+    ss << ln;
+    ss >> tmp;
+    numLineages = atoi(tmp.c_str());
+    ss >> tmp;
+    numFossils = atoi(tmp.c_str());
+    
+    string *calList = new string[nlins];
+    for(int i=0; i<nlins; i++){
+        calList[i] = getLineFromFile(calibfilen, i+2);
+        Calibration *cal = new Calibration(calList[i], 4); //rw:
+        calibrs.push_back(cal);
+    }
+    
+    delete [] calList;
+    
+    //initOT = ot * 2.0; //rw: origin time initiated by class frg
+
+    cout << "\nTotal number of lineages: " << numLineages << endl;
+    cout << "\nTotal number of fossils: " << numFossils << endl;
+
+}
 
 Calibration* Model::getRootCalibration(void) {
 

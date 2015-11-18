@@ -32,6 +32,7 @@
 #include "Parameter_exchangeability.h"
 #include "Parameter_expcalib.h"
 #include "Parameter_fossilgraph.h"
+#include "Parameter_fossilrangegraph.h"
 #include "Parameter_rate.h"
 #include "Parameter_shape.h"
 #include "Parameter_tree.h"
@@ -146,6 +147,14 @@ Parameter& Parameter::operator=(Parameter &p) {
         {
             FossilGraph *thatDerivedPtr = dynamic_cast<FossilGraph *>(&p);
             FossilGraph *thisDerivedPtr = dynamic_cast<FossilGraph *>(this);
+            if ( thatDerivedPtr != 0 && thisDerivedPtr != 0 ){
+                thisDerivedPtr->clone( *thatDerivedPtr );
+                goto exitOperator;
+            }
+        }
+        {
+            FossilRangeGraph *thatDerivedPtr = dynamic_cast<FossilRangeGraph *>(&p);
+            FossilRangeGraph *thisDerivedPtr = dynamic_cast<FossilRangeGraph *>(this);
             if ( thatDerivedPtr != 0 && thisDerivedPtr != 0 ){
                 thisDerivedPtr->clone( *thatDerivedPtr );
                 goto exitOperator;

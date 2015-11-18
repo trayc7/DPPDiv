@@ -229,6 +229,8 @@ int main (int argc, char * const argv[]) {
                     treeNodePrior = 8;
                 else if(!strcmp(curArg, "-fofbd")) // fossil only fossilised birth death process
                     treeNodePrior = 9;
+                else if(!strcmp(curArg, "-frofbd")) // fossil range only fossilised birth death process
+                    treeNodePrior = 10;
 				else if(!strcmp(curArg, "-bdr"))	// (lambda - mu)
 					netDiv = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-bda"))	// (mu / lambda)
@@ -316,7 +318,8 @@ int main (int argc, char * const argv[]) {
 	}
 	
     //rw: suppress tree requirement
-    if(treeNodePrior != 9) {
+    //if(treeNodePrior != 9){
+    if(treeNodePrior < 9) {
         if(dataFileName.empty() || treeFileName.empty()){
             cout << "\n############################ !!! ###########################\n";
             cout << "\n\n\tPlease specify data and tree files, here are the \n\tavailable options:\n";
@@ -329,7 +332,7 @@ int main (int argc, char * const argv[]) {
     MbRandom myRandom;
     myRandom.setSeed(s1, s2);
 	
-    if(treeNodePrior == 9){
+    if(treeNodePrior >= 9){
         Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;
