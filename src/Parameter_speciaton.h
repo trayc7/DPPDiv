@@ -42,6 +42,7 @@ This also defines parameters for the FBD model (Heath, Huelsenbeck, Stadler. unp
 class MbRandom;
 class Model;
 class FossilGraph;
+class FossilRangeGraph;
 class Tree;
 class Speciation : public Parameter {
 	
@@ -60,6 +61,7 @@ class Speciation : public Parameter {
 		void				setNetDiversification(double v) { netDiversificaton = v; }
 		double				getLnTreeProb(Tree *t);
 		double				getLnFossilGraphProb(FossilGraph *fg);
+        double				getLnFossilRangeGraphProb(FossilRangeGraph *frg);
 		
 		double				getBDSSSpeciationRateLambda(void) { return birthRate; }
 		double				getBDSSExtinctionRateMu(void) { return deathRate; }
@@ -81,6 +83,7 @@ class Speciation : public Parameter {
 		double				fossilStratSampleProb; // omega = ? This is for later
 		double				probSpeciationS;  // \psi / (\mu + \psi) // Need hyperprior
 		double				currentFossilGraphLnL;
+        double              currentFossilRangeGraphLnL;
 		
 		int					parameterization; // 1=d,r,s,rho; 2=d,r,psi,rho; 3=lambda,mu,psi,rho;
 		
@@ -90,6 +93,7 @@ class Speciation : public Parameter {
 
 		double				updateTreeBDParams(double &oldLnL);
 		double				updateFossileGraphBDParams(double &oldLnL);
+        double				updateFossilRangeGraphBDParams(double &oldLnL);
 
 		
 		double				updateRelDeathRt(); //rw: function never used?
@@ -114,6 +118,12 @@ class Speciation : public Parameter {
         double				updateDeathRate(FossilGraph *fg);
         double				updateBirthRate(FossilGraph *fg);
 		double				updateBirthAndDeath(FossilGraph *fg);
+    
+        // updates for fossil range graph FBD
+        double				updateRelDeathRt(FossilRangeGraph *frg);
+        double				updateNetDivRate(FossilRangeGraph *frg);
+        double				updateBDSSFossilProbS(FossilRangeGraph *frg);
+        double				updatePsiRate(FossilRangeGraph *frg);
     
         // alternative priors options
         int                 deathRatePrior;

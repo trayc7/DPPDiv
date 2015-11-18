@@ -31,6 +31,7 @@
 #include "Parameter.h"
 #include "Parameter_speciaton.h"
 #include "Parameter_fossilgraph.h"
+#include "Parameter_fossilrangegraph.h"
 #include "Parameter_treescale.h"
 #include "Parameter_tree.h"
 #include "MbRandom.h"
@@ -155,6 +156,9 @@ double Speciation::update(double &oldLnL) {
 	if(treeTimePrior == 9){
 		return updateFossileGraphBDParams(oldLnL);
 	}
+    else if(treeTimePrior == 10){
+        return updateFossilRangeGraphBDParams(oldLnL);
+    }
 	else{
 		return updateTreeBDParams(oldLnL);
 	}
@@ -297,6 +301,38 @@ double Speciation::updateFossileGraphBDParams(double &oldLnL){
 	return currentFossilGraphLnL;
 }
 
+
+double Speciation::updateFossilRangeGraphBDParams(double &oldLnL){
+    
+    int v;
+    currentFossilRangeGraphLnL = oldLnL;
+    FossilRangeGraph *frg = modelPtr->getActiveFossilRangeGraph();
+    
+    int numMoves = 3;
+    if(parameterization == 3) numMoves = 4;
+    v = (int)(ranPtr->uniformRv() * numMoves);
+    
+    if(parameterization == 1){
+        if(v == 0)
+            updateRelDeathRt(frg); // r
+        else if(v == 1)
+            updateNetDivRate(frg); // d
+        else
+            updateBDSSFossilProbS(frg); // s
+    }
+    
+    else if(parameterization == 2){
+        if(v == 0)
+            updateRelDeathRt(frg); // r
+        else if(v == 1)
+            updateNetDivRate(frg); // d
+        else
+            updatePsiRate(frg); // psi
+    }
+    
+    return currentFossilRangeGraphLnL;
+}
+
 double Speciation::updateRelDeathRt(void) {
 	
 	double rdwindow = 0.2;
@@ -353,6 +389,31 @@ double Speciation::updateRelDeathRt(FossilGraph *fg) {
 	}
 	return 0.0;
 	
+}
+
+double Speciation::updateRelDeathRt(FossilRangeGraph *frg) {
+    
+    double oldfgprob = currentFossilRangeGraphLnL;
+    double lnPropR = 0.0;
+    double rdwindow = 0.2;
+    double oldRD = relativeDeath;
+    double newRD = getNewValSWindoMv(oldRD, 0.0, 0.99999, rdwindow);
+    relativeDeath = newRD;
+    double newfgprob = getLnFossilRangeGraphProb(frg);
+    double lnLikeRatio = (newfgprob - oldfgprob);
+    double lnR = lnLikeRatio + lnPropR;
+    double r = modelPtr->safeExponentiation(lnR);
+    if(ranPtr->uniformRv() < r){
+        setAllBDFossParams();
+        currentFossilRangeGraphLnL = newfgprob;
+    }
+    else{
+        relativeDeath = oldRD;
+        setAllBDFossParams();
+        currentFossilRangeGraphLnL = oldfgprob;
+    }
+    return 0.0;
+    
 }
 
 double Speciation::getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv){
@@ -492,6 +553,34 @@ double Speciation::updateRealValNetDiv(FossilGraph *fg) {
 	return 0.0;
 }
 
+double Speciation::updateNetDivRate(FossilRangeGraph *frg) {
+    
+    double oldfgprob = currentFossilRangeGraphLnL;
+    double lpr = 0.0;
+    double oldND = netDiversificaton;
+    double newND;
+    double tuning = log(2.0);
+    double minV = 0.000001;
+    double c = getNewValScaleMv(newND, oldND, minV, maxdivV, tuning);
+    netDiversificaton = newND;
+    lpr = c;
+    double newfgprob = getLnFossilRangeGraphProb(frg);
+    double lnPriorRat = getExpPriorRatio(oldND, newND, netDivRateExpRate, netDivRatePrior);
+    double lnLikeRat = (newfgprob - oldfgprob);
+    double lnR = lnLikeRat + lpr + lnPriorRat;
+    double r = modelPtr->safeExponentiation(lnR);
+    if(ranPtr->uniformRv() < r){
+        setAllBDFossParams();
+        currentFossilRangeGraphLnL = newfgprob;
+    }
+    else{
+        netDiversificaton = oldND;
+        setAllBDFossParams();
+        currentFossilRangeGraphLnL = oldfgprob;
+    }
+    return 0.0;
+}
+
 
 double Speciation::updateBDSSSampleProbRho(void) {
 	
@@ -609,6 +698,30 @@ double Speciation::updateBDSSFossilProbS(FossilGraph *fg) {
     
 }
 
+double Speciation::updateBDSSFossilProbS(FossilRangeGraph *frg) {
+    
+    double oldfgprob = currentFossilRangeGraphLnL;
+    double lnPropR = 0.0;
+    double swindow = 0.2;
+    double oldS = probSpeciationS;
+    double newS = getNewValSWindoMv(oldS, 0.0, 0.99999, swindow);
+    probSpeciationS = newS;
+    double newfgprob = getLnFossilRangeGraphProb(frg);
+    double lnPriorRatio = (newfgprob - oldfgprob);
+    double lnR = lnPriorRatio + lnPropR;
+    double r = modelPtr->safeExponentiation(lnR);
+    if(ranPtr->uniformRv() < r){
+        setAllBDFossParams();
+        currentFossilRangeGraphLnL = newfgprob;
+    }
+    else{
+        probSpeciationS = oldS;
+        setAllBDFossParams();
+        currentFossilGraphLnL = oldfgprob;
+    }
+    return 0.0;
+    
+}
 
 double Speciation::updatePsiRate(Tree *t) {
 	
@@ -672,6 +785,34 @@ double Speciation::updatePsiRate(FossilGraph *fg) {
         fossilRate = oldPsi;
         setAllBDFossParams();
         currentFossilGraphLnL = oldfgprob;
+    }
+    return 0.0;
+}
+
+double Speciation::updatePsiRate(FossilRangeGraph *frg) {
+    
+    double oldfgprob = currentFossilRangeGraphLnL;
+    double lpr = 0.0;
+    double oldPsi = fossilRate;
+    double newPsi;
+    double tuning = log(2.0);
+    double minV = 0.0001;
+    double c = getNewValScaleMv(newPsi, oldPsi, minV, maxdivV, tuning);
+    fossilRate = newPsi;
+    lpr = c;
+    double newfgprob = getLnFossilRangeGraphProb(frg);
+    double lnPriorRat = getExpPriorRatio(oldPsi, newPsi, fossilSamplingRateExpRate, fossilSamplingRatePrior);
+    double lnLikeRat = (newfgprob - oldfgprob);
+    double lnR = lnLikeRat + lpr + lnPriorRat;
+    double r = modelPtr->safeExponentiation(lnR);
+    
+    if(ranPtr->uniformRv() < r){
+        currentFossilRangeGraphLnL = newfgprob;
+    }
+    else{
+        fossilRate = oldPsi;
+        setAllBDFossParams();
+        currentFossilRangeGraphLnL = oldfgprob;
     }
     return 0.0;
 }
@@ -889,6 +1030,13 @@ double Speciation::getLnFossilGraphProb(FossilGraph *fg) {
 	return fgprob;
 }
 
+double Speciation::getLnFossilRangeGraphProb(FossilRangeGraph *frg) {
+    
+    double ot = frg->getFossilRangeGraphOriginTime();
+    setAllBDFossParams();
+    double fgprob = frg->getFossilRangeGraphProb(birthRate, deathRate, fossilRate, extantSampleRate, ot);
+    return fgprob;
+}
 
 void Speciation::setAllBDFossParams(){
 	

@@ -105,6 +105,8 @@ public:
     double							getFossilRangeGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot); // cf getTreeAncCalBDSSTreeNodePriorProb or getFossilGraphProb
     double							getActiveFossilRangeGraphProb();
     
+    double                          getFossilRangeGraphOriginTime(void) { return originTime; }
+    
 //    double							fbdC1Fxn(double b, double d, double psi);
 //    double							fbdC2Fxn(double b, double d, double psi,double rho);
 //    double							fbdQFxn(double b, double d, double psi, double rho, double t); // on log scale
