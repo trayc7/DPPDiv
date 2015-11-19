@@ -97,6 +97,8 @@ void printHelp(bool files)
 		cout << "\t\t-bdr  : initial diversification rate (lambda - mu)\n";
 		cout << "\t\t-bda  : initial relative death rate (mu / lambda)\n"; // what about bds?
         //cout << "\t\t-rho  : extant species sampling (fixed) -fofbd only\n"; //rw: probably should be fixed
+        cout << "\t\t-nosa  : Turn off sampled ancestors\n"; 
+        
 		cout << "\t\t-soft : turn on soft bounds on calibrated nodes\n";
 		cout << "\t\t-clok : run under strict clock (and estimate substitution rate)\n";
 		cout << "\t\t-urg  : run under uncorrelated gamma-distributed rates\n";
