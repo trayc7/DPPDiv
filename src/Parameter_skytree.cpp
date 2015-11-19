@@ -527,6 +527,9 @@ void Tree::setUpdateProbs(void){
 		
 		if(sampleFossilAges)
 			updateProbs[3] = 1.0;
+        if(noSampledAncestors == true){
+            updateProbs[2] = 0.0;
+        }
 	}
 	
 	double sum = 0.0;

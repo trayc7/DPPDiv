@@ -203,7 +203,7 @@ class Tree : public Parameter {
 	public:
 										Tree(MbRandom *rp, Model *mp, Alignment *ap, std::string ts, 
 											 bool ubl, bool allnm, bool rndNods, std::vector<Calibration *> clb, 
-											 double rth, double iot, bool sb, bool exhpc, ExpCalib *ec, std::vector<Calibration *> tdt);
+											 double rth, double iot, bool sb, bool exhpc, bool nosampanc, ExpCalib *ec, std::vector<Calibration *> tdt);
 										Tree(MbRandom *rp, Model *mp, Alignment *ap, std::string ts, double rth, double iot, int ni,
 											 bool ubl, std::vector<Calibration *> clb, std::vector<Calibration *> tdt);
 										~Tree(void); 
@@ -428,6 +428,7 @@ class Tree : public Parameter {
 		int								numIntervals;
 		bool							skylineFBD;
 		std::vector<double>				updateProbs;
+        bool                            noSampledAncestors; //disallow sampled ancestors
 };
 
 

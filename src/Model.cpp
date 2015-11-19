@@ -58,7 +58,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 double hal, double hbe, bool ubl, bool alnm, int offmv, bool rndNo, 
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
-			 bool ihp, string tipdfn, bool fxtr, int sky, double omx, bool runPr) {
+			 bool ihp, string tipdfn, bool fxtr, int sky, double omx, bool runPr, bool nsa) {
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -81,6 +81,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixTestRun = fxtr;
 	estAbsRts = false;
 	runUnderPrior = runPr;
+    noSampledAncestors = nsa;
 	originMax = omx;
 	if(sky == 1){
 		doSkylineBDP = false;
@@ -405,7 +406,7 @@ void Model::initializeConstantRateDPPDiv(double initRootH,double bdr, double bda
 		parms[i].push_back( new Exchangeability(ranPtr, this) );				// rate parameters of the GTR model
 		parms[i].push_back( new Shape(ranPtr, this, numGammaCats, 2.0, fixSomeModParams) );		// gamma shape parameter for rate variation across sites
 		parms[i].push_back( new Tree(ranPtr, this, alignmentPtr, newickTreeString, ubl, true, true, // these last two bools indicate that all nodes are moved and at random
-									 calibrs, initRootH, initOT, sfb, exponCalibHyperParm, excal, tipDates) );    // rooted phylogenetic tree
+									 calibrs, initRootH, initOT, sfb, exponCalibHyperParm, noSampledAncestors, excal, tipDates) );    // rooted phylogenetic tree
 		parms[i].push_back( nr );												// restaurant containing node rates
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, exponCalibHyperParm) ); // the tree scale prior

@@ -80,7 +80,7 @@ Node::Node(void) {
 }
 
 Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool allnm, 
-		   bool rndNods, vector<Calibration *> clb, double rth, double iot, bool sb, bool exhpc,
+		   bool rndNods, vector<Calibration *> clb, double rth, double iot, bool sb, bool exhpc, bool nosampanc,
 		   ExpCalib *ec, vector<Calibration *> tdt) : Parameter(rp, mp) {
 
 	alignmentPtr = ap;
@@ -108,7 +108,8 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	sampleFossilAges = false;
 	skylineFBD = false;
 	numIntervals = 1;
-	buildTreeFromNewickDescription(ts); 
+	buildTreeFromNewickDescription(ts);
+    noSampledAncestors = nosampanc;
 	
 	nodeProposal = 2; // proposal type 1=window, 2=scale, 3=slide
 	tuningVal = log(8.0);
@@ -915,9 +916,11 @@ double Tree::update(double &oldLnL) {
 		lppr = updateSSBDFossTips(oldLnL);
 	}
 	else if(treeTimePrior >= 7){
-		updateFBDRJMCMC(oldLnL);
+        updateFBDRJMCMC(oldLnL);
 		return 0.0;
+        
 	}
+
 	else{ 
 		lppr = updateSimple(oldLnL);
 	}
@@ -966,6 +969,7 @@ double Tree::updateFBDRJMCMC(double &oldLnL){
 
 	return 0.0;
 }
+
 
 double Tree::updateSSBDFossTips(double &oldLnL){
 	
@@ -3041,8 +3045,10 @@ void Tree::initializeFossilSpecVariables(){
             }
         }
 		double prTip = 1.0;
-		if(treeTimePrior >= 7)
+		if(treeTimePrior >= 7 && noSampledAncestors == false)
             prTip = 0.5;
+        else
+            prTip = 1.0;
 		if(ranPtr->uniformRv() < prTip){
 			double phi = fA + ranPtr->uniformRv()*(currDepth-fA);
 			f->setFossilSppTime(phi); // initialises the attachment times

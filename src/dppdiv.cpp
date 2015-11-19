@@ -107,6 +107,7 @@ void printHelp(bool files)
 		cout << "\t\t-fxm  : fix some model params\n";
 		cout << "\t\t-ihp  : run under independent hyperprior on exp cals\n";
         cout << "\t\t-po   : print origin to log file\n"; //rw
+
         //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; //rw: right now this also prints yf times (probably not neccessary)
 		cout << "\t\t** required\n\n";
 	}
@@ -164,7 +165,8 @@ int main (int argc, char * const argv[]) {
     bool printAttach    = false;     //rw: maybe issue a warning if cal file is large & printAttach = true
 	int numIntervals	= 1;
 	double originMax		= 0.0;
-	
+    bool lackOfSampled = false;
+    
 	if(argc > 1){
 		for (int i = 1; i < argc; i++){
 			char *curArg = argv[i];
@@ -294,12 +296,15 @@ int main (int argc, char * const argv[]) {
                 }
 				else if(!strcmp(curArg, "-sky"))
 					numIntervals = atoi(argv[i+1]);
+                else if(!strcmp(curArg, "-nosa"))
+                    lackOfSampled = true;
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
 					printHelp(false);
 					cout << "\n############################ !!! ###########################\n";
 					return 0;
+    // in here, somewhere, add a flag to specify no sampled ancestors
 				}
 			}
 		}
@@ -346,7 +351,7 @@ int main (int argc, char * const argv[]) {
                       hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN,
                       treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
                       dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, numIntervals,
-					  originMax, runPrior);
+					  originMax, runPrior, lackOfSampled);
         if(doAbsRts)
             myModel.setEstAbsRates(true);
         if(runPrior)
