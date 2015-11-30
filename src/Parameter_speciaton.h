@@ -124,6 +124,8 @@ class Speciation : public Parameter {
         double				updateNetDivRate(FossilRangeGraph *frg);
         double				updateBDSSFossilProbS(FossilRangeGraph *frg);
         double				updatePsiRate(FossilRangeGraph *frg);
+        double				updateDeathRate(FossilRangeGraph *frg);
+        double				updateBirthRate(FossilRangeGraph *frg);
     
         // alternative priors options
         int                 deathRatePrior;

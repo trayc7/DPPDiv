@@ -245,9 +245,9 @@ void Calibration::initializeFossilRange(string calstr){
     firstAppearance = atof(tmp.c_str());
     
     if(firstAppearance == 0)
-        isExtant = true;
-    if(lastAppearance == 0)
         isExtantOnly = true;
+    if(lastAppearance == 0)
+         isExtant = true;
     
     cout << firstAppearance << " - " << lastAppearance << endl;
     

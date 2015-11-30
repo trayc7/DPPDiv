@@ -107,16 +107,22 @@ public:
     
     double                          getFossilRangeGraphOriginTime(void) { return originTime; }
     
-//    double							fbdC1Fxn(double b, double d, double psi);
-//    double							fbdC2Fxn(double b, double d, double psi,double rho);
-//    double							fbdQFxn(double b, double d, double psi, double rho, double t); // on log scale
-//    double							fbdPFxn(double b, double d, double psi, double rho, double t);
+    std::string						getFossilRangeInfoParamNames(void);
+    std::string						getFossilRangeInfoParamList(void);
+    
+    double							fbdC1Fxn(double b, double d, double psi);
+    double							fbdC2Fxn(double b, double d, double psi,double rho);
+    double							fbdC3Fxn(double b, double d, double psi,double rho);
+    double							fbdC4Fxn(double b, double d, double psi,double rho);
+    double							fbdPFxn(double b, double d, double psi, double rho, double t);
+    double							fbdQTildaFxn(double b, double d, double psi, double rho, double t); // on log scale?
+    double							fbdQTildaFxnLog(double b, double d, double psi, double rho, double t);
+
 //    double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
     
 //    int								getSumIndicatorFG(void);
 
-//    std::string						getOccInfoParamNames(void);
-//    std::string						getOccInfoParamList(void);
+
 //    double							getCurrentFossilGraphLnL(void) { return currentFossilGraphLnL; }
 
 private:
@@ -124,10 +130,11 @@ private:
     void                            createFossilRangeVector(std::vector<Calibration *> clb);
     void							initializeFossilRangeVariables(); // cf initializeFossilSpecVariables or initializeOccurrenceSpecVariables
     void							recountFossilRangeAttachNums(); // cf recountFossilAttachNums() or recountOccurrenceAttachNums()
+    void                            printFossilRangeVariables(); //rw: for debugging
     void                            redefineOriginTime();
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
-    double                          getFossilRangeGraphProb();
+    //double                          getFossilRangeGraphProb();
     
     int                             numFossils;
     int                             numLineages;

@@ -45,10 +45,12 @@ class Mcmc {
 	private:
 		void			runChain(void);
         void            runFOFBDChain(void);
+        void            runFRGFBDChain(void);
 		double			safeExponentiation(double lnX);
 		void			sampleChain(int gen, std::ofstream &paraOut, 
 									std::ofstream &figTOut, std::ofstream &nodeOut, double lnl);
         void			sampleChain(int gen, std::ofstream &occOut, double lnl); //rw: sample chain overload fxn for fofbd
+        void			sampleChainFR(int gen, std::ofstream &fgOut, double lnl); //rw: sample chain overload fxn for frgfbd
 		void			sampleFBDExpChain(int gen, std::ofstream &nodeOut, double lnl);
 		void			sampleRtsFChain(int gen, std::ofstream &rOut);
 		void			printAllModelParams(std::ofstream &dOut);

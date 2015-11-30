@@ -359,7 +359,7 @@ int main (int argc, char * const argv[]) {
             myModel.writeUnifTreetoFile();
             return 0;
         }
-        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach); //RW:
+        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
     }
 	
     return 0;

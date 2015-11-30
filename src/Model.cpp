@@ -200,7 +200,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         if(treeTimePrior == 9)
             readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
         else if (treeTimePrior == 10)
-            readFossilRangeFile();
+            readFossilRangeFile(); // --> this function will read the file, create a Calibration obj for each fossil range
     }
 
     //originMax = initOT * 2.5;
@@ -271,15 +271,13 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp){
         
         myCurLnL = this->getActiveFossilRangeGraph()->getActiveFossilRangeGraphProb();
         cout << "lnL = " << myCurLnL << endl;
-        cout << "Terminating...\nFossil range graph model not fully implemented." << endl;
-        exit(1);
     }
     
 }
 
 Model::~Model(void) {
 
-    if(treeTimePrior !=9){
+    if(treeTimePrior < 9){
         delete [] cls;
         delete tiCalculator;
         for (int i=0; i<2; i++){
@@ -948,7 +946,7 @@ void Model::readFossilRangeFile(void){
     string *calList = new string[nlins];
     for(int i=0; i<nlins; i++){
         calList[i] = getLineFromFile(calibfilen, i+2);
-        Calibration *cal = new Calibration(calList[i], 4); //rw:
+        Calibration *cal = new Calibration(calList[i], 4);
         calibrs.push_back(cal);
     }
     

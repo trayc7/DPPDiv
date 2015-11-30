@@ -58,6 +58,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     extantSampleRate = rh; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
+    currentFossilRangeGraphLnL = 0.0;
 	parameterization = 2;
 	if(treeTimePrior == 9){
 		parameterization = 3;
@@ -309,7 +310,7 @@ double Speciation::updateFossilRangeGraphBDParams(double &oldLnL){
     FossilRangeGraph *frg = modelPtr->getActiveFossilRangeGraph();
     
     int numMoves = 3;
-    if(parameterization == 3) numMoves = 4;
+    //if(parameterization == 3) numMoves = 4;
     v = (int)(ranPtr->uniformRv() * numMoves);
     
     if(parameterization == 1){
@@ -320,7 +321,6 @@ double Speciation::updateFossilRangeGraphBDParams(double &oldLnL){
         else
             updateBDSSFossilProbS(frg); // s
     }
-    
     else if(parameterization == 2){
         if(v == 0)
             updateRelDeathRt(frg); // r
@@ -329,6 +329,18 @@ double Speciation::updateFossilRangeGraphBDParams(double &oldLnL){
         else
             updatePsiRate(frg); // psi
     }
+    else if(parameterization == 3){  //****//
+        if(v == 0)
+            updateDeathRate(frg); // mu
+        else if(v == 1)
+            updateBirthRate(frg); // lambda
+        else if(v == 2)
+            updatePsiRate(frg); // psi
+        //else
+          //  updateBirthAndDeath(fg); // mu and lambda
+    }
+    
+    //cout << "Now = " << netDiversificaton << " , r = " << relativeDeath<< " , s = " << probSpeciationS << endl; //rw: debugging
     
     return currentFossilRangeGraphLnL;
 }
@@ -717,7 +729,7 @@ double Speciation::updateBDSSFossilProbS(FossilRangeGraph *frg) {
     else{
         probSpeciationS = oldS;
         setAllBDFossParams();
-        currentFossilGraphLnL = oldfgprob;
+        currentFossilRangeGraphLnL = oldfgprob;
     }
     return 0.0;
     
@@ -845,6 +857,34 @@ double Speciation::updateDeathRate(FossilGraph *fg) {
     return 0.0;
 }
 
+double Speciation::updateDeathRate(FossilRangeGraph *frg) {
+    
+    double oldfgprob = currentFossilRangeGraphLnL;
+    double lpr = 0.0;
+    double oldMu = deathRate;
+    double newMu;
+    double tuning = log(2.0);
+    double minV = 0.0001;
+    double c = getNewValScaleMv(newMu, oldMu, minV, 100.0, tuning);
+    deathRate = newMu;
+    lpr = c;
+    double newfgprob = getLnFossilRangeGraphProb(frg);
+    double lnPriorRat = getExpPriorRatio(oldMu, newMu, deathRateExpRate, deathRatePrior);
+    double lnLikeRat = (newfgprob - oldfgprob);
+    double lnR = lnLikeRat + lpr + lnPriorRat;
+    double r = modelPtr->safeExponentiation(lnR);
+    
+    if(ranPtr->uniformRv() < r){
+        currentFossilRangeGraphLnL = newfgprob;
+    }
+    else{
+        deathRate = oldMu;
+        setAllBDFossParams();
+        currentFossilRangeGraphLnL = oldfgprob;
+    }
+    return 0.0;
+}
+
 double Speciation::updateDeathRate(Tree *t) {
     
     double oldtreeprob = getLnTreeProb(t);
@@ -900,6 +940,34 @@ double Speciation::updateBirthRate(FossilGraph *fg) {
     return 0.0;
 }
 
+double Speciation::updateBirthRate(FossilRangeGraph *frg) {
+    
+    double oldfgprob = currentFossilRangeGraphLnL;
+    double lpr = 0.0;
+    double oldLambda = birthRate;
+    double newLambda;
+    double tuning = log(3.0);
+    double minV = 0.0001;
+    double c = getNewValScaleMv(newLambda, oldLambda, minV, maxdivV, tuning);
+    birthRate = newLambda;
+    lpr = c;
+    double newfgprob = getLnFossilRangeGraphProb(frg);
+    double lnPriorRat = getExpPriorRatio(oldLambda, newLambda, birthRateExpRate, birthRatePrior);
+    double lnLikeRat = (newfgprob - oldfgprob);
+    double lnR = lnLikeRat + lpr + lnPriorRat;
+    double r = modelPtr->safeExponentiation(lnR);
+    
+    if(ranPtr->uniformRv() < r){
+        currentFossilRangeGraphLnL = newfgprob;
+    }
+    else{
+        birthRate = oldLambda;
+        setAllBDFossParams();
+        currentFossilRangeGraphLnL = oldfgprob;
+    }
+    return 0.0;
+}
+
 double Speciation::updateBirthAndDeath(FossilGraph *fg) {
     
     double oldfgprob = currentFossilGraphLnL;
@@ -929,8 +997,6 @@ double Speciation::updateBirthAndDeath(FossilGraph *fg) {
     }
     return 0.0;
 }
-
-
 
 double Speciation::updateBirthRate(Tree *t) {
     

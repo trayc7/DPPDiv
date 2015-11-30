@@ -36,6 +36,7 @@
 #include "Parameter_exchangeability.h"
 #include "Parameter_expcalib.h"
 #include "Parameter_fossilgraph.h"
+#include "Parameter_fossilrangegraph.h"
 #include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_tree.h"
@@ -50,12 +51,9 @@
 
 #include <time.h>
 
-#include <unistd.h>//rw: remember to remove
-
-
 using namespace std;
 
-Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf, bool modUpP, bool po, bool pfat) {//RW:
+Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf, bool modUpP, bool po, bool pfat) {
 
 	ranPtr          = rp;
 	modelPtr        = mp;
@@ -63,7 +61,7 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
 	printFrequency  = pf;
 	sampleFrequency = sf;
 	fileNamePref    = ofp;
-	writeInfoFile   = wdf;
+	writeInfoFile   = wdf;//rw: check where this is switched on
 	printratef		= false;
 	modUpdateProbs  = modUpP;
     printOrigin     = po;
@@ -71,8 +69,10 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
     treeTimePr      = mp->getTreeTimePriorNum();
     if(treeTimePr < 9)
         runChain();
-    else
+    else if(treeTimePr == 9)
         runFOFBDChain();
+    else
+        runFRGFBDChain();
 }
 
 void Mcmc::runChain(void) {
@@ -249,7 +249,6 @@ void Mcmc::runFOFBDChain() {
 				modelPtr->updateAccepted();
 			}
         }
-                
         
         if ( n % printFrequency == 0 || n == 1){
             cout << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
@@ -274,6 +273,79 @@ void Mcmc::runFOFBDChain() {
     mxOut.close();
     
 }
+
+void Mcmc::runFRGFBDChain() {
+    
+    string dFile = fileNamePref + ".info.out"; // what's this?
+    string frFile = fileNamePref + ".FR.out"; // info about occurrences, speciation parameters
+    
+    ofstream frOut(frFile.c_str(), ios::out);
+    //ofstream mxOut;
+    ofstream dOut;
+    
+    int numMoves = modelPtr->getTotalUpdateWeights();
+    
+    if(writeInfoFile)
+        dOut.open(dFile.c_str(), ios::out);
+    
+    double oldLnLikelihood = modelPtr->getActiveFossilRangeGraph()->getActiveFossilRangeGraphProb();
+    
+    // verbose logging
+    if(writeInfoFile){
+        dOut << "Running MCMC with:\n";
+        dOut << "   Starting seeds = { " << modelPtr->getStartingSeed1() << " , " << modelPtr->getStartingSeed2() << " } \n";
+        dOut << "   # Gens = " << numCycles << "\n";
+        dOut << "   lnL = " << oldLnLikelihood << "\n";
+        //printAllModelParams(dOut);
+    }
+    
+
+    int timeSt = (int)time(NULL);
+    int modifyUProbsGen = (int)numCycles * 0.5;
+    
+    for (int n=1; n<=numCycles; n++){
+        
+        if(modUpdateProbs && n == modifyUProbsGen) //rw: do we need this here?
+            modelPtr->setUpdateProbabilities(false);
+        
+        double prevlnl = oldLnLikelihood;
+        double newLnLikelihood = 0.0;
+        
+        for(int it=0; it<numMoves; it++){
+            modelPtr->switchActiveParm();
+            Parameter *parm = modelPtr->pickParmToUpdate();
+            
+            prevlnl = oldLnLikelihood;
+            newLnLikelihood = parm->update(oldLnLikelihood); //all of the moves for FOFBD return the new likelihood for reporting
+            bool isAccepted = true;
+            if (isAccepted == true){
+                oldLnLikelihood = newLnLikelihood;
+                modelPtr->updateAccepted();
+            }
+        }
+        
+        if ( n % printFrequency == 0 || n == 1){
+            cout << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
+            //if(writeInfoFile){
+                //dOut << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
+                //dOut << n << " -- " << parm->writeParam();
+            //}
+        }
+
+        // sample chain
+        if ( n % sampleFrequency == 0 || n == 1){
+            sampleChainFR(n, frOut, oldLnLikelihood);
+        }
+    }
+    
+    int timeEnd = (int)time(NULL);
+    cout << "   Markov chain completed in " << (static_cast<float>(timeEnd - timeSt)) << " seconds" << endl;
+    dOut.close();
+    frOut.close();
+    //mxOut.close();
+    
+}
+
 
 double Mcmc::safeExponentiation(double lnX) {
 
@@ -588,6 +660,43 @@ void Mcmc::sampleChain(int gen, ofstream &occOut, double lnl) {
     
 }
 
-
+void Mcmc::sampleChainFR(int gen, ofstream &frOut, double lnl) {
+    
+    FossilRangeGraph *frg = modelPtr->getActiveFossilRangeGraph();
+    Speciation *sp = modelPtr->getActiveSpeciation();
+    
+    sp->setAllBDFossParams();
+    
+    if(gen == 1){
+        
+        frOut << "Gen\tlnL";
+        frOut << "\tNetDiv(b-d)\tRelativeDeath(d/b)";
+        frOut << "\tFBD.psi\tFBD.rho";
+        frOut << "\tFBD.lambda\tFBD.mu\tFBD.prsp";
+        if(printOrigin)
+            frOut << "\tFBD.OriginTime";
+        if(printAttach)
+            frOut << frg->getFossilRangeInfoParamNames();
+        //frOut << "\tnum.tip_fossils";
+        frOut << "\n";
+    }
+    
+    // then print stuff
+    frOut << gen << "\t" << lnl;
+    frOut << "\t" << sp->getNetDiversification();
+    frOut << "\t" << sp->getRelativeDeath();
+    frOut << "\t" << sp->getBDSSFossilSampRatePsi();
+    frOut << "\t" << sp->getBDSSSppSampRateRho();
+    frOut << "\t" << sp->getBDSSSpeciationRateLambda();
+    frOut << "\t" << sp->getBDSSExtinctionRateMu();
+    frOut << "\t" << sp->getBDSSFossilSampProbS();
+    if(printOrigin)
+        frOut << "\t" << frg->getFossilRangeGraphOriginTime();
+    if(printAttach)
+        frOut << frg->getFossilRangeInfoParamList();
+    //occOut << "\t" << fg->getSumIndicatorFG();
+    frOut << "\n";
+    
+}
 
 // end

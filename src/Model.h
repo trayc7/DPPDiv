@@ -112,7 +112,7 @@ class Model {
 		bool							getFixTestRun(void) { return fixTestRun; }
 		bool							getOriginCondition(void) { return conditionOnOrigin; }
 		int								getTotalUpdateWeights(void){ return totalUpdateWeights; }
-        int                             getFBDSExperimentalMode() { return fbdsExperimentalMode; }//rw:
+        int                             getFBDSExperimentalMode() { return fbdsExperimentalMode; }
 
 	private:
 		void							initializeConditionalLikelihoods(void);
@@ -166,7 +166,7 @@ class Model {
         double                          initOT;
         double                          originMax;
 		double							rootNExpRate;
-        double                          rho; //rw:
+        double                          rho;
 		bool							exponCalibHyperParm;
 		bool							exponDPMCalibHyperParm;
 		bool							fixSomeModParams;
@@ -175,7 +175,7 @@ class Model {
 		bool							estAbsRts;
 		bool							fixTestRun;
         bool                            conditionOnOrigin;
-        int                             fbdsExperimentalMode;//rw:
+        int                             fbdsExperimentalMode;
         bool                            ignoreFossils;
         int                             numLineages;
 		
