@@ -132,12 +132,14 @@ private:
     void							recountFossilRangeAttachNums(); // cf recountFossilAttachNums() or recountOccurrenceAttachNums()
     void                            printFossilRangeVariables(); //rw: for debugging
     void                            redefineOriginTime();
+    void                            countExtinctLineages();
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
     //double                          getFossilRangeGraphProb();
     
     int                             numFossils;
     int                             numLineages;
+    int                             numExtinctLineages;
     double                          originTime;
     double                          ancientBound;
     bool							runUnderPrior;

@@ -44,7 +44,7 @@
 
 using namespace std;
 
-Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh) : Parameter(rp, mp) {//rw:
+Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp) : Parameter(rp, mp) {//rw:
 	
 	
 	maxdivV = 1000.0;
@@ -59,7 +59,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
     currentFossilRangeGraphLnL = 0.0;
-	parameterization = 2;
+	parameterization = bdp;
 	if(treeTimePrior == 9){
 		parameterization = 3;
 		extantSampleRate = 0.0;
@@ -67,13 +67,13 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	setAllBDFossParams();
     
     // priors on birth death paras
-    deathRatePrior = 2; // 1 = unifrom prior, 2 = exponential prior
-    birthRatePrior = 2;
+    deathRatePrior = 1; // 1 = unifrom prior, 2 = exponential prior
+    birthRatePrior = 1;
     fossilSamplingRatePrior = 1;
     netDivRatePrior = 1;
     deathRateExpRate = 10.0;
     birthRateExpRate = 10.0;
-    fossilSamplingRateExpRate = 50.0;
+    fossilSamplingRateExpRate = 50; // for a similar prior psi under p1 = 0.001
     netDivRateExpRate = 10.0;
 	
 	if(mp->getFixTestRun()){
@@ -105,6 +105,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 		netDiversificaton = maxdivV * maxdivV / netDiversificaton;
 		
 	if(treeTimePrior > 5){
+        cout << "Paramterization: " << parameterization << endl;
 		cout << "Speciaton parameters are initialized with: d = " << netDiversificaton << " , r = " << relativeDeath<< " , s = " << probSpeciationS << endl;
 		cout << "                                   l = " << birthRate << " , m = " << deathRate << " , psi = " << fossilRate << " , rho = " << extantSampleRate << endl; //rw:
 	}
@@ -809,7 +810,9 @@ double Speciation::updatePsiRate(FossilRangeGraph *frg) {
     double newPsi;
     double tuning = log(2.0);
     double minV = 0.0001;
+    //double maxV = 100000;
     double c = getNewValScaleMv(newPsi, oldPsi, minV, maxdivV, tuning);
+    //double c = getNewValScaleMv(newPsi, oldPsi, minV, maxV, tuning);
     fossilRate = newPsi;
     lpr = c;
     double newfgprob = getLnFossilRangeGraphProb(frg);

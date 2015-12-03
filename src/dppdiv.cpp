@@ -164,6 +164,7 @@ int main (int argc, char * const argv[]) {
     bool printAttach    = false;     //rw: maybe issue a warning if cal file is large & printAttach = true
     int expMode         = 0;        //rw: experimental mode for testing the fbds model and extensions. 1: fix branch lengths; 2: fix branch lengths & ignore calibrations
     bool igfoss         = false;
+    int bdpar           = 2; //rw: FBD parameterization flag
 	
 	if(argc > 1){
 		for (int i = 1; i < argc; i++){
@@ -298,6 +299,8 @@ int main (int argc, char * const argv[]) {
                 else if(!strcmp(curArg, "-igf")){//RW
                     igfoss = true;
                 }
+                else if(!strcmp(curArg, "-bdp"))//rw: FBD parameterization
+                    bdpar = atof(argv[i+1]);
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -333,7 +336,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior >= 9){
-        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior);
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;
     }
@@ -350,7 +353,7 @@ int main (int argc, char * const argv[]) {
         Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc,
                       hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN,
                       treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
-                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, expMode, igfoss, rho);
+                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, expMode, igfoss, rho, bdpar);
         if(doAbsRts)
             myModel.setEstAbsRates(true);
         if(runPrior)
