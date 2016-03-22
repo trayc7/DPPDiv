@@ -307,7 +307,7 @@ double FossilGraph::fbdQFxn(double b, double d, double psi, double rho, double t
 
 double FossilGraph::fbdC1Fxn(double b, double d, double psi){
     
-    double v = abs( sqrt( ( (b-d-psi) * (b-d-psi) ) + 4*b*psi) );
+    double v = fabs( sqrt( ( (b-d-psi) * (b-d-psi) ) + 4*b*psi) );
     return v;
 }
 

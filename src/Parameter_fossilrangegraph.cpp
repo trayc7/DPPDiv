@@ -615,7 +615,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
 
 double FossilRangeGraph::fbdC1Fxn(double b, double d, double psi){
     
-    double v = abs( sqrt( ( (b-d-psi) * (b-d-psi) ) + 4*b*psi) );
+    double v = fabs( sqrt( ( (b-d-psi) * (b-d-psi) ) + 4*b*psi) );
     return v;
 }
 
