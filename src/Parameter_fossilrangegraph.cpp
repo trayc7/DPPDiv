@@ -61,6 +61,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     currentFossilRangeGraphLnL = 0.0;
     moves = 1; // 1: update lineage start or stop times; 2: update both
     proposal = 2; // proposal type 1=window, 2=scale, 3=slide
+    getAltProb=1;
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;
@@ -537,24 +538,29 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     
     double nprb = 0.0;
     
-    nprb = numFossils*log(fossRate);
-    nprb += numExtinctLineages*log(mu);
-    nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate, sppSampRate,ot)) );
+    if(getAltProb)
+        nprb = getFossilRangeGraphAlternativeProb(lambda, mu, fossRate, sppSampRate, ot);
     
-    for(int f=0; f < fossilRanges.size(); f++){
+    else {
+        nprb = numFossils*log(fossRate);
+        nprb += numExtinctLineages*log(mu);
+        nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate, sppSampRate,ot)) );
         
-        FossilRange *fr = fossilRanges[f];
-        
-        double bi = fr->getLineageStart(); //rw: zf
-        double di = fr->getLineageStop();  //rw: bf
-        
-        nprb += log( lambda * fr->getFossilRangeBrGamma() );
-        
-        double rangePr = 0;
-        rangePr += fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, bi);
-        rangePr -= fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, di);
-        
-        nprb += rangePr;
+        for(int f=0; f < fossilRanges.size(); f++){
+            
+            FossilRange *fr = fossilRanges[f];
+            
+            double bi = fr->getLineageStart(); //rw: zf
+            double di = fr->getLineageStop();  //rw: bf
+            
+            nprb += log( lambda * fr->getFossilRangeBrGamma() );
+            
+            double rangePr = 0;
+            rangePr += fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, bi);
+            rangePr -= fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, di);
+            
+            nprb += rangePr;
+        }
     }
     
     currentFossilRangeGraphLnL = nprb;
@@ -639,5 +645,38 @@ double FossilRangeGraph::fbdQTildaFxnLog(double b, double d, double psi, double 
     return v;
 }
 
+//rw: another test; sppSampRate not used
+double FossilRangeGraph::getFossilRangeGraphAlternativeProb(double lambda, double mu, double fossRate, double sppSampRate, double ot){
+    if(runUnderPrior)
+        return 0.0;
+    
+    double nprb = 0.0;
+    
+    nprb = numFossils*log(fossRate);
+    nprb += numExtinctLineages*log(mu);
+    nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
+    
+    for(int f=0; f < fossilRanges.size(); f++){
+        
+        FossilRange *fr = fossilRanges[f];
+        
+        double bi = fr->getLineageStart(); //rw: zf
+        double di = fr->getLineageStop();  //rw: bf
+        
+        int gamma = fr->getFossilRangeBrGamma();
+        
+        nprb += log( lambda * gamma );
+        
+        double rangePr;
+        rangePr = -(lambda+mu+fossRate)*(bi-di);
+        
+        nprb += rangePr;
+        
+    }
+    
+    currentFossilRangeGraphLnL = nprb;//rw: some redundancy for now
+    
+    return nprb;
+}
 
 //END

@@ -110,6 +110,7 @@ public:
 //    int                             getNumFossils(void) { return numFossils; }
     
     double							getFossilRangeGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot); // cf getTreeAncCalBDSSTreeNodePriorProb or getFossilGraphProb
+    double                          getFossilRangeGraphAlternativeProb(double lambda, double mu, double fossRate, double sppSampRate, double ot);
     double							getActiveFossilRangeGraphProb();
     
     double                          getFossilRangeGraphOriginTime(void) { return originTime; }
@@ -166,9 +167,8 @@ private:
     bool                            fixFRG;
     int                             fixStart;
     int                             fixStop;
+    bool                            getAltProb;
     
 };
-
-
 
 #endif
