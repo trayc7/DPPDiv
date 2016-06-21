@@ -182,7 +182,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 
 }
 
-Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp){
+Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, int fxSt, int fxSp){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
@@ -245,7 +245,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     }
     
     if(treeTimePrior == 10){
-        FossilRangeGraph *frg = new FossilRangeGraph(ranPtr, this, numFossils, numLineages, calibrs, runUnderPrior);
+        FossilRangeGraph *frg = new FossilRangeGraph(ranPtr, this, numFossils, numLineages, calibrs, runUnderPrior, fxSt, fxSp);
         Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho, fbdPar);
         for (int i=0; i<2; i++){
             parms[i].push_back( sp );

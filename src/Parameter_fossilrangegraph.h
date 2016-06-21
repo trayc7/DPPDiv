@@ -64,6 +64,11 @@ public:
         void                            setExtant(bool b) { extant = b; }
         void                            setExtantOnly(bool b) { extantOnly = b; }
         void							setFossilRangeID(int i) { fossilRangeID = i; }
+        void                            setFixStart(bool b) { fixStart = b; }
+        void                            setFixStop(bool b) { fixStop = b; }
+    
+        bool                             getIsFixStart(void) { return fixStart; }
+        bool                             getIsFixStop(void) { return fixStop; }
     
     //    int								getFossilIndicatorVar(void) { return ancFossIndicator; }
 
@@ -77,6 +82,8 @@ private:
     int								fossilBrGamma;
     double                          lineageStart; // note this is the speciation time = zf or phi
     double                          lineageStop;
+    double                          fixStart;
+    double                          fixStop;
     
 //    int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
 
@@ -89,7 +96,7 @@ class Calibration;
 class FossilRangeGraph : public Parameter {
     
 public:
-    FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, bool rnp);
+    FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, bool rnp, int fxSt, int fxSp);
     
     ~FossilRangeGraph(void);
     
@@ -155,6 +162,10 @@ private:
 //    double							doSinglePhiMove(void);
 //    int                               numAncFossilsk;
 //    int								treeTimePrior; // this should always be 10
+    
+    bool                            fixFRG;
+    int                             fixStart;
+    int                             fixStop;
     
 };
 

@@ -43,7 +43,7 @@
 
 using namespace std;
 
-FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp) : Parameter(rp, mp){
+FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, int fxSt, int fxSp) : Parameter(rp, mp){
     
     name = "FRG";
     numFossils = nf;
@@ -53,6 +53,9 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     ancientBound = 1000.0;
     printInitialFossilRangeVariables = 1;
     numExtinctLineages = 0;
+    fixFRG = 1; //1: fix start and end range times to FAs and LAs
+    fixStart = fxSt;
+    fixStop = fxSp;
     createFossilRangeVector(clb);
     initializeFossilRangeVariables();
     currentFossilRangeGraphLnL = 0.0;
@@ -185,91 +188,31 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
         }
     }
 
-    //fixed frg test
-//    fossilRanges[0]->setLineageStart(5.560851);
-//    fossilRanges[0]->setLineageStop(2.469863);
-//    fossilRanges[1]->setLineageStart(3.723645);
-//    fossilRanges[1]->setLineageStop(0);
-//    fossilRanges[2]->setLineageStart(0.7480391);
-//    fossilRanges[2]->setLineageStop(0);
-//    fossilRanges[3]->setLineageStart(2.891589);
-//    fossilRanges[3]->setLineageStop(1.725818);
-//    fossilRanges[4]->setLineageStart(1.926918);
-//    fossilRanges[4]->setLineageStop(0);
-//    fossilRanges[5]->setLineageStart(0.1037843);
-//    fossilRanges[5]->setLineageStop(0);
-//    fossilRanges[6]->setLineageStart(0.4343739);
-//    fossilRanges[6]->setLineageStop(0);
-//    fossilRanges[7]->setLineageStart(1.530841);
-//    fossilRanges[7]->setLineageStop(0);
-//    fossilRanges[8]->setLineageStart(1.061154);
-//    fossilRanges[8]->setLineageStop(0.061442);
-//    fossilRanges[9]->setLineageStart(3.224778);
-//    fossilRanges[9]->setLineageStop(2.3289);
-//    fossilRanges[10]->setLineageStart(2.819214);
-//    fossilRanges[10]->setLineageStop(2.718085);
-//    fossilRanges[11]->setLineageStart(2.938183);
-//    fossilRanges[11]->setLineageStop(0.986128);
-//    fossilRanges[12]->setLineageStart(4.1891);
-//    fossilRanges[12]->setLineageStop(0);
-//    fossilRanges[13]->setLineageStart(0.7107883);
-//    fossilRanges[13]->setLineageStop(0);
-//    fossilRanges[14]->setLineageStart(0.9757994);
-//    fossilRanges[14]->setLineageStop(0);
-//    fossilRanges[15]->setLineageStart(0.9359346);
-//    fossilRanges[15]->setLineageStop(0);
-//    fossilRanges[16]->setLineageStart(1.664171);
-//    fossilRanges[16]->setLineageStop(1.471591);
-//    fossilRanges[17]->setLineageStart(1.532807);
-//    fossilRanges[17]->setLineageStop(0.2839254);
-//    fossilRanges[18]->setLineageStart(0.3198285);
-//    fossilRanges[18]->setLineageStop(0);
-//    fossilRanges[19]->setLineageStart(2.431094);
-//    fossilRanges[19]->setLineageStop(2.286943);
-//    fossilRanges[20]->setLineageStart(4.747997);
-//    fossilRanges[20]->setLineageStop(3.766295);
-//    fossilRanges[21]->setLineageStart(3.781237);
-//    fossilRanges[21]->setLineageStop(2.150407);
-//    fossilRanges[22]->setLineageStart(2.938139);
-//    fossilRanges[22]->setLineageStop(0);
-//    fossilRanges[23]->setLineageStart(0.4388662);
-//    fossilRanges[23]->setLineageStop(0);
-//    fossilRanges[24]->setLineageStart(0.334802);
-//    fossilRanges[24]->setLineageStop(0);
-//    fossilRanges[25]->setLineageStart(0.07767761);
-//    fossilRanges[25]->setLineageStop(0);
-//    fossilRanges[26]->setLineageStart(0.4731897);
-//    fossilRanges[26]->setLineageStop(0.4493463);
-//    fossilRanges[27]->setLineageStart(0.5304301);
-//    fossilRanges[27]->setLineageStop(0);
-//    fossilRanges[28]->setLineageStart(0.3094577);
-//    fossilRanges[28]->setLineageStop(0);
-//    fossilRanges[29]->setLineageStart(1.331281);
-//    fossilRanges[29]->setLineageStop(0);
-//    fossilRanges[30]->setLineageStart(0.5376007);
-//    fossilRanges[30]->setLineageStop(0);
-//    fossilRanges[31]->setLineageStart(0.836111);
-//    fossilRanges[31]->setLineageStop(0);
-//    fossilRanges[32]->setLineageStart(0.5588915);
-//    fossilRanges[32]->setLineageStop(0);
-//    fossilRanges[33]->setLineageStart(0.2243971);
-//    fossilRanges[33]->setLineageStop(0);
-//    fossilRanges[34]->setLineageStart(0.2036094);
-//    fossilRanges[34]->setLineageStop(0);
-//    fossilRanges[35]->setLineageStart(0.2659481);
-//    fossilRanges[35]->setLineageStop(0);
-//    fossilRanges[36]->setLineageStart(0.4489092);
-//    fossilRanges[36]->setLineageStop(0);
-//    fossilRanges[37]->setLineageStart(2.990018);
-//    fossilRanges[37]->setLineageStop(1.251231);
-//    fossilRanges[38]->setLineageStart(4.067044);
-//    fossilRanges[38]->setLineageStop(3.692535);
-//    fossilRanges[39]->setLineageStart(3.951721);
-//    fossilRanges[39]->setLineageStop(3.926339);
-//    fossilRanges[40]->setLineageStart(5.560851);
-//    fossilRanges[40]->setLineageStop(3.710196);
-//    fossilRanges[41]->setLineageStart(5.23413);
-//    fossilRanges[41]->setLineageStop(5.016654);
+    if(fixFRG){
+        for(int f = 0; f < numLineages; f++){
+            FossilRange *fr = fossilRanges[f];
+            fr->setLineageStart(fr->getFirstAppearance());
+            fr->setLineageStop(fr->getLastAppearance());
+            fr->setFixStart(1);
+            fr->setFixStop(1);
+        }
+    }
+    
+    if(fixStart > 0){
+        for(int f = 0; f < fixStart; f++){
+            FossilRange *fr = fossilRanges[f];
+            fr->setLineageStart(fr->getFirstAppearance());
+            fr->setFixStart(1);
+        }
+    }
+    
+    if(fixStop > 0){
+        for(int f = 0; f < fixStop; f++){
+            FossilRange *fr = fossilRanges[f];
+            fr->setLineageStop(fr->getLastAppearance());
+            fr->setFixStop(1);
+        }
+    }
     
     redefineOriginTime();
     recountFossilRangeAttachNums();
@@ -370,6 +313,9 @@ double FossilRangeGraph::updateLineageStartTimes(){
         
         FossilRange *fr = fossilRanges[(*it)];
         
+        if(fr->getIsFixStart())
+            continue;
+        
         // define old values
         double fa = fr->getFirstAppearance(); // yf
         double oldStart = fr->getLineageStart(); // zf
@@ -435,6 +381,9 @@ double FossilRangeGraph::updateLineageStopTimes(){
         FossilRange *fr = fossilRanges[(*it)];
         
         if(fr->getIsExtant())
+            continue;
+        
+        if(fr->getIsFixStop())
             continue;
         
         // define old values
