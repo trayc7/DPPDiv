@@ -61,7 +61,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     currentFossilRangeGraphLnL = 0.0;
     moves = 1; // 1: update lineage start or stop times; 2: update both
     proposal = 2; // proposal type 1=window, 2=scale, 3=slide
-    getAltProb=1;
+    getAltProb=0;
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;
@@ -184,7 +184,7 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
         }
         else {
             la = fr->getLastAppearance();
-            stop = ranPtr->uniformRv(0.0,la);
+            stop = ranPtr->uniformRv(0.0,la); //di
             fr->setLineageStop(stop);
         }
     }
@@ -497,9 +497,9 @@ string FossilRangeGraph::getFossilRangeInfoParamNames(void){
         frg = fossilRanges[i];
         int frgID = frg->getFossilRangeID();
         ss << "\ty_f(FR_" << frgID << ")"; //rw: first appearance
-        ss << "\tz_f(FR_" << frgID << ")"; //rw: lineage start
-        ss << "\ta_f(FR_" << frgID << ")"; //rw: last appearance
-        ss << "\tb_f(FR_" << frgID << ")"; //rw: lineage stop
+        ss << "\tb_f(FR_" << frgID << ")"; //rw: lineage start
+        ss << "\tx_f(FR_" << frgID << ")"; //rw: last appearance
+        ss << "\td_f(FR_" << frgID << ")"; //rw: lineage stop
     }
     for(int i=0; i<fossilRanges.size(); i++){
         frg = fossilRanges[i];
@@ -550,8 +550,8 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             
             FossilRange *fr = fossilRanges[f];
             
-            double bi = fr->getLineageStart(); //rw: zf
-            double di = fr->getLineageStop();  //rw: bf
+            double bi = fr->getLineageStart(); //rw: zf or bi
+            double di = fr->getLineageStop();  //rw: di
             
             nprb += log( lambda * fr->getFossilRangeBrGamma() );
             
@@ -620,11 +620,17 @@ double FossilRangeGraph::fbdQTildaFxn(double b, double d, double psi, double rho
     double f  = (f1a/f1b) * (f2a/f2b) * -1;
     
     double v = rho * sqrt(f);
-    
+
     return v;
 }
 
 double FossilRangeGraph::fbdQTildaFxnLog(double b, double d, double psi, double rho, double t){
+    
+    //b=2.5;
+    //d=1.7;
+    //psi=0.9;
+    //rho=0.8;
+    //t=1.3;
     
     double c1 = fbdC1Fxn(b,d,psi);
     double c2 = fbdC2Fxn(b,d,psi,rho);
@@ -640,7 +646,7 @@ double FossilRangeGraph::fbdQTildaFxnLog(double b, double d, double psi, double 
     double v = f*0.5 + log(rho);
     
     //cout << "t " << t << endl;
-    //cout << "q_tilda " << v << endl;
+    //cout << "q_tilda " << setprecision(12) << exp(v) << endl;
     
     return v;
 }
