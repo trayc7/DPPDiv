@@ -67,13 +67,13 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	setAllBDFossParams();
     
     // priors on birth death paras
-    deathRatePrior = 1; // 1 = unifrom prior, 2 = exponential prior
-    birthRatePrior = 1;
-    fossilSamplingRatePrior = 1;
+    deathRatePrior = 2; // 1 = unifrom prior, 2 = exponential prior
+    birthRatePrior = 2;
+    fossilSamplingRatePrior = 2;
     netDivRatePrior = 1;
-    deathRateExpRate = 10.0;
-    birthRateExpRate = 10.0;
-    fossilSamplingRateExpRate = 50; // for a similar prior psi under p1 = 0.001
+    deathRateExpRate = 1.0;
+    birthRateExpRate = 1.0;
+    fossilSamplingRateExpRate = 1.0; // for a similar prior psi under p1 = 0.001
     netDivRateExpRate = 10.0;
 	
 	if(mp->getFixTestRun()){
