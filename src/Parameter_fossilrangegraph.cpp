@@ -112,7 +112,7 @@ void FossilRangeGraph::lnSurfaceGenerator(string outFile){
     string lnSurfFile = outFile + ".lnSurface.out";
     ofstream lnSurfOut(lnSurfFile.c_str(), ios::out);
     
-    lnSurfOut << std::setprecision(9) << "lambda\tmu\tlnL\n";
+    lnSurfOut << std::setprecision(9) << "l\tm\tlogL\n";
     
     double birthMin = 0.01;
     double birthMax = 10.0;
@@ -129,7 +129,7 @@ void FossilRangeGraph::lnSurfaceGenerator(string outFile){
                 
             // calculate FBD probability
             double lnL = getFossilRangeGraphProb(i, j, fossRate, sppSampRate, originTime);
-            cout << lnL << endl;
+            //cout << lnL << endl;
             lnSurfOut << i << "\t" << j << "\t" << lnL << "\n";
         }
     }
