@@ -44,7 +44,7 @@
 
 using namespace std;
 
-Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp) : Parameter(rp, mp) {//rw:
+Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp, bool fxPsi, double psi) : Parameter(rp, mp) {//rw:
 	
 	
 	maxdivV = 1000.0;
@@ -52,7 +52,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	relativeDeath = 0.7; //ranPtr->uniformRv();
 	netDiversificaton = 0.5; //ranPtr->uniformRv();
 	probSpeciationS = 0.01; //ranPtr->uniformRv();
-	fossilRate = 0.01;
+	fossilRate = psi;
 	birthRate = 0.02;
 	deathRate = 0.01;
     extantSampleRate = rh; //rh;
@@ -64,6 +64,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 		parameterization = 3;
 		extantSampleRate = 0.0;
 	}
+    fixPsi = fxPsi;
 	setAllBDFossParams();
     
     // priors on birth death paras
@@ -327,16 +328,20 @@ double Speciation::updateFossilRangeGraphBDParams(double &oldLnL){
             updateRelDeathRt(frg); // r
         else if(v == 1)
             updateNetDivRate(frg); // d
-        else
-            updatePsiRate(frg); // psi
+        else {
+            if(!fixPsi)
+                updatePsiRate(frg); // psi
+        }
     }
     else if(parameterization == 3){  //****//
         if(v == 0)
             updateDeathRate(frg); // mu
         else if(v == 1)
             updateBirthRate(frg); // lambda
-        else if(v == 2)
-            updatePsiRate(frg); // psi
+        else if(v == 2){
+            if(!fixPsi)
+                updatePsiRate(frg); // psi
+        }
         //else
           //  updateBirthAndDeath(fg); // mu and lambda
     }

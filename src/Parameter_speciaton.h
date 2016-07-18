@@ -47,7 +47,7 @@ class Tree;
 class Speciation : public Parameter {
 	
 	public:
-							Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp); //rw:
+							Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp, bool fxPsi, double psi); //rw:
 							~Speciation(void);
 		Speciation			&operator=(const Speciation &c);
 		void				clone(const Speciation &c);
@@ -137,6 +137,8 @@ class Speciation : public Parameter {
         int                 netDivRatePrior;
         double              netDivRateExpRate;
         double              getExpPriorRatio(double oldVal, double newVal, double rate, double prior);
+    
+        bool                fixPsi;
 
 };
 

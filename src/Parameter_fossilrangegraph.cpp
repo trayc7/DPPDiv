@@ -61,7 +61,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     currentFossilRangeGraphLnL = 0.0;
     moves = 1; // 1: update lineage start or stop times; 2: update both
     proposal = 2; // proposal type 1=window, 2=scale, 3=slide
-    getAltProb=0;
+    getAltProb = 0;
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;
@@ -103,6 +103,39 @@ void FossilRangeGraph::clone(const FossilRangeGraph &frg){
     
     //numAncFossilsk = frg.numAncFossilsk;
     //treeTimePrior = frg.treeTimePrior;
+    
+}
+
+void FossilRangeGraph::lnSurfaceGenerator(string outFile){
+    
+    // output file for likelihood surface data
+    string lnSurfFile = outFile + ".lnSurface.out";
+    ofstream lnSurfOut(lnSurfFile.c_str(), ios::out);
+    
+    lnSurfOut << std::setprecision(9) << "lambda\tmu\tlnL\n";
+    
+    double birthMin = 0.01;
+    double birthMax = 10.0;
+    double deathMin = 0.01;
+    double deathMax = 10.0;
+    
+    Speciation *s = modelPtr->getActiveSpeciation();
+    double fossRate = s->getBDSSFossilSampRatePsi();
+    double sppSampRate = s->getBDSSSppSampRateRho();
+    
+    for(double i = birthMin; i <= birthMax; i += 0.1) {
+            
+        for(double j = deathMin; j <= deathMax; j += 0.1){
+                
+            // calculate FBD probability
+            double lnL = getFossilRangeGraphProb(i, j, fossRate, sppSampRate, originTime);
+            cout << lnL << endl;
+            lnSurfOut << i << "\t" << j << "\t" << lnL << "\n";
+        }
+    }
+    
+    lnSurfOut.close();
+    exit(0);
     
 }
 
@@ -537,6 +570,11 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
         return 0.0;
     
     double nprb = 0.0;
+//    
+//    lambda=1;
+//    mu=0.5;
+//    fossRate=50;
+//    sppSampRate=1;
     
     if(getAltProb)
         nprb = getFossilRangeGraphAlternativeProb(lambda, mu, fossRate, sppSampRate, ot);
@@ -564,6 +602,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     }
     
     currentFossilRangeGraphLnL = nprb;
+    //cout << "likelihood " << currentFossilRangeGraphLnL << endl;
     
     return nprb;
 }

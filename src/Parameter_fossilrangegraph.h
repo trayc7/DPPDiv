@@ -127,11 +127,11 @@ public:
     double							fbdQTildaFxnLog(double b, double d, double psi, double rho, double t);
 
 //    double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
-    
+
 //    int								getSumIndicatorFG(void);
 
-
 //    double							getCurrentFossilGraphLnL(void) { return currentFossilGraphLnL; }
+    void                            lnSurfaceGenerator(std::string outFile);
 
 private:
     
@@ -168,6 +168,7 @@ private:
     int                             fixStart;
     int                             fixStop;
     bool                            getAltProb;
+    //bool                            lSurf;
     
 };
 
