@@ -165,6 +165,7 @@ int main (int argc, char * const argv[]) {
     int expMode         = 0;        //rw: experimental mode for testing the fbds model and extensions. 1: fix branch lengths; 2: fix branch lengths & ignore calibrations
     bool igfoss         = false;
     int bdpar           = 2; //rw: FBD parameterization flag
+    bool fixFRG         = false;
     int fixStart        = 0;
     int fixStop         = 0;
     bool fixPsi         = false;
@@ -306,6 +307,9 @@ int main (int argc, char * const argv[]) {
                 }
                 else if(!strcmp(curArg, "-bdp"))//rw: FBD parameterization
                     bdpar = atof(argv[i+1]);
+                else if(!strcmp(curArg, "-fixfrg")){//rw
+                    fixFRG = true;
+                }
                 else if(!strcmp(curArg, "-fxst"))//rw: fix start times
                     fixStart = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-fxsp"))//rw: fix stop times
@@ -351,7 +355,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior >= 9){
-        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixStart, fixStop, lSurf, fixPsi, psi);
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, fixStart, fixStop, lSurf, fixPsi, psi);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;
     }

@@ -314,7 +314,7 @@ void Mcmc::runFRGFBDChain() {
         for(int it=0; it<numMoves; it++){
             modelPtr->switchActiveParm();
             Parameter *parm = modelPtr->pickParmToUpdate();
-            
+
             prevlnl = oldLnLikelihood;
             newLnLikelihood = parm->update(oldLnLikelihood); //all of the moves for FOFBD return the new likelihood for reporting
             bool isAccepted = true;
@@ -323,7 +323,7 @@ void Mcmc::runFRGFBDChain() {
                 modelPtr->updateAccepted();
             }
         }
-        
+
         if ( n % printFrequency == 0 || n == 1){
             cout << setw(6) << n << " -- " << fixed << setprecision(3) << prevlnl << " -> " << newLnLikelihood << endl;
             //if(writeInfoFile){

@@ -141,6 +141,8 @@ void FossilRangeGraph::lnSurfaceGenerator(string outFile){
 
 double FossilRangeGraph::update(double &oldLnL){
     
+    currentFossilRangeGraphLnL = oldLnL;
+    
     if(moves == 1){
         if(ranPtr->uniformRv() < 0.5)
             updateLineageStartTimes();
@@ -335,8 +337,8 @@ double FossilRangeGraph::updateLineageStartTimes(){
     double fossRate = s->getBDSSFossilSampRatePsi();
     double sppSampRate = s->getBDSSSppSampRateRho();
     
-    // maybe unnecessary here, for debugging
-    getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
+    // this shouldn't be necessary here now
+    // getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
     
     vector<int> rndFossilRangeIDs;
     for(int i=0; i<fossilRanges.size(); i++)
@@ -402,7 +404,7 @@ double FossilRangeGraph::updateLineageStopTimes(){
     double fossRate = s->getBDSSFossilSampRatePsi();
     double sppSampRate = s->getBDSSSppSampRateRho();
     
-    // maybe unnecessary here, for debugging -> check this does/doesn't make a difference
+    // this shouldn't be necessary here now
     //getFossilGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
     
     vector<int> rndFossilRangeIDs;
@@ -570,10 +572,10 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
         return 0.0;
     
     double nprb = 0.0;
-//    
-//    lambda=1;
-//    mu=0.5;
-//    fossRate=50;
+    
+//    lambda=1.56722;
+//    mu=0.0600474;
+//    fossRate=9.41854;
 //    sppSampRate=1;
     
     if(getAltProb)

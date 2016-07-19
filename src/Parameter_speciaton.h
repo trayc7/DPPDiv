@@ -92,7 +92,7 @@ class Speciation : public Parameter {
 		double				getNewValUpDownScaleMv(double &nv1, double ov1, double &nv2, double ov2, double sf);
 
 		double				updateTreeBDParams(double &oldLnL);
-		double				updateFossileGraphBDParams(double &oldLnL);
+		double				updateFossilGraphBDParams(double &oldLnL);
         double				updateFossilRangeGraphBDParams(double &oldLnL);
 
 		

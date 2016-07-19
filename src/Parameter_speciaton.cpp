@@ -53,7 +53,8 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	netDiversificaton = 0.5; //ranPtr->uniformRv();
 	probSpeciationS = 0.01; //ranPtr->uniformRv();
 	fossilRate = psi;
-	birthRate = 0.02;
+	//birthRate = 0.02;
+    birthRate = 1.0;
 	deathRate = 0.01;
     extantSampleRate = rh; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
@@ -157,7 +158,7 @@ double Speciation::update(double &oldLnL) {
 	
 	double lnR = 0.0;
 	if(treeTimePrior == 9){
-		return updateFossileGraphBDParams(oldLnL);
+		return updateFossilGraphBDParams(oldLnL);
 	}
     else if(treeTimePrior == 10){
         return updateFossilRangeGraphBDParams(oldLnL);
@@ -255,7 +256,7 @@ double Speciation::updateTreeBDParams(double &oldLnL) {
 	return lnR;
 }
 
-double Speciation::updateFossileGraphBDParams(double &oldLnL){
+double Speciation::updateFossilGraphBDParams(double &oldLnL){
 
 	int v;
 	currentFossilGraphLnL = oldLnL;
@@ -334,13 +335,16 @@ double Speciation::updateFossilRangeGraphBDParams(double &oldLnL){
         }
     }
     else if(parameterization == 3){  //****//
+        
+        updateDeathRate(frg);
+        
         if(v == 0)
             updateDeathRate(frg); // mu
         else if(v == 1)
             updateBirthRate(frg); // lambda
         else if(v == 2){
-            if(!fixPsi)
-                updatePsiRate(frg); // psi
+            //if(!fixPsi)
+            updatePsiRate(frg); // psi
         }
         //else
           //  updateBirthAndDeath(fg); // mu and lambda
