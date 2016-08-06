@@ -166,8 +166,6 @@ int main (int argc, char * const argv[]) {
     bool igfoss         = false;
     int bdpar           = 2; //rw: FBD parameterization flag
     bool fixFRG         = false;
-    int fixStart        = 0;
-    int fixStop         = 0;
     bool fixPsi         = false;
     double psi          = 0.01;
     bool lSurf          = false;
@@ -292,33 +290,29 @@ int main (int argc, char * const argv[]) {
 					printHelp(true);
 					return 0;
 				}
-                else if(!strcmp(curArg, "-po")){//RW
+                else if(!strcmp(curArg, "-po")){// print origin
                     printOrigin = true;
                 }
-                else if(!strcmp(curArg, "-pfat")){//RW
+                else if(!strcmp(curArg, "-pfat")){// print attach times
                     printAttach = true;
                 }
-                else if(!strcmp(curArg, "-expmo")){//RW
+                else if(!strcmp(curArg, "-expmo")){// experimental mode
                     expMode = atof(argv[i+1]);
                     priorMean = 2;
                 }
-                else if(!strcmp(curArg, "-igf")){//RW
+                else if(!strcmp(curArg, "-igf")){// ignore fossils
                     igfoss = true;
                 }
-                else if(!strcmp(curArg, "-bdp"))//rw: FBD parameterization
+                else if(!strcmp(curArg, "-bdp"))// FBD parameterization
                     bdpar = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-fixfrg")){//rw
+                else if(!strcmp(curArg, "-fixfrg")){// fixed fossil range graph
                     fixFRG = true;
                 }
-                else if(!strcmp(curArg, "-fxst"))//rw: fix start times
-                    fixStart = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-fxsp"))//rw: fix stop times
-                    fixStop = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-lsurf"))//rw: print out likelihood surface info
+                else if(!strcmp(curArg, "-lsurf"))// print out likelihood surface info
                     lSurf = true;
-                else if(!strcmp(curArg, "-fixpsi"))//rw: print out likelihood surface info
+                else if(!strcmp(curArg, "-fixpsi"))// fix psi
                     fixPsi = true;
-                else if(!strcmp(curArg, "-psi"))//rw: print out likelihood surface info
+                else if(!strcmp(curArg, "-psi"))// initial or fixed value for psi
                     psi = atof(argv[i+1]);
 				else {
 					cout << "\n############################ !!! ###########################\n";
@@ -355,7 +349,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior >= 9){
-        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, fixStart, fixStop, lSurf, fixPsi, psi);
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;
     }

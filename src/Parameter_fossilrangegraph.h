@@ -82,8 +82,8 @@ private:
     int								fossilBrGamma;
     double                          lineageStart; // note this is the speciation time = zf or phi
     double                          lineageStop;
-    double                          fixStart;
-    double                          fixStop;
+    bool                            fixStart;
+    bool                            fixStop;
     
 //    int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
 
@@ -96,7 +96,7 @@ class Calibration;
 class FossilRangeGraph : public Parameter {
     
 public:
-    FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, bool rnp, int fxSt, int fxSp);
+    FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, bool rnp, bool fxFRG);
     
     ~FossilRangeGraph(void);
     

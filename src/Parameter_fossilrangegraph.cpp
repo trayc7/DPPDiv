@@ -43,7 +43,7 @@
 
 using namespace std;
 
-FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, int fxSt, int fxSp) : Parameter(rp, mp){
+FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, bool fxFRG) : Parameter(rp, mp){
     
     name = "FRG";
     numFossils = nf;
@@ -54,15 +54,13 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     printInitialFossilRangeVariables = 1;
     numExtinctLineages = 0;
     fixFRG = 1; //1: fix start and end range times to FAs and LAs
-    fixStart = fxSt;
-    fixStop = fxSp;
     createFossilRangeVector(clb);
     initializeFossilRangeVariables();
     currentFossilRangeGraphLnL = 0.0;
     moves = 1; // 1: update lineage start or stop times; 2: update both
     proposal = 2; // proposal type 1=window, 2=scale, 3=slide
     getAltProb = 0;
-    completeSampling=1; // note if this is 0 it should produce the same results for complete sampling
+    completeSampling=0; // note if this is 0 it should produce the same results as 1 for complete sampling
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;
@@ -231,22 +229,6 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
             fr->setLineageStart(fr->getFirstAppearance());
             fr->setLineageStop(fr->getLastAppearance());
             fr->setFixStart(1);
-            fr->setFixStop(1);
-        }
-    }
-    
-    if(fixStart > 0){
-        for(int f = 0; f < fixStart; f++){
-            FossilRange *fr = fossilRanges[f];
-            fr->setLineageStart(fr->getFirstAppearance());
-            fr->setFixStart(1);
-        }
-    }
-    
-    if(fixStop > 0){
-        for(int f = 0; f < fixStop; f++){
-            FossilRange *fr = fossilRanges[f];
-            fr->setLineageStop(fr->getLastAppearance());
             fr->setFixStop(1);
         }
     }
