@@ -197,7 +197,7 @@ void FossilRangeGraph::createFossilRangeVector(vector<Calibration *> clb){
 void FossilRangeGraph::initializeFossilRangeVariables(){
     
     //numAncFossilsk = 0; //rw: do we ever need to know this for the frg?
-    double stop, start, la, fa, at;
+    double stop, start, la, fa;
     
     for(int f = 0; f < numLineages; f++){
         FossilRange *fr = fossilRanges[f];
