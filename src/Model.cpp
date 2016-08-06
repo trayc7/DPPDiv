@@ -935,10 +935,16 @@ void Model::readOccurrenceFile(void){
 
 void Model::readFossilRangeFile(void){
     /*
-    <lineages total> (inc. extant) <fossils total> (ignore extant)
-    <first> <last> (lineage 1)
-    <first> <last> (lineage 2) etc.
+    n k
+    yi oi
+    yj oj etc.
     */
+    
+    /* OR to specify fixed attachment times
+     n k
+     yi oi bi
+     yj oj bj etc.
+     */
     
     cout << "\nFossil ranges:" << endl;
     string ln = getLineFromFile(calibfilen, 1);

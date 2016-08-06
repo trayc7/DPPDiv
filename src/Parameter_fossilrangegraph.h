@@ -38,13 +38,14 @@
 class FossilRange {
     
 public:
-    FossilRange(double fa, double la, bool e, bool eo, int frid) :firstAppearance(fa), lastAppearance(la), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0) {}
+    FossilRange(double fa, double la, double at, bool e, bool eo, int frid) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0) {}
     
         bool                              getIsExtant(void) { return extant; }
         bool                              getIsExtantOnly(void) { return extantOnly; }
     
         double                            getFirstAppearance(void) { return firstAppearance; }
         double                            getLastAppearance(void) { return lastAppearance; }
+        double                            getAttachmentTime(void) { return attachmentTime; } // only used when the FRG is fixed
         double                            getLineageStart(void) { return lineageStart; }
         double                            getLineageStop(void) { return lineageStop; }
         int                               getFossilRangeBrGamma(void) { return fossilBrGamma; }
@@ -76,6 +77,7 @@ private:
     int								indx;
     double							firstAppearance; // oi
     double							lastAppearance; // yi
+    double							attachmentTime; // note this is for fixed ranges
     bool                            extant;
     bool                            extantOnly;
     int                             fossilRangeID;

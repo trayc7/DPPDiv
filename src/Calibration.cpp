@@ -239,10 +239,13 @@ void Calibration::initializeFossilRange(string calstr){
     stringstream ss;
     string tmp = "";
     ss << calstr;
+    
     ss >> tmp;
     lastAppearance = atof(tmp.c_str());
     ss >> tmp;
     firstAppearance = atof(tmp.c_str());
+    ss >> tmp;
+    attachmentTime = atof(tmp.c_str()); // consider giving this a more informative name
     
     if(firstAppearance == 0)
         isExtantOnly = true;
@@ -250,6 +253,8 @@ void Calibration::initializeFossilRange(string calstr){
          isExtant = true;
     
     cout << firstAppearance << " - " << lastAppearance << endl;
+    
+    cout << "placeholder" << endl;
     
 }
 

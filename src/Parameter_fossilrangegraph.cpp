@@ -53,14 +53,14 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     ancientBound = 1000.0;
     printInitialFossilRangeVariables = 1;
     numExtinctLineages = 0;
-    fixFRG = 1; //1: fix start and end range times to FAs and LAs
+    fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
     createFossilRangeVector(clb);
     initializeFossilRangeVariables();
     currentFossilRangeGraphLnL = 0.0;
     moves = 1; // 1: update lineage start or stop times; 2: update both
     proposal = 2; // proposal type 1=window, 2=scale, 3=slide
     getAltProb = 0;
-    completeSampling=0; // note if this is 0 it should produce the same results as 1 for complete sampling
+    completeSampling=1; // note if this is 0 it should produce the same results as 1 for complete sampling
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;
@@ -182,10 +182,11 @@ void FossilRangeGraph::createFossilRangeVector(vector<Calibration *> clb){
         Calibration *p = clb[c];
         double fa = p->getFirstAppearance();
         double la = p->getLastAppearance();
+        double at = p->getAttachmentTime();
         bool e = p->getIsExtant();
         bool eo = p->getIsExtantOnly();
         
-        FossilRange *fr = new FossilRange(fa, la, e, eo, frid);
+        FossilRange *fr = new FossilRange(fa, la, at, e, eo, frid);
         fossilRanges.push_back(fr);
         
         frid ++;
@@ -196,7 +197,7 @@ void FossilRangeGraph::createFossilRangeVector(vector<Calibration *> clb){
 void FossilRangeGraph::initializeFossilRangeVariables(){
     
     //numAncFossilsk = 0; //rw: do we ever need to know this for the frg?
-    double stop, start, la, fa;
+    double stop, start, la, fa, at;
     
     for(int f = 0; f < numLineages; f++){
         FossilRange *fr = fossilRanges[f];
@@ -226,7 +227,7 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
     if(fixFRG){
         for(int f = 0; f < numLineages; f++){
             FossilRange *fr = fossilRanges[f];
-            fr->setLineageStart(fr->getFirstAppearance());
+            fr->setLineageStart(fr->getAttachmentTime());
             fr->setLineageStop(fr->getLastAppearance());
             fr->setFixStart(1);
             fr->setFixStop(1);
