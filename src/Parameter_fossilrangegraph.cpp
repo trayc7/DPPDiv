@@ -60,7 +60,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     moves = 1; // 1: update lineage start or stop times; 2: update both
     proposal = 2; // proposal type 1=window, 2=scale, 3=slide
     getAltProb = 0;
-    completeSampling=1; // note if this is 0 it should produce the same results as 1 for complete sampling
+    completeSampling=0; // note if this is 0 it should produce the same results as 1 for complete sampling
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;

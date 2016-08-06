@@ -254,8 +254,6 @@ void Calibration::initializeFossilRange(string calstr){
     
     cout << firstAppearance << " - " << lastAppearance << endl;
     
-    cout << "placeholder" << endl;
-    
 }
 
 
