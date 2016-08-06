@@ -62,6 +62,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     moves = 1; // 1: update lineage start or stop times; 2: update both
     proposal = 2; // proposal type 1=window, 2=scale, 3=slide
     getAltProb = 0;
+    completeSampling=1; // note if this is 0 it should produce the same results for complete sampling
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;
@@ -581,7 +582,8 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     if(getAltProb)
         nprb = getFossilRangeGraphAlternativeProb(lambda, mu, fossRate, sppSampRate, ot);
     
-    else {
+    else if(completeSampling) {
+        
         nprb = numFossils*log(fossRate);
         nprb += numExtinctLineages*log(mu);
         nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate, sppSampRate,ot)) );
@@ -590,7 +592,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             
             FossilRange *fr = fossilRanges[f];
             
-            double bi = fr->getLineageStart(); //rw: zf or bi
+            double bi = fr->getLineageStart(); //rw: bi (zf)
             double di = fr->getLineageStop();  //rw: di
             
             nprb += log( lambda * fr->getFossilRangeBrGamma() );
@@ -602,9 +604,37 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             nprb += rangePr;
         }
     }
+    // correctly accounting for incomplete sampling
+    else {
+        
+        nprb = numFossils*log(fossRate);
+        nprb += numExtinctLineages*log(mu);
+        nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate, sppSampRate,ot)) );
+        
+        for(int f=0; f < fossilRanges.size(); f++){
+            
+            FossilRange *fr = fossilRanges[f];
+            
+            double bi = fr->getLineageStart(); // bi
+            double di = fr->getLineageStop();  // di
+            double oi = fr->getFirstAppearance(); // oi
+            
+            nprb += log( lambda * fr->getFossilRangeBrGamma() );
+            
+            double rangePr = 0;
+            
+            rangePr += fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, oi);
+            rangePr -= fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, di);
+            
+            rangePr += fbdQFxnLog(lambda, mu, fossRate, sppSampRate, bi);
+            rangePr -= fbdQFxnLog(lambda, mu, fossRate, sppSampRate, oi);
+            
+            nprb += rangePr;
+        }
+        
+    }
     
     currentFossilRangeGraphLnL = nprb;
-    //cout << "likelihood " << currentFossilRangeGraphLnL << endl;
     
     return nprb;
 }
@@ -692,6 +722,20 @@ double FossilRangeGraph::fbdQTildaFxnLog(double b, double d, double psi, double 
     return v;
 }
 
+
+double FossilRangeGraph::fbdQFxnLog(double b, double d, double psi, double rho, double t){
+    
+    double c1 = fbdC1Fxn(b,d,psi);
+    double c2 = fbdC2Fxn(b,d,psi,rho);
+    
+    double f1 = log(4) + (-c1 * t);
+    double f2 = 2 * (log( (exp(-c1*t) * (1-c2)) + (1+c2) ));
+    
+    double v = f1 - f2;
+    
+    return v;
+}
+
 //rw: another test; sppSampRate not used
 double FossilRangeGraph::getFossilRangeGraphAlternativeProb(double lambda, double mu, double fossRate, double sppSampRate, double ot){
     if(runUnderPrior)
@@ -721,7 +765,7 @@ double FossilRangeGraph::getFossilRangeGraphAlternativeProb(double lambda, doubl
         
     }
     
-    currentFossilRangeGraphLnL = nprb;//rw: some redundancy for now
+    currentFossilRangeGraphLnL = nprb;
     
     return nprb;
 }

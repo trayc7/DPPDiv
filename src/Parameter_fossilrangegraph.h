@@ -74,8 +74,8 @@ public:
 
 private:
     int								indx;
-    double							firstAppearance; // yf
-    double							lastAppearance;
+    double							firstAppearance; // oi
+    double							lastAppearance; // yi
     bool                            extant;
     bool                            extantOnly;
     int                             fossilRangeID;
@@ -125,8 +125,7 @@ public:
     double							fbdPFxn(double b, double d, double psi, double rho, double t);
     double							fbdQTildaFxn(double b, double d, double psi, double rho, double t); // on log scale?
     double							fbdQTildaFxnLog(double b, double d, double psi, double rho, double t);
-
-//    double							fbdQHatFxn(double b, double d, double psi, double rho, double t);
+    double							fbdQFxnLog(double b, double d, double psi, double rho, double t);
 
 //    int								getSumIndicatorFG(void);
 
@@ -168,6 +167,7 @@ private:
     int                             fixStart;
     int                             fixStop;
     bool                            getAltProb;
+    bool                            completeSampling;
     //bool                            lSurf;
     
 };
