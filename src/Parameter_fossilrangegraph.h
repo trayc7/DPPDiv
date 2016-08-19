@@ -98,7 +98,7 @@ class Calibration;
 class FossilRangeGraph : public Parameter {
     
 public:
-    FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, bool rnp, bool fxFRG);
+    FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, bool rnp, bool fxFRG, bool compS);
     
     ~FossilRangeGraph(void);
     
@@ -133,6 +133,7 @@ public:
 
 //    double							getCurrentFossilGraphLnL(void) { return currentFossilGraphLnL; }
     void                            lnSurfaceGenerator(std::string outFile);
+    void                            crossValidateFBDfunctions();
 
 private:
     

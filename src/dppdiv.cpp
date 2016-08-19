@@ -169,6 +169,7 @@ int main (int argc, char * const argv[]) {
     bool fixPsi         = false;
     double psi          = 0.01;
     bool lSurf          = false;
+    bool compS          = false;
 	
 	if(argc > 1){
 		for (int i = 1; i < argc; i++){
@@ -314,6 +315,8 @@ int main (int argc, char * const argv[]) {
                     fixPsi = true;
                 else if(!strcmp(curArg, "-psi"))// initial or fixed value for psi
                     psi = atof(argv[i+1]);
+                else if(!strcmp(curArg, "-comps"))// initial or fixed value for psi
+                    compS = true;
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -349,7 +352,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior >= 9){
-        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi);
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi, compS);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;
     }

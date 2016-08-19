@@ -816,8 +816,8 @@ double Speciation::updatePsiRate(FossilRangeGraph *frg) {
     double newPsi;
     double tuning = log(2.0);
     double minV = 0.0001;
-    //double maxV = 100000;
-    double c = getNewValScaleMv(newPsi, oldPsi, minV, maxdivV, tuning);
+    double maxV = 100000;
+    double c = getNewValScaleMv(newPsi, oldPsi, minV, maxV, tuning);
     //double c = getNewValScaleMv(newPsi, oldPsi, minV, maxV, tuning);
     fossilRate = newPsi;
     lpr = c;
