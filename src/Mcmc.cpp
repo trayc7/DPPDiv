@@ -677,7 +677,7 @@ void Mcmc::sampleChainFR(int gen, ofstream &frOut, double lnl) {
             frOut << "\tFBD.OriginTime";
         if(printAttach)
             frOut << frg->getFossilRangeInfoParamNames();
-        //frOut << "\tnum.tip_fossils";
+        frOut << "\tnum.fossils(k)";
         frOut << "\n";
     }
     
@@ -695,6 +695,7 @@ void Mcmc::sampleChainFR(int gen, ofstream &frOut, double lnl) {
     if(printAttach)
         frOut << frg->getFossilRangeInfoParamList();
     //occOut << "\t" << fg->getSumIndicatorFG();
+    frOut << "\t" << frg->getNumFossils();
     frOut << "\n";
     
 }

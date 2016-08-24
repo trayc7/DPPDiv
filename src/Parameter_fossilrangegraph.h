@@ -109,7 +109,7 @@ public:
     void							print(std::ostream & o) const;
     std::string						writeParam(void);
     
-//    int                             getNumFossils(void) { return numFossils; }
+    int                             getNumFossils(void) { return numFossils; }
     
     double							getFossilRangeGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot); // cf getTreeAncCalBDSSTreeNodePriorProb or getFossilGraphProb
     double                          getFossilRangeGraphAlternativeProb(double lambda, double mu, double fossRate, double sppSampRate, double ot);

@@ -747,8 +747,8 @@ double FossilRangeGraph::getFossilRangeGraphAlternativeProb(double lambda, doubl
 void FossilRangeGraph::crossValidateFBDfunctions(){
     
     double lambda = 1.0;
-    double mu = 0.5;
-    double fossRate = 1.0;
+    double mu = 0.1;
+    double fossRate = 10.0;
     double sppSampRate = 1.0;
     double ot = originTime;
     
