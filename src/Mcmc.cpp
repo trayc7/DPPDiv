@@ -682,7 +682,8 @@ void Mcmc::sampleChainFR(int gen, ofstream &frOut, double lnl) {
     }
     
     // then print stuff
-    frOut << gen << "\t" << lnl;
+    //frOut << gen << "\t" << fixed << setprecision(3) <<  lnl;
+    frOut << gen << "\t" <<  lnl;
     frOut << "\t" << sp->getNetDiversification();
     frOut << "\t" << sp->getRelativeDeath();
     frOut << "\t" << sp->getBDSSFossilSampRatePsi();

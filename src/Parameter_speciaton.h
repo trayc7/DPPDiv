@@ -47,7 +47,7 @@ class Tree;
 class Speciation : public Parameter {
 	
 	public:
-							Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp, bool fxPsi, double psi); //rw:
+							Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp, bool fxPsi, double psi, int specPr); //rw:
 							~Speciation(void);
 		Speciation			&operator=(const Speciation &c);
 		void				clone(const Speciation &c);

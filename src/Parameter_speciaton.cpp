@@ -44,10 +44,10 @@
 
 using namespace std;
 
-Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp, bool fxPsi, double psi) : Parameter(rp, mp) {//rw:
+Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp, bool fxPsi, double psi, int specPr) : Parameter(rp, mp) {//rw:
 	
 	
-	maxdivV = 1000.0;
+	maxdivV = 10000.0;
 	name = "SP";
 	relativeDeath = 0.7; //ranPtr->uniformRv();
 	netDiversificaton = 0.5; //ranPtr->uniformRv();
@@ -68,13 +68,13 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	setAllBDFossParams();
     
     // priors on birth death paras
-    deathRatePrior = 1; // 1 = unifrom prior, 2 = exponential prior
-    birthRatePrior = 1;
-    fossilSamplingRatePrior = 2;
+    deathRatePrior = specPr; // 1 = unifrom prior, 2 = exponential prior
+    birthRatePrior = specPr;
+    fossilSamplingRatePrior = 1;
     netDivRatePrior = 1;
     deathRateExpRate = 1.0;
     birthRateExpRate = 1.0;
-    fossilSamplingRateExpRate = 1.0; // for a similar prior psi under p1 = 0.001
+    fossilSamplingRateExpRate = 1.0;
     netDivRateExpRate = 10.0;
 	
 	if(mp->getFixTestRun()){
@@ -335,8 +335,7 @@ double Speciation::updateFossilRangeGraphBDParams(double &oldLnL){
         else
             updatePsiRate(frg); // psi
     }
-    else if(parameterization == 3){  //****//
-        
+    else if(parameterization == 3){  //
         if(v == 0)
             updateDeathRate(frg); // mu
         else if(v == 1)
