@@ -170,8 +170,9 @@ int main (int argc, char * const argv[]) {
     double psi          = 0.01;
     bool lSurf          = false;
     bool compS          = false;
-    int specPr           = 1;        // Prior on birth and death rates, 1 = uniform, 2 = exponential
-    //bool specExpRate    = 1;
+    int specPr          = 1;        // Prior on birth and death rates, 1 = uniform, 2 = exponential
+    double bPrRate      = 1;        // mean of exponential prior on birth
+    double dPrRate      = 1;        // mean of exponential prior on death
     //bool maxSpecRate  = 10000;
 	
 	if(argc > 1){
@@ -320,8 +321,12 @@ int main (int argc, char * const argv[]) {
                     psi = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-comps"))// complete sampling
                     compS = true;
-                else if(!strcmp(curArg, "-specPrior"))// complete sampling
+                else if(!strcmp(curArg, "-specPrior"))// prior on birth and death
                     specPr = atof(argv[i+1]);
+                else if(!strcmp(curArg, "-bexpR"))// mean of exp prior on birth rate
+                    bPrRate = atof(argv[i+1]);
+                else if(!strcmp(curArg, "-dexpR"))// mean of exp prior on death rate
+                    dPrRate = atof(argv[i+1]);
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -357,7 +362,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior >= 9){
-        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi, compS, specPr);
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi, compS, specPr, bPrRate, dPrRate);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;
     }
@@ -374,7 +379,7 @@ int main (int argc, char * const argv[]) {
         Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc,
                       hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN,
                       treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
-                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, expMode, igfoss, rho, bdpar, fixPsi, psi, specPr);
+                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, expMode, igfoss, rho, bdpar, fixPsi, psi, specPr, bPrRate, dPrRate);
         if(doAbsRts)
             myModel.setEstAbsRates(true);
         if(runPrior)

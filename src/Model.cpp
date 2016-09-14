@@ -59,7 +59,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 			 string clfn, int nodpr, double bdr, double bda, double bds, double fxclkrt, bool roofix,
 			 bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod, bool fxmod,
 			 bool ihp, string tipdfn, bool fxtr, int expmo, bool igfoss, double rh, int bdp, bool fxPsi, double psi,
-             int specPr) {
+             int specPr, double bPrRate, double dPrRate) {
 	// remember pointers to important objects...
 	ranPtr       = rp;
 	alignmentPtr = ap;
@@ -150,7 +150,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 		parms[i].push_back( nr );												// restaurant containing node rates
 		parms[i].push_back( conp );												// hyper prior on DPP concentration parameter
 		parms[i].push_back( new Treescale(ranPtr, this, initRootH, rHtY, rHtO, tsPrDist, rtCalib, ehpc) ); // the tree scale prior
-		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH, rho, fbdPar, fxPsi, psi, specPr) );												// hyper prior on diversification for cBDP speciation
+		parms[i].push_back( new Speciation(ranPtr, this, bdr, bda, bds, initRootH, rho, fbdPar, fxPsi, psi, specPr, bPrRate, dPrRate) );												// hyper prior on diversification for cBDP speciation
 		parms[i].push_back( excal );											// hyper prior exponential node calibration parameters
         parms[i].push_back( new OriginTime(ranPtr, this, initOT, rHtY, originMax) ); // the origin time parameters
 	}
@@ -183,7 +183,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 
 }
 
-Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool lnSurf, bool fxPsi, double psi, bool compS, int specPr){
+Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool lnSurf, bool fxPsi, double psi, bool compS, int specPr, double bPrRate, double dPrRate){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
@@ -214,7 +214,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     if(treeTimePrior == 9){
         FossilGraph *fg = new FossilGraph(ranPtr, this, numFossils, initOT, calibrs, runUnderPrior);
         OriginTime *ot = new OriginTime(ranPtr, this, initOT, rHtY, originMax);
-        Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho, bdp, fxPsi, psi, specPr);
+        Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho, bdp, fxPsi, psi, specPr, bPrRate, dPrRate);
         for (int i=0; i<2; i++){
             parms[i].push_back( ot );
             parms[i].push_back( sp ); //rw: bdr = netDiversificaton, bda = relativeDeath, bds = probSpeciationS, initRootH, rho
@@ -248,7 +248,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     if(treeTimePrior == 10){
         
         FossilRangeGraph *frg = new FossilRangeGraph(ranPtr, this, numFossils, numLineages, calibrs, runUnderPrior, fixFRG, compS);
-        Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho, fbdPar, fxPsi, psi, specPr);
+        Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho, fbdPar, fxPsi, psi, specPr, bPrRate, dPrRate);
         
         for (int i=0; i<2; i++){
             parms[i].push_back( sp );
