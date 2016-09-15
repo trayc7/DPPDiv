@@ -44,7 +44,8 @@
 
 using namespace std;
 
-Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp, bool fxPsi, double psi, int specPr, double bPrRate, double dPrRate) : Parameter(rp, mp) {//rw:
+Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp, bool fxPsi, double psi, int specPr,
+                       int psiPr, double bPrRate, double dPrRate) : Parameter(rp, mp) {
 	
 	
 	maxdivV = 10000.0;
@@ -70,7 +71,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     // priors on birth death paras
     deathRatePrior = specPr; // 1 = unifrom prior, 2 = exponential prior
     birthRatePrior = specPr;
-    fossilSamplingRatePrior = 1;
+    fossilSamplingRatePrior = psiPr;
     netDivRatePrior = 1;
     birthRateExpRate = bPrRate;
     deathRateExpRate = dPrRate;
