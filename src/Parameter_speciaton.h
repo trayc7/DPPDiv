@@ -48,7 +48,7 @@ class Speciation : public Parameter {
 	
 	public:
 							Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double bds, double initRH, double rh, int bdp, bool fxPsi, double psi, int specPr,
-                                       int psiPr, double bPrRate, double dPrRate);
+                                       int psiPr, double bPrRate, double dPrRate, double pPrRate);
 							~Speciation(void);
 		Speciation			&operator=(const Speciation &c);
 		void				clone(const Speciation &c);

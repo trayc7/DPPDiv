@@ -174,6 +174,7 @@ int main (int argc, char * const argv[]) {
     int psiPr           = 1;        // Prior on psi sampling
     double bPrRate      = 1;        // mean of exponential prior on birth
     double dPrRate      = 1;        // mean of exponential prior on death
+    double pPrRate      = 1;        // mean of exponential prior on psi
     //bool maxSpecRate  = 10000;
 	
 	if(argc > 1){
@@ -330,6 +331,8 @@ int main (int argc, char * const argv[]) {
                     bPrRate = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-dexpR"))// mean of exp prior on death rate
                     dPrRate = atof(argv[i+1]);
+                else if(!strcmp(curArg, "-pexpR"))// mean of exp prior on sampling rate
+                    pPrRate = atof(argv[i+1]);
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -365,7 +368,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior >= 9){
-        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi, compS, specPr, psiPr, bPrRate, dPrRate);
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi, compS, specPr, psiPr, bPrRate, dPrRate, pPrRate);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;
     }
@@ -382,7 +385,8 @@ int main (int argc, char * const argv[]) {
         Model myModel(&myRandom, &myAlignment, treeStr, priorMean, rateSh, rateSc,
                       hyperSh, hyperSc, userBLs, moveAllN, offmove, rndNdMv, calibFN,
                       treeNodePrior, netDiv, relDeath, ssbdPrS, fixclokrt, rootfix, softbnd, calibHyP,
-                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, expMode, igfoss, rho, bdpar, fixPsi, psi, specPr, psiPr, bPrRate, dPrRate);
+                      dpmExpHyp, dpmEHPPrM, gammaExpHP, modelType, fixModelPs, indHP, tipDateFN, fixTest, expMode, igfoss,
+                      rho, bdpar, fixPsi, psi, specPr, psiPr, bPrRate, dPrRate, pPrRate);
         if(doAbsRts)
             myModel.setEstAbsRates(true);
         if(runPrior)

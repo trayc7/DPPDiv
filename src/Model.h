@@ -69,9 +69,9 @@ class Model {
 											  double bdr, double bda, double bds, double fxclkrt, bool roofix,
 											  bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod,
 											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr, int expmo, bool igfoss, double rh, int bdp, bool fxPsi, double psi,
-                                              int specPr, int psiPr, double bPrRate, double dPrRate);
+                                              int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate);
                                         Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool lSf, bool fxPsi, double psi,
-                                              bool compS, int specPr, int psiPr, double bPrRate, double dPrRate); // model overload constructor for fofbd
+                                              bool compS, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate); // model overload constructor for fofbd
 										~Model(void);
 		double							lnLikelihood(void);
 		double							getPriorMeanV(void) { return priorMeanN; }
