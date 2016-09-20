@@ -141,6 +141,7 @@ private:
     void							initializeFossilRangeVariables(); // cf initializeFossilSpecVariables or initializeOccurrenceSpecVariables
     void							recountFossilRangeAttachNums(); // cf recountFossilAttachNums() or recountOccurrenceAttachNums()
     void                            printFossilRangeVariables(); //rw: for debugging
+    void                            printFossilRangeVariables(int range); //rw: for debugging
     void                            redefineOriginTime();
     void                            countExtinctLineages();
     double                          updateLineageStartTimes();

@@ -209,24 +209,29 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
         if(fr->getIsExtant()){
             start = ranPtr->uniformRv(0.0,ancientBound);
             fr->setLineageStart(start);
+            fr->setFixStart(0);
         }
         else{
             fa = fr->getFirstAppearance(); // yf
             start = ranPtr->uniformRv(fa,ancientBound); // zf
             fr->setLineageStart(start);
+            fr->setFixStart(0);
         }
         
         // lineage stop times = extinction times
         if(fr->getIsExtant()){
             fr->setLineageStop(0.0);
+            fr->setFixStop(1);
         }
         else {
             la = fr->getLastAppearance();
             stop = ranPtr->uniformRv(0.0,la); //di
             fr->setLineageStop(stop);
+            fr->setFixStop(0);
         }
     }
 
+    // redefines the variables defined in the above loop
     if(fixFRG){
         for(int f = 0; f < numLineages; f++){
             FossilRange *fr = fossilRanges[f];
@@ -257,8 +262,27 @@ void FossilRangeGraph::printFossilRangeVariables(){
         cout << "Lineage start: " << fr->getLineageStart() << endl;
         cout << "Lineage end: " << fr->getLineageStop() << endl;
         cout << "Is extant: " << fr->getIsExtant() << endl;
-        cout << "Gamma: " << fr->getFossilRangeBrGamma() << endl; //rw: is gamma correct?
+        cout << "Gamma: " << fr->getFossilRangeBrGamma() << endl;
     }
+    
+    cout << "Origin time: " << originTime << endl;
+    
+}
+
+void FossilRangeGraph::printFossilRangeVariables(int range){
+    
+    int f = range;
+
+    FossilRange *fr = fossilRanges[f];
+    cout << "Fossil range ID: " << fr->getFossilRangeID() << endl;
+    cout << "First appearance: " << fr->getFirstAppearance() << endl;
+    cout << "Last appearance: " << fr->getLastAppearance() << endl;
+    cout << "Lineage start: " << fr->getLineageStart() << endl;
+    cout << "Lineage end: " << fr->getLineageStop() << endl;
+    cout << "Is extant: " << fr->getIsExtant() << endl;
+    cout << "Gamma: " << fr->getFossilRangeBrGamma() << endl;
+    cout << "Is fix start: " << fr->getIsFixStart() << endl;
+    cout << "Is fix stop: " << fr->getIsFixStop() << endl;
     
     cout << "Origin time: " << originTime << endl;
     
@@ -378,6 +402,9 @@ double FossilRangeGraph::updateLineageStartTimes(){
             currentFossilRangeGraphLnL = oldLike;
         }
     }
+    
+    // debugging code
+    //printFossilRangeVariables(0);
     
     return 0.0;
 }
