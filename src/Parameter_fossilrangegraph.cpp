@@ -43,7 +43,7 @@
 
 using namespace std;
 
-FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, bool fxFRG, bool compS) : Parameter(rp, mp){
+FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, bool fxFRG, bool compS, int expMode) : Parameter(rp, mp){
     
     name = "FRG";
     numFossils = nf;
@@ -51,16 +51,24 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     runUnderPrior = rnp;
     originTime = 0.0;
     ancientBound = 1000.0;
+    fixOrigin = 0;
+    orderStartTimes = 0;
     printInitialFossilRangeVariables = 1;
     numExtinctLineages = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
+    if(expMode == 1){
+        fixOrigin = 1;
+        originTime = 2.630281;
+        ancientBound = originTime;
+        orderStartTimes = 1;
+    }
     createFossilRangeVector(clb);
     initializeFossilRangeVariables();
     currentFossilRangeGraphLnL = 0.0;
     moves = 1; // 1: update lineage start or stop times; 2: update both
     proposal = 2; // proposal type 1=window, 2=scale, 3=slide
     getAltProb = 0;
-    completeSampling = compS; // note if this is 0 it should produce the same results as 1 given complete sampling
+    completeSampling = compS; // likelihood function - if this is 0 it should produce the same results as 1 given complete sampling
     bool crossValidate = 0;
     if(crossValidate)
         crossValidateFBDfunctions();
@@ -156,6 +164,9 @@ double FossilRangeGraph::update(double &oldLnL){
         updateLineageStopTimes();
     }
     
+    if(orderStartTimes)
+        orderFossilAges();
+    
     return currentFossilRangeGraphLnL;
     
 }
@@ -199,7 +210,6 @@ void FossilRangeGraph::createFossilRangeVector(vector<Calibration *> clb){
 
 void FossilRangeGraph::initializeFossilRangeVariables(){
     
-    //numAncFossilsk = 0; //rw: do we ever need to know this for the frg?
     double stop, start, la, fa;
     
     for(int f = 0; f < numLineages; f++){
@@ -242,6 +252,19 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
         }
     }
     
+    if(fixOrigin){
+        double ofa = 0;
+        for(int f = 0; f < numLineages; f++){
+            FossilRange *fr = fossilRanges[f];
+            double fa = fr->getFirstAppearance();
+            if(fa > ofa)
+                ofa = f;
+        }
+        FossilRange *fr = fossilRanges[ofa];
+        fr->setLineageStart(originTime);
+        fr->setFixStart(1);
+    }
+    
     redefineOriginTime();
     recountFossilRangeAttachNums();
     countExtinctLineages();
@@ -267,6 +290,28 @@ void FossilRangeGraph::printFossilRangeVariables(){
     
     cout << "Origin time: " << originTime << endl;
     
+}
+
+// debugging code
+void FossilRangeGraph::orderFossilAges(){
+    
+    double start;
+    std::vector<double> ages;
+    
+    for(int f = 0; f < numLineages; f++){
+        FossilRange *fr = fossilRanges[f];
+        start = fr->getLineageStart();
+        ages.push_back(start);
+    }
+    
+    std::sort(ages.begin(), ages.end(), std::greater<double>());
+    
+    for(int f = 0; f < numLineages; f++){
+        FossilRange *fr = fossilRanges[f];
+        fr->setLineageStart(ages[f]);
+    }
+    
+    ages.clear();
 }
 
 void FossilRangeGraph::printFossilRangeVariables(int range){
@@ -326,6 +371,8 @@ void FossilRangeGraph::countExtinctLineages(){
 }
 
 void FossilRangeGraph::redefineOriginTime(){
+    if(fixOrigin)
+        return;
     
     double ot = 0.0;
     
@@ -363,10 +410,13 @@ double FossilRangeGraph::updateLineageStartTimes(){
         if(fr->getIsFixStart())
             continue;
         
+        if(fixOrigin && fr->getLineageStart() == originTime)
+            continue;
+        
         // define old values
         double fa = fr->getFirstAppearance(); // yf
         double oldStart = fr->getLineageStart(); // zf
-        double oldLike = currentFossilRangeGraphLnL; //rw: where is this initially defined?
+        double oldLike = currentFossilRangeGraphLnL;
 
         // propose new values
         double newStart = 0.0;

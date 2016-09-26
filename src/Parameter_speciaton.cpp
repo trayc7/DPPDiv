@@ -53,9 +53,9 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	relativeDeath = 0.7; //ranPtr->uniformRv();
 	netDiversificaton = 0.5; //ranPtr->uniformRv();
 	probSpeciationS = 0.01; //ranPtr->uniformRv();
-	fossilRate = psi;
-	birthRate = 0.02;
-	deathRate = 0.01;
+    fossilRate = 0.001; //psi;
+    birthRate = 1.0; //0.02;
+    deathRate = 0.001; //0.01;
     extantSampleRate = rh; //rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;

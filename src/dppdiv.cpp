@@ -368,7 +368,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior >= 9){
-        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi, compS, specPr, psiPr, bPrRate, dPrRate, pPrRate);
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi, compS, specPr, psiPr, bPrRate, dPrRate, pPrRate, expMode);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;
     }
