@@ -52,15 +52,15 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     originTime = 0.0;
     ancientBound = 1000.0;
     fixOrigin = 0;
-    orderStartTimes = 0;
+    orderStartStopTimes = 0;
     printInitialFossilRangeVariables = 1;
     numExtinctLineages = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
     if(expMode == 1){
         fixOrigin = 1;
-        originTime = 2.630281;
+        originTime = 1.291039;
         ancientBound = originTime;
-        orderStartTimes = 1;
+        orderStartStopTimes = 1;
     }
     createFossilRangeVector(clb);
     initializeFossilRangeVariables();
@@ -164,8 +164,8 @@ double FossilRangeGraph::update(double &oldLnL){
         updateLineageStopTimes();
     }
     
-    if(orderStartTimes)
-        orderFossilAges();
+    if(orderStartStopTimes)
+        orderRangeAges();
     
     return currentFossilRangeGraphLnL;
     
@@ -252,15 +252,19 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
         }
     }
     
+    // this is only used for expmo = 1
     if(fixOrigin){
+        int of = 0;
         double ofa = 0;
         for(int f = 0; f < numLineages; f++){
             FossilRange *fr = fossilRanges[f];
             double fa = fr->getFirstAppearance();
-            if(fa > ofa)
-                ofa = f;
+            if(fa > ofa){
+                ofa = fa;
+                of = f;
+            }
         }
-        FossilRange *fr = fossilRanges[ofa];
+        FossilRange *fr = fossilRanges[of];
         fr->setLineageStart(originTime);
         fr->setFixStart(1);
     }
@@ -293,25 +297,31 @@ void FossilRangeGraph::printFossilRangeVariables(){
 }
 
 // debugging code
-void FossilRangeGraph::orderFossilAges(){
+void FossilRangeGraph::orderRangeAges(){
     
-    double start;
-    std::vector<double> ages;
+    double start, stop;
+    std::vector<double> agesStart, agesStop;
     
     for(int f = 0; f < numLineages; f++){
         FossilRange *fr = fossilRanges[f];
         start = fr->getLineageStart();
-        ages.push_back(start);
+        agesStart.push_back(start);
+        stop = fr->getLineageStop();
+        agesStop.push_back(stop);
+        
     }
     
-    std::sort(ages.begin(), ages.end(), std::greater<double>());
+    std::sort(agesStart.begin(), agesStart.end(), std::greater<double>());
+    std::sort(agesStop.begin(), agesStop.end(), std::greater<double>());
     
     for(int f = 0; f < numLineages; f++){
         FossilRange *fr = fossilRanges[f];
-        fr->setLineageStart(ages[f]);
+        fr->setLineageStart(agesStart[f]);
+        fr->setLineageStop(agesStop[f]);
     }
     
-    ages.clear();
+    agesStart.clear();
+    agesStop.clear();
 }
 
 void FossilRangeGraph::printFossilRangeVariables(int range){

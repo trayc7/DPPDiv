@@ -147,7 +147,7 @@ private:
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
     //double                          getFossilRangeGraphProb();
-    void                            orderFossilAges();
+    void                            orderRangeAges();
     
     int                             numFossils;
     int                             numLineages;
@@ -175,7 +175,7 @@ private:
     bool                            completeSampling;
     //bool                            lSurf;
     bool                            fixOrigin;
-    bool                            orderStartTimes;
+    bool                            orderStartStopTimes;
     
 };
 
