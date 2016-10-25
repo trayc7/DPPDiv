@@ -113,6 +113,7 @@ public:
     
     double							getFossilRangeGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot); // cf getTreeAncCalBDSSTreeNodePriorProb or getFossilGraphProb
     double                          getFossilRangeGraphAlternativeProb(double lambda, double mu, double fossRate, double sppSampRate, double ot);
+    double                          getPhyloProb(double lambda, double mu, double sppSampRate, double ot); // stadler 2010
     double							getActiveFossilRangeGraphProb();
     
     double                          getFossilRangeGraphOriginTime(void) { return originTime; }
@@ -125,9 +126,11 @@ public:
     double							fbdC3Fxn(double b, double d, double psi,double rho);
     double							fbdC4Fxn(double b, double d, double psi,double rho);
     double							fbdPFxn(double b, double d, double psi, double rho, double t);
-    double							fbdQTildaFxn(double b, double d, double psi, double rho, double t); // on log scale?
+    double							fbdQTildaFxn(double b, double d, double psi, double rho, double t);
     double							fbdQTildaFxnLog(double b, double d, double psi, double rho, double t);
     double							fbdQFxnLog(double b, double d, double psi, double rho, double t);
+    double                          phyloBDP0Fxn(double b, double d, double rho, double t); // stadler 2010
+    double                          phyloBDP1FxnLog(double b, double d, double rho, double t); // stadler 2010
 
 //    int								getSumIndicatorFG(void);
 
@@ -176,6 +179,9 @@ private:
     //bool                            lSurf;
     bool                            fixOrigin;
     bool                            orderStartStopTimes;
+    
+    bool                            phyloTest;
+    
     
 };
 

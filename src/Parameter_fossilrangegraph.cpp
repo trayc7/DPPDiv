@@ -56,6 +56,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     printInitialFossilRangeVariables = 1;
     numExtinctLineages = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
+    phyloTest = 0;
     if(expMode == 1){
         fixOrigin = 1;
         originTime = 1.291039;
@@ -652,6 +653,9 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     if(getAltProb)
         nprb = getFossilRangeGraphAlternativeProb(lambda, mu, fossRate, sppSampRate, ot);
     
+    else if(phyloTest)
+        nprb = getPhyloProb(lambda, mu, sppSampRate, ot);
+    
     else if(completeSampling) {
         
         nprb = numFossils*log(fossRate);
@@ -831,6 +835,48 @@ double FossilRangeGraph::getFossilRangeGraphAlternativeProb(double lambda, doubl
     return nprb;
 }
 
+// Stadler 2010, equation 2
+double FossilRangeGraph::getPhyloProb(double lambda, double mu, double sppSampRate, double ot){
+    
+    double nprb = 0.0;
+    
+    // deal with the origin
+    nprb = phyloBDP1FxnLog(lambda, mu, sppSampRate, ot);
+    nprb -= log(1 - phyloBDP0Fxn(lambda, mu, sppSampRate, ot));
+    
+    cout << nprb << endl;
+    
+    // deal with each internal node
+    for(int f=0; f < fossilRanges.size(); f++){
+        
+        FossilRange *fr = fossilRanges[f];
+        
+        double bi = fr->getLineageStart();
+        
+        if(bi==ot)
+            continue;
+        
+        nprb += log(lambda) + phyloBDP1FxnLog(lambda, mu, sppSampRate, bi);
+    }
+    
+    return nprb;
+    
+}
+
+double FossilRangeGraph::phyloBDP0Fxn(double b, double d, double rho, double t){
+    
+    double p = 1 - ( ( rho * (b-d) ) / ( (rho * b) + (b * (1-rho) - d) * exp(-(b-d)*t) ) );
+    
+    return p;
+}
+
+double FossilRangeGraph::phyloBDP1FxnLog(double b, double d, double rho, double t){
+    
+    double p = 2*log(rho * (b-d)) + (-(b-d)*t) - 2*log( (rho * b) + (b*(1-rho)-d) * exp(-(b-d)*t) );
+    
+    return p;
+}
+
 void FossilRangeGraph::crossValidateFBDfunctions(){
     
     double lambda = 1.0;
@@ -839,29 +885,46 @@ void FossilRangeGraph::crossValidateFBDfunctions(){
     double sppSampRate = 1.0;
     double ot = originTime;
     
-    double c1 = fbdC1Fxn(lambda, mu, fossRate);
-    double c2 = fbdC2Fxn(lambda, mu, fossRate, sppSampRate);
-    double c3 = fbdC3Fxn(lambda, mu, fossRate, sppSampRate);
-    double c4 = fbdC4Fxn(lambda, mu, fossRate, sppSampRate);
-    
-    cout << "Cross validating FBD functions.. " << endl;
-    cout << "c1 = " << c1 << endl;
-    cout << "c2 = " << c2 << endl;
-    cout << "c3 = " << c3 << endl;
-    cout << "c4 = " << c4 << endl;
-    
-    double fbdP = fbdPFxn(lambda, mu, fossRate, sppSampRate, ot);
-    double fbdQLog = fbdQFxnLog(lambda, mu, fossRate, sppSampRate, ot);
-    double fbdQtildaLog = fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, ot);
-    
-    cout << "P(ot) = " << fbdP << endl;
-    cout << "Q(ot) log = " << fbdQLog << endl;
-    cout << "Q tilda (ot) log = " << fbdQtildaLog << endl;
-    
-    double fbdProb = getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, ot);
+    if(phyloTest){
+        
+        double p0 = phyloBDP0Fxn(lambda, mu, sppSampRate, ot);
+        double p1 = phyloBDP1FxnLog(lambda, mu, sppSampRate, ot);
+        
+        cout << "Cross validating phylo BD functions..." << endl;
+        cout << "p0(ot) = " << p0 << endl;
+        cout << "p1(ot) log = " << p1 << endl;
+        
+        double bdProb = getPhyloProb(lambda, mu, sppSampRate, ot);
+        
+        cout << "BD probability = " << setprecision(7) << bdProb << endl;
+        
+    }
+    else {
+        double c1 = fbdC1Fxn(lambda, mu, fossRate);
+        double c2 = fbdC2Fxn(lambda, mu, fossRate, sppSampRate);
+        double c3 = fbdC3Fxn(lambda, mu, fossRate, sppSampRate);
+        double c4 = fbdC4Fxn(lambda, mu, fossRate, sppSampRate);
+        
+        cout << "Cross validating FBD functions..." << endl;
+        cout << "c1 = " << c1 << endl;
+        cout << "c2 = " << c2 << endl;
+        cout << "c3 = " << c3 << endl;
+        cout << "c4 = " << c4 << endl;
+        
+        double fbdP = fbdPFxn(lambda, mu, fossRate, sppSampRate, ot);
+        double fbdQLog = fbdQFxnLog(lambda, mu, fossRate, sppSampRate, ot);
+        double fbdQtildaLog = fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, ot);
+        
+        cout << "P(ot) = " << fbdP << endl;
+        cout << "Q(ot) log = " << fbdQLog << endl;
+        cout << "Q tilda (ot) log = " << fbdQtildaLog << endl;
+        
+        double fbdProb = getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, ot);
 
-    cout << "FBD probability = " << setprecision(7) << fbdProb << endl;
+        cout << "FBD probability = " << setprecision(7) << fbdProb << endl;
 
+    }
+    
     exit(0);
     
 }
