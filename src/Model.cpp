@@ -183,7 +183,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 
 }
 
-Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool lnSurf, bool fxPsi, double psi, bool compS,
+Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool lnSurf, bool fxPsi, double psi, int compS,
              int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, int expMode){
     
     ranPtr = rp;

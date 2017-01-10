@@ -43,7 +43,7 @@
 
 using namespace std;
 
-FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, bool fxFRG, bool compS, int expMode) : Parameter(rp, mp){
+FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, bool fxFRG, int compS, int expMode) : Parameter(rp, mp){
     
     name = "FRG";
     numFossils = nf;
@@ -648,7 +648,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     
     double nprb = 0.0;
 
-    //lambda = 0.9694246; mu = 0.3630135; fossRate = 1.368238; sppSampRate = 1.0;
+    lambda = 1.0; mu = 0.1; //fossRate = 1.368238; sppSampRate = 1.0;
     
     if(getAltProb)
         nprb = getFossilRangeGraphAlternativeProb(lambda, mu, fossRate, sppSampRate, ot);
@@ -656,7 +656,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     else if(phyloTest)
         nprb = getPhyloProb(lambda, mu, sppSampRate, ot);
     
-    else if(completeSampling) {
+    else if(completeSampling == 1) {
         
         nprb = numFossils*log(fossRate);
         nprb += numExtinctLineages*log(mu);
@@ -678,6 +678,32 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             nprb += rangePr;
         }
     }
+    // Keiding 1975
+    else if(completeSampling == 2) {
+        
+        int birthEvents = -1; //B. Note the origin is not a birth event
+        int deathEvents = 0; //D
+        double totalLineageDuration = 0; //S
+        
+        for(int f=0; f < fossilRanges.size(); f++){
+            
+            FossilRange *fr = fossilRanges[f];
+            
+            double bi = fr->getLineageStart(); // bi
+            double di = fr->getLineageStop();  // di
+            
+            totalLineageDuration += bi - di;
+            birthEvents += 1;
+            if(di > 0)
+                deathEvents +=1;
+        }
+        
+        nprb = birthEvents * log(lambda);
+        nprb += deathEvents * log(mu);
+        nprb += -(lambda + mu) * totalLineageDuration;
+        
+    }
+    
     // correctly accounting for incomplete sampling
     else {
         

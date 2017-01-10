@@ -169,7 +169,7 @@ int main (int argc, char * const argv[]) {
     bool fixPsi         = false;
     double psi          = 0.01;
     bool lSurf          = false;
-    bool compS          = false;
+    int compS           = 0;        // there are two alternative equations for complete sampling (1: Stadler and 2: Keiding)
     int specPr          = 1;        // Prior on birth and death rates, 1 = uniform, 2 = exponential
     int psiPr           = 1;        // Prior on psi sampling
     double bPrRate      = 1;        // mean of exponential prior on birth
@@ -321,8 +321,11 @@ int main (int argc, char * const argv[]) {
                     fixPsi = true;
                 else if(!strcmp(curArg, "-psi"))// initial or fixed value for psi
                     psi = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-comps"))// complete sampling
-                    compS = true;
+                else if(!strcmp(curArg, "-comps")){ // complete sampling
+                    compS = atof(argv[i+1]);
+                    if(compS == 2)
+                        fixPsi = true;
+                }
                 else if(!strcmp(curArg, "-specPrior"))// prior on birth and death
                     specPr = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-psiPrior"))// prior on psi
