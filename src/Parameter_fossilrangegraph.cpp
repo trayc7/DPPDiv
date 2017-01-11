@@ -648,7 +648,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     
     double nprb = 0.0;
 
-    lambda = 1.0; mu = 0.1; //fossRate = 1.368238; sppSampRate = 1.0;
+    //lambda = 1.0; mu = 0.1; fossRate = 1.368238; sppSampRate = 1.0;
     
     if(getAltProb)
         nprb = getFossilRangeGraphAlternativeProb(lambda, mu, fossRate, sppSampRate, ot);
