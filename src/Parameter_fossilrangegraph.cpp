@@ -701,7 +701,8 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
         
         nprb = birthEvents * log(lambda);
         nprb += deathEvents * log(mu);
-        nprb += -(lambda + mu) * totalLineageDuration;
+        nprb += numFossils * log(fossRate);
+        nprb += -(lambda + mu + fossRate) * totalLineageDuration;
         
     }
     
