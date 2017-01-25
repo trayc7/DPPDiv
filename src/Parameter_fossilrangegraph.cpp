@@ -679,7 +679,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             nprb += rangePr;
         }
     }
-    // Keiding 1975
+    // Keiding 1975 + Poisson fossil samping
     else if(completeSampling == 2) {
         
         int birthEvents = -1; //B. Note the origin is not a birth event
