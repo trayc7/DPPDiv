@@ -159,11 +159,11 @@ private:
     double                          ancientBound;
     bool							runUnderPrior;
     bool							printInitialFossilRangeVariables;
-    int                             moves; //rw:
-    int                             proposal; //rw:
+    int                             moves;
+    int                             proposal;
     std::vector<FossilRange *>		fossilRanges;
     
-    double							currentFossilRangeGraphLnL; //rw:
+    double							currentFossilRangeGraphLnL; 
     double                          getNewValSWindoMv(double ov, double vmin, double vmax, double tv);
     double							doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv); //c.f FossilGraph::doAScaleMove
     
@@ -175,7 +175,7 @@ private:
     int                             fixStart;
     int                             fixStop;
     bool                            getAltProb;
-    int                            completeSampling;
+    int                             completeSampling;
     //bool                            lSurf;
     bool                            fixOrigin;
     bool                            orderStartStopTimes;

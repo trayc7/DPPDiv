@@ -117,39 +117,6 @@ void FossilRangeGraph::clone(const FossilRangeGraph &frg){
     
 }
 
-void FossilRangeGraph::lnSurfaceGenerator(string outFile){
-    
-    // output file for likelihood surface data
-    string lnSurfFile = outFile + ".lnSurface.out";
-    ofstream lnSurfOut(lnSurfFile.c_str(), ios::out);
-    
-    lnSurfOut << std::setprecision(9) << "l\tm\tlogL\n";
-    
-    double birthMin = 0.01;
-    double birthMax = 10.0;
-    double deathMin = 0.01;
-    double deathMax = 10.0;
-    
-    Speciation *s = modelPtr->getActiveSpeciation();
-    double fossRate = s->getBDSSFossilSampRatePsi();
-    double sppSampRate = s->getBDSSSppSampRateRho();
-    
-    for(double i = birthMin; i <= birthMax; i += 0.1) {
-            
-        for(double j = deathMin; j <= deathMax; j += 0.1){
-                
-            // calculate FBD probability
-            double lnL = getFossilRangeGraphProb(i, j, fossRate, sppSampRate, originTime);
-            //cout << lnL << endl;
-            lnSurfOut << i << "\t" << j << "\t" << lnL << "\n";
-        }
-    }
-    
-    lnSurfOut.close();
-    exit(0);
-    
-}
-
 double FossilRangeGraph::update(double &oldLnL){
     
     currentFossilRangeGraphLnL = oldLnL;
@@ -606,10 +573,10 @@ string FossilRangeGraph::getFossilRangeInfoParamNames(void){
     for(int i=0; i<fossilRanges.size(); i++){
         frg = fossilRanges[i];
         int frgID = frg->getFossilRangeID();
-        ss << "\ty_f(FR_" << frgID << ")"; //rw: first appearance
-        ss << "\tb_f(FR_" << frgID << ")"; //rw: lineage start
-        ss << "\tx_f(FR_" << frgID << ")"; //rw: last appearance
-        ss << "\td_f(FR_" << frgID << ")"; //rw: lineage stop
+        ss << "\ty_f(FR_" << frgID << ")"; // first appearance
+        ss << "\tb_f(FR_" << frgID << ")"; // lineage start
+        ss << "\tx_f(FR_" << frgID << ")"; // last appearance
+        ss << "\td_f(FR_" << frgID << ")"; // lineage stop
     }
     for(int i=0; i<fossilRanges.size(); i++){
         frg = fossilRanges[i];
@@ -627,10 +594,10 @@ string FossilRangeGraph::getFossilRangeInfoParamList(void){
     
     for(int i=0; i<fossilRanges.size(); i++){
         frg = fossilRanges[i];
-        ss << "\t" << frg->getFirstAppearance(); //rw: first appearance -- note this is fixed in this implementation
-        ss << "\t" << frg->getLineageStart(); //rw: lineage start
-        ss << "\t" << frg->getLastAppearance(); //rw: last appearance
-        ss << "\t" << frg->getLineageStop(); //rw: lineage stop
+        ss << "\t" << frg->getFirstAppearance(); // first appearance -- note this is fixed in this implementation
+        ss << "\t" << frg->getLineageStart(); // lineage start
+        ss << "\t" << frg->getLastAppearance(); // last appearance
+        ss << "\t" << frg->getLineageStop(); // lineage stop
     }
     for(int i=0; i<fossilRanges.size(); i++){
         frg = fossilRanges[i];
@@ -953,6 +920,41 @@ void FossilRangeGraph::crossValidateFBDfunctions(){
 
     }
     
+    exit(0);
+    
+}
+
+// generate likelihood surface plot
+
+void FossilRangeGraph::lnSurfaceGenerator(string outFile){
+    
+    // output file for likelihood surface data
+    string lnSurfFile = outFile + ".lnSurface.out";
+    ofstream lnSurfOut(lnSurfFile.c_str(), ios::out);
+    
+    lnSurfOut << std::setprecision(9) << "l\tm\tlogL\n";
+    
+    double birthMin = 0.01;
+    double birthMax = 10.0;
+    double deathMin = 0.01;
+    double deathMax = 10.0;
+    
+    Speciation *s = modelPtr->getActiveSpeciation();
+    double fossRate = s->getBDSSFossilSampRatePsi();
+    double sppSampRate = s->getBDSSSppSampRateRho();
+    
+    for(double i = birthMin; i <= birthMax; i += 0.1) {
+        
+        for(double j = deathMin; j <= deathMax; j += 0.1){
+            
+            // calculate FBD probability
+            double lnL = getFossilRangeGraphProb(i, j, fossRate, sppSampRate, originTime);
+            //cout << lnL << endl;
+            lnSurfOut << i << "\t" << j << "\t" << lnL << "\n";
+        }
+    }
+    
+    lnSurfOut.close();
     exit(0);
     
 }

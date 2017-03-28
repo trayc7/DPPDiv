@@ -38,6 +38,7 @@
 #include "Parameter_expcalib.h"
 #include "Parameter_fossilgraph.h"
 #include "Parameter_fossilrangegraph.h"
+#include "Parameter_fossilrangegraphskyline.h"
 #include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_shape.h"
@@ -191,15 +192,15 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     treeTimePrior = nodpr;
     calibfilen = clfn;
     numFossils = 0;
+    numLineages = 0;
 	runUnderPrior = rnp;
     rho = rh; //rw: if rho is 0, I think the likelihood will always = NaN
-    fbdPar = bdp;
     if(rho < 0.0 || rho > 1.0) {
         cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
         exit(1);
     }
+    fbdPar = bdp;
     
-    // RW initialization stuff ******
     if(calibfilen.empty() == false){
         if(treeTimePrior == 9)
             readOccurrenceFile(); // --> this function will read the file, create a Calibration obj for each one, and initialize initOT
@@ -207,9 +208,6 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
             readFossilRangeFile(); // --> this function will read the file, create a Calibration obj for each fossil range
     }
 
-    //originMax = initOT * 2.5;
-    //originMax = 500.0;
-    
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
     if(treeTimePrior == 9){
@@ -287,6 +285,37 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
         myCurLnL = this->getActiveFossilRangeGraph()->getActiveFossilRangeGraphProb();
         cout << "lnL = " << myCurLnL << endl;
     }
+    
+}
+
+Model::Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool rnp, int bdp){
+    
+    ranPtr = rp;
+    ranPtr->getSeed(startS1, startS2);
+    calibfilen = clfn;
+    intfilen = intfn;
+    numFossils = 0;
+    numLineages = 0;
+    numIntervals = 0;
+    runUnderPrior = rnp;
+    rho = rh;
+    if(rho < 0.0 || rho > 1.0) {
+        cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
+        exit(1);
+    }
+    fbdPar = bdp;
+    
+    // **skynote I don't think you need to change this...
+    readFossilRangeFile(); // --> this function will read the file, create a Calibration obj for each fossil range
+    // **skynote write a fxn to read the intervals file
+    
+    cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
+    
+    FossilRangeGraphSkyline *frgsl = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, numIntervals);
+    //**skynote add rest of FossilRangeGraphSkyline variables
+    // ,  , ints, runUnderPrior, fixFRG);
+    
+    cout << "I don't do anything meaningful yet\n";
     
 }
 

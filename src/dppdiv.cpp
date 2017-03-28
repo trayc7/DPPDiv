@@ -122,6 +122,7 @@ int main (int argc, char * const argv[]) {
 	string treeFileName = "";
 	string calibFN		= "";
 	string tipDateFN	= "";
+    string intFN        = "";
 	string outName		= "out";
 	double priorMean    = 3.0;		// prior mean number of rate cats
 	double rateSh       = 2.0;		// shape param for gamma dist on rates
@@ -231,6 +232,8 @@ int main (int argc, char * const argv[]) {
 					calibFN = argv[i+1];
 				else if(!strcmp(curArg, "-tip"))
 					tipDateFN = argv[i+1];
+                else if(!strcmp(curArg, "-int"))
+                    intFN = argv[i+1];
 				else if(!strcmp(curArg, "-npr"))
 					treeNodePrior = atoi(argv[i+1]);
 				else if(!strcmp(curArg, "-tgs"))		// set treeNodePrior to do calibrated birth-death
@@ -243,6 +246,10 @@ int main (int argc, char * const argv[]) {
                     treeNodePrior = 9;
                 else if(!strcmp(curArg, "-frofbd")) // fossil range only fossilised birth death process
                     treeNodePrior = 10;
+                else if(!strcmp(curArg, "-frofbdsky")){ // fossil range only fossilised birth death process skyline
+                    treeNodePrior = 11;
+                    bdpar = 3;
+                }
 				else if(!strcmp(curArg, "-bdr"))	// (lambda - mu)
 					netDiv = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-bda"))	// (mu / lambda)
@@ -323,8 +330,6 @@ int main (int argc, char * const argv[]) {
                     psi = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-comps")){ // complete sampling
                     compS = atof(argv[i+1]);
-                    //if(compS == 2)
-                      //  fixPsi = true;
                 }
                 else if(!strcmp(curArg, "-specPrior"))// prior on birth and death
                     specPr = atof(argv[i+1]);
@@ -355,8 +360,6 @@ int main (int argc, char * const argv[]) {
 		return 0;
 	}
 	
-    //rw: suppress tree requirement
-    //if(treeNodePrior != 9){
     if(treeNodePrior < 9) {
         if(dataFileName.empty() || treeFileName.empty()){
             cout << "\n############################ !!! ###########################\n";
@@ -370,7 +373,11 @@ int main (int argc, char * const argv[]) {
     MbRandom myRandom;
     myRandom.setSeed(s1, s2);
 	
-    if(treeNodePrior >= 9){
+    if(treeNodePrior == 11){
+        Model myModel(&myRandom, calibFN, intFN, rho, runPrior, bdpar);
+        return  0;
+    }
+    else if(treeNodePrior == 9 || treeNodePrior == 10){
         Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi, compS, specPr, psiPr, bPrRate, dPrRate, pPrRate, expMode);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;
