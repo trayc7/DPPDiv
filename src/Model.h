@@ -72,7 +72,7 @@ class Model {
                                               int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate);
                                         Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool lSf, bool fxPsi, double psi,
                                               int compS, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, int expMode); // model overload constructor for fofbd
-                                        Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool rnp, int bdp); // model overload constructor for fofbd skyline
+                                        Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool rnp, int bdp, bool fixFRG); // model overload constructor for fofbd skyline
 										~Model(void);
 		double							lnLikelihood(void);
 		double							getPriorMeanV(void) { return priorMeanN; }
@@ -123,6 +123,7 @@ class Model {
 		double							readCalibFile();
         void							readOccurrenceFile();
         void                            readFossilRangeFile();
+        void                            readIntervalsFile();
 		Calibration*					getRootCalibration();
 		
 		MbRandom						*ranPtr;
@@ -161,6 +162,7 @@ class Model {
 		std::vector<Calibration*>		calibrs;
 		std::vector<Calibration*>		tipDates;
         std::vector<Calibration*>		fixedNodes;
+        std::vector<Calibration*>		intervals;
 		bool							fixRootHeight;
 		int								treeTimePrior;
         int                             numFossils;

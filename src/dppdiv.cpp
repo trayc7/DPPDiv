@@ -374,7 +374,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior == 11){
-        Model myModel(&myRandom, calibFN, intFN, rho, runPrior, bdpar);
+        Model myModel(&myRandom, calibFN, intFN, rho, runPrior, bdpar, fixFRG);
         return  0;
     }
     else if(treeNodePrior == 9 || treeNodePrior == 10){

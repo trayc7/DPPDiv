@@ -43,13 +43,16 @@
 
 using namespace std;
 
-FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni) : Parameter(rp, mp){
+FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni, vector<Calibration *> ints, bool rnp, bool fxFRG) : Parameter(rp, mp){
 
     //**skynote most of this will be the same
     name = "FRGS";
     numFossils = nf;
     numLineages = nl;
     numIntervals = ni;
+    runUnderPrior = rnp;
+    
+    createIntervalsVector(ints);
     
 }
 
@@ -76,7 +79,7 @@ double FossilRangeGraphSkyline::update(double &oldLnL){
     
     currentFossilRangeGraphSkylineLnL = oldLnL;
     
-    // this should be the same
+    //**skyline this should be the same
     
     return currentFossilRangeGraphSkylineLnL;
 }
@@ -96,6 +99,37 @@ string FossilRangeGraphSkyline::writeParam(void){
     return s;
 }
 
+void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
+    
+    bool printIntVariables = 1;
+    
+    int intid = 1;
+    for(int i = 0; i < ints.size(); i++){
+        Calibration *h = ints[i];
+        double start = h->getIntervalStart();
+        double end = h->getIntervalEnd();
+        int fossils = h->getIntervalFossils();
+        
+        Interval *interval = new Interval(start, end, fossils, intid);
+        intervals.push_back(interval);
+        
+        intid ++;
+    }
+    
+    if(printIntVariables)
+        printIntervalVariables();
+}
+
+void FossilRangeGraphSkyline::printIntervalVariables(){
+    
+    for(int h = 0; h < numIntervals; h++){
+        Interval *interval = intervals[h];
+        cout << "Interval ID: " << interval->getIntervalID() << endl;
+        cout << "Interval start: " << interval->getIntervalStart() << endl;
+        cout << "Interval end: " << interval->getIntervalEnd() << endl;
+        cout << "Number of fossils: " << interval->getIntervalFossils() << endl;
+    }
+}
 
 // create fossil range vector
 // and intialize fossil range variables

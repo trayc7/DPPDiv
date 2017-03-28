@@ -48,6 +48,8 @@ Calibration::Calibration(string calstr, int tip){
         initializeFixedNodeAge(calstr);
     else if (tip == 4)
         initializeFossilRange(calstr);
+    else if (tip == 5)
+        initializeInterval(calstr);
 }
 
 
@@ -256,6 +258,21 @@ void Calibration::initializeFossilRange(string calstr){
     
 }
 
+
+void Calibration::initializeInterval(string calstr){
+    
+    stringstream ss;
+    string tmp = "";
+    ss << calstr;
+    
+    ss >> tmp;
+    intervalStart = atof(tmp.c_str());
+    ss >> tmp;
+    intervalFossils = atof(tmp.c_str());
+
+    cout << "Interval start: " << intervalStart << " fossils: " << intervalFossils << endl;
+    
+}
 
 /*
 3

@@ -288,7 +288,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     
 }
 
-Model::Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool rnp, int bdp){
+Model::Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool rnp, int bdp, bool fixFRG){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
@@ -307,13 +307,12 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool 
     
     // **skynote I don't think you need to change this...
     readFossilRangeFile(); // --> this function will read the file, create a Calibration obj for each fossil range
-    // **skynote write a fxn to read the intervals file
+    readIntervalsFile(); // --> this function will read the file, create a Calibration obj for each interval
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
-    FossilRangeGraphSkyline *frgsl = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, numIntervals);
-    //**skynote add rest of FossilRangeGraphSkyline variables
-    // ,  , ints, runUnderPrior, fixFRG);
+    FossilRangeGraphSkyline *frgsl = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, numIntervals, intervals, runUnderPrior, fixFRG);
+    // create SpeciationSkyline *sp functions
     
     cout << "I don't do anything meaningful yet\n";
     
@@ -1007,6 +1006,39 @@ void Model::readFossilRangeFile(void){
     cout << "\nTotal number of lineages: " << numLineages << endl;
     cout << "\nTotal number of fossils: " << numFossils << endl;
 
+}
+
+void Model::readIntervalsFile(void){
+    /*
+     i
+     h1
+     h2 etc.
+     */
+    cout << "\nIntervals:" << endl;
+    string ln = getLineFromFile(intfilen, 1);
+    int nlins = atoi(ln.c_str());
+    
+    // fetch the number of intervals
+    stringstream ss;
+    string tmp = "";
+    ss << ln;
+    ss >> tmp;
+    numIntervals = atoi(tmp.c_str());
+    
+    double nextEnd = 0;
+    
+    string *intList = new string[nlins];
+    for(int i=0; i<nlins; i++){
+        intList[i] = getLineFromFile(intfilen, i+2);
+        Calibration *interval = new Calibration(intList[i], 5);
+        interval->setIntervalEnd(nextEnd);
+        nextEnd = interval->getIntervalStart();
+        intervals.push_back(interval);
+    }
+    delete [] intList;
+    
+    cout << "\nTotal number of intervals: " << numIntervals << endl;
+    
 }
 
 Calibration* Model::getRootCalibration(void) {
