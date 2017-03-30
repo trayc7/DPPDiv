@@ -49,12 +49,11 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     numFossils = nf;
     numLineages = nl;
     runUnderPrior = rnp;
+    numExtinctLineages = 0;
     originTime = 0.0;
     ancientBound = 1000.0;
     fixOrigin = 0;
     orderStartStopTimes = 0;
-    printInitialFossilRangeVariables = 1;
-    numExtinctLineages = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
     phyloTest = 0;
     if(expMode == 1){
@@ -63,6 +62,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
         ancientBound = originTime;
         orderStartStopTimes = 1;
     }
+    printInitialFossilRangeVariables = 1;
     createFossilRangeVector(clb);
     initializeFossilRangeVariables();
     currentFossilRangeGraphLnL = 0.0;
@@ -91,12 +91,15 @@ FossilRangeGraph& FossilRangeGraph::operator=(const FossilRangeGraph &frg) {
     if (this != &frg)
         clone(frg);
     return *this;
+    
 }
 
 void FossilRangeGraph::clone(const FossilRangeGraph &frg){
     
     numFossils = frg.numFossils;
     numLineages = frg.numLineages;
+    numExtinctLineages = frg.numExtinctLineages;
+    originTime = frg.originTime;
     
     for(int i=0; i<fossilRanges.size(); i++){
         FossilRange *frTo = fossilRanges[i];
@@ -111,9 +114,6 @@ void FossilRangeGraph::clone(const FossilRangeGraph &frg){
         frTo->setLineageStart(frFrom->getLineageStart());
         frTo->setLineageStop(frFrom->getLineageStop());
     }
-    
-    //numAncFossilsk = frg.numAncFossilsk;
-    //treeTimePrior = frg.treeTimePrior;
     
 }
 
@@ -155,9 +155,6 @@ string FossilRangeGraph::writeParam(void){
 }
 
 void FossilRangeGraph::createFossilRangeVector(vector<Calibration *> clb){
-    
-    //double et = originTime;
-    //terminalTime = et;
     
     int frid=1;
     for(int c = 0; c < clb.size(); c++){
@@ -246,24 +243,6 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
     
 }
 
-//rw: for debugging
-void FossilRangeGraph::printFossilRangeVariables(){
-    
-    for(int f = 0; f < numLineages; f++){
-        FossilRange *fr = fossilRanges[f];
-        cout << "Fossil range ID: " << fr->getFossilRangeID() << endl;
-        cout << "First appearance: " << fr->getFirstAppearance() << endl;
-        cout << "Last appearance: " << fr->getLastAppearance() << endl;
-        cout << "Lineage start: " << fr->getLineageStart() << endl;
-        cout << "Lineage end: " << fr->getLineageStop() << endl;
-        cout << "Is extant: " << fr->getIsExtant() << endl;
-        cout << "Gamma: " << fr->getFossilRangeBrGamma() << endl;
-    }
-    
-    cout << "Origin time: " << originTime << endl;
-    
-}
-
 // debugging code
 void FossilRangeGraph::orderRangeAges(){
     
@@ -292,23 +271,20 @@ void FossilRangeGraph::orderRangeAges(){
     agesStop.clear();
 }
 
-void FossilRangeGraph::printFossilRangeVariables(int range){
+void FossilRangeGraph::redefineOriginTime(){
+    if(fixOrigin)
+        return;
     
-    int f = range;
-
-    FossilRange *fr = fossilRanges[f];
-    cout << "Fossil range ID: " << fr->getFossilRangeID() << endl;
-    cout << "First appearance: " << fr->getFirstAppearance() << endl;
-    cout << "Last appearance: " << fr->getLastAppearance() << endl;
-    cout << "Lineage start: " << fr->getLineageStart() << endl;
-    cout << "Lineage end: " << fr->getLineageStop() << endl;
-    cout << "Is extant: " << fr->getIsExtant() << endl;
-    cout << "Gamma: " << fr->getFossilRangeBrGamma() << endl;
-    cout << "Is fix start: " << fr->getIsFixStart() << endl;
-    cout << "Is fix stop: " << fr->getIsFixStop() << endl;
+    double ot = 0.0;
     
-    cout << "Origin time: " << originTime << endl;
+    for(int f = 0; f < numLineages; f++){
+        FossilRange *fr = fossilRanges[f];
+        double ls = fr->getLineageStart();
+        if(ls > ot)
+            ot = ls;
+    }
     
+    originTime = ot;
 }
 
 void FossilRangeGraph::recountFossilRangeAttachNums(){
@@ -348,20 +324,41 @@ void FossilRangeGraph::countExtinctLineages(){
     
 }
 
-void FossilRangeGraph::redefineOriginTime(){
-    if(fixOrigin)
-        return;
-    
-    double ot = 0.0;
+// debugging code
+void FossilRangeGraph::printFossilRangeVariables(){
     
     for(int f = 0; f < numLineages; f++){
         FossilRange *fr = fossilRanges[f];
-        double ls = fr->getLineageStart();
-        if(ls > ot)
-            ot = ls;
+        cout << "Fossil range ID: " << fr->getFossilRangeID() << endl;
+        cout << "First appearance: " << fr->getFirstAppearance() << endl;
+        cout << "Last appearance: " << fr->getLastAppearance() << endl;
+        cout << "Lineage start: " << fr->getLineageStart() << endl;
+        cout << "Lineage end: " << fr->getLineageStop() << endl;
+        cout << "Is extant: " << fr->getIsExtant() << endl;
+        cout << "Gamma: " << fr->getFossilRangeBrGamma() << endl;
     }
     
-    originTime = ot;
+    cout << "Origin time: " << originTime << endl;
+    
+}
+
+void FossilRangeGraph::printFossilRangeVariables(int range){
+    
+    int f = range;
+    
+    FossilRange *fr = fossilRanges[f];
+    cout << "Fossil range ID: " << fr->getFossilRangeID() << endl;
+    cout << "First appearance: " << fr->getFirstAppearance() << endl;
+    cout << "Last appearance: " << fr->getLastAppearance() << endl;
+    cout << "Lineage start: " << fr->getLineageStart() << endl;
+    cout << "Lineage end: " << fr->getLineageStop() << endl;
+    cout << "Is extant: " << fr->getIsExtant() << endl;
+    cout << "Gamma: " << fr->getFossilRangeBrGamma() << endl;
+    cout << "Is fix start: " << fr->getIsFixStart() << endl;
+    cout << "Is fix stop: " << fr->getIsFixStop() << endl;
+    
+    cout << "Origin time: " << originTime << endl;
+    
 }
 
 double FossilRangeGraph::updateLineageStartTimes(){

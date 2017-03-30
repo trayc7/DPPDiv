@@ -70,6 +70,9 @@ public:
     double                            getLineageStop(void) { return lineageStop; }
     int                               getFossilRangeBrGamma(void) { return fossilBrGamma; }
     
+    bool                              getIsFixStart(void) { return fixStart; }
+    bool                              getIsFixStop(void) { return fixStop; }
+    
     void                              setLineageStop(double d) { lineageStop = d; }
     void                              setLineageStart(double d) { lineageStart = d; }
     void                              setFossilRangeBrGamma(int i) { fossilBrGamma = i; }
@@ -79,14 +82,13 @@ public:
     int                               getFossilRangeDeathInterval(void) { return deathInterval; }
     int                               getFossilRangeFirstAppearanceInterval(void) { return firstAppearanceInterval; }
     
-    void                               setFossilRangeBirthInterval(int i) { birthInterval = i; }
+    void                              setFossilRangeBirthInterval(int i) { birthInterval = i; }
     void                              setFossilRangeDeathInterval(int i) { deathInterval = i; }
     void                              setFossilRangeFirstAppearanceInterval(int i) { firstAppearanceInterval = i; }
     
-    //rw: fxns required for cloning only (double check)
-    
-    int								getFossilRangeIndex(void) { return indx; }
-    int								getFossilRangeID(void) { return fossilRangeID; } //rw: what does getFossilIndex do?
+    // fxns required for cloning only
+    int								getFossilRangeIndex(void) { return indx; }   // this isn't used
+    int								getFossilRangeID(void) { return fossilRangeID; }
     
     void							setFossilRangeIndex(int i) { indx = i; }
     void							setFirstAppearance(double d) { firstAppearance = d; }
@@ -96,11 +98,6 @@ public:
     void							setFossilRangeID(int i) { fossilRangeID = i; }
     void                            setFixStart(bool b) { fixStart = b; }
     void                            setFixStop(bool b) { fixStop = b; }
-    
-    bool                             getIsFixStart(void) { return fixStart; }
-    bool                             getIsFixStop(void) { return fixStop; }
-    
-    //    int								getFossilIndicatorVar(void) { return ancFossIndicator; }
     
 private:
     int								indx;
@@ -120,8 +117,6 @@ private:
     int                             birthInterval;
     int                             deathInterval;
     int                             firstAppearanceInterval;
-    
-    //    int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
     
 };
 
@@ -143,9 +138,11 @@ public:
     void							print(std::ostream & o) const;
     std::string                     writeParam(void);
     
-    double							getFossilRangeGraphProbSkyline(std::vector<double> lambda, double mu); //, double fossRate, double sppSampRate, double ot);
+    double							getFossilRangeGraphSkylineProb(std::vector<double> lambda, std::vector<double> mu, std::vector<double> fossRate, double sppSampRate, double ot);
+    double							getActiveFossilRangeGraphSkylineProb();
     
-    // get functions
+    double                          getFossilRangeGraphOriginTime(void) { return originTime; }
+    int                             getNumFossils(void) { return numFossils; }
     
     // probability functions
     // constants
@@ -157,22 +154,38 @@ public:
 private:
     
     void                            createIntervalsVector(std::vector<Calibration *> ints);
-    
-    // you need both of these
-    //void                            createFossilRangeVector(std::vector<Calibration *> clb);
-    //void							initializeFossilRangeVariables(); // cf initializeFossilSpecVariables or initializeOccurrenceSpecVariables
+    void                            createFossilRangeSkylineVector(std::vector<Calibration *> clb);
+    void							initializeFossilRangeSkylineVariables();
+    void							recountFossilRangeAttachNums();
+    void                            redefineOriginTime();
+    void                            countExtinctLineages();
+    int                             assignInterval(double d);
+    double                          updateLineageStartTimes();
+    double                          updateLineageStopTimes();
     
     int                             numFossils;
     int                             numLineages;
+    int                             numExtinctLineages;
     int                             numIntervals;
-    
+    int                             originInterval;
+    double                          originTime;
+    double                          ancientBound;
     bool							runUnderPrior;
-    bool                            fixFRG;
+    bool                            printInitialFossilRangeSkylineVariables;
     
-    std::vector<Interval *>		intervals;
+    std::vector<Interval *>         intervals;
+    std::vector<FossilRangeSkyline *>		fossilRangesSkyline;
     void                            printIntervalVariables();
+    void                            printFossilRangeSkylineVariables(); //debugging code
+    void                            printFossilRangeVariables(int range); //debugging code
     
     double							currentFossilRangeGraphSkylineLnL;
+    double							doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv);
+    
+    //    int								treeTimePrior; // this should always be 11
+    
+    bool                            fixFRG;
+    bool                            fixOrigin;
     
 };
 

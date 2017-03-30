@@ -53,6 +53,7 @@ class ExpCalib;
 class OriginTime;
 class FossilGraph;
 class FossilRangeGraph;
+class FossilRangeGraphSkyline;
 class Model {
 
 	enum TreeDirection 
@@ -88,6 +89,7 @@ class Model {
         OriginTime*						getActiveOriginTime(void);
         FossilGraph*                    getActiveFossilGraph(void);
         FossilRangeGraph*               getActiveFossilRangeGraph(void);
+        FossilRangeGraphSkyline*        getActiveFossilRangeGraphSkyline(void);
 		Parameter*						pickParmToUpdate(void);
 		void							printTis(std::ostream &) const;
 		void							setTiProb(void);

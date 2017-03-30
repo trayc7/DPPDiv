@@ -314,6 +314,40 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool 
     FossilRangeGraphSkyline *frgsl = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, numIntervals, intervals, runUnderPrior, fixFRG);
     // create SpeciationSkyline *sp functions
     
+//    for (int i=0; i<2; i++){
+//        //parms[i].push_back( sp );
+//        parms[i].push_back( frgsl );
+//    }
+//    numParms = (int)parms[0].size();
+//    activeParm = 0;
+//    for (int i=0; i<numParms; i++)
+//        *parms[0][i] = *parms[1][i];
+//    
+//    for (int i=0; i<numParms; i++)
+//        parms[0][i]->print(std::cout);
+//    
+//    updateProb.clear();
+    
+//    if(expMode == 1)
+//        updateProb.push_back(0.0); // 1 speciation
+//    else
+//        updateProb.push_back(3.0); // 1 speciation
+//    if(fixFRG)
+//        updateProb.push_back(0.0); // 2 fossil graph
+//    else
+//        updateProb.push_back(4.0); // 2 fossil graph
+//    
+//    double sum = 0.0;
+//    for (unsigned i=0; i<updateProb.size(); i++)
+//        sum += updateProb[i];
+//    for (unsigned i=0; i<updateProb.size(); i++)
+//        updateProb[i] /= sum;
+//    
+//    totalUpdateWeights = (int)sum;
+//    
+//    myCurLnL = this->getActiveFossilRangeGraphSkyline()->getActiveFossilRangeGraphSkylineProb();
+//    cout << "lnL = " << myCurLnL << endl;
+    
     cout << "I don't do anything meaningful yet\n";
     
 }
@@ -464,6 +498,16 @@ FossilRangeGraph* Model::getActiveFossilRangeGraph(void) {
     return NULL;
 }
 
+FossilRangeGraphSkyline* Model::getActiveFossilRangeGraphSkyline(void) {
+    
+    for (int i=0; i<numParms; i++){
+        Parameter *p = parms[activeParm][i];
+        FossilRangeGraphSkyline *derivedPtr = dynamic_cast<FossilRangeGraphSkyline *>(p);
+        if ( derivedPtr != 0 )
+            return derivedPtr;
+    }
+    return NULL;
+}
 
 void Model::initializeConditionalLikelihoods(void) {
 
@@ -1037,7 +1081,7 @@ void Model::readIntervalsFile(void){
     }
     delete [] intList;
     
-    cout << "\nTotal number of intervals: " << numIntervals << endl;
+    cout << "\nTotal number of user defined intervals: " << numIntervals << endl;
     
 }
 

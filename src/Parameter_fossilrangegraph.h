@@ -50,14 +50,16 @@ public:
         double                            getLineageStop(void) { return lineageStop; }
         int                               getFossilRangeBrGamma(void) { return fossilBrGamma; }
     
+        bool                              getIsFixStart(void) { return fixStart; }
+        bool                              getIsFixStop(void) { return fixStop; }
+    
         void                              setLineageStop(double d) { lineageStop = d; }
         void                              setLineageStart(double d) { lineageStart = d; }
         void                              setFossilRangeBrGamma(int i) { fossilBrGamma = i; }
     
-        //rw: fxns required for cloning only (double check)
-    
+        // fxns required for cloning only
         int								getFossilRangeIndex(void) { return indx; }
-        int								getFossilRangeID(void) { return fossilRangeID; } //rw: what does getFossilIndex do?
+        int								getFossilRangeID(void) { return fossilRangeID; }
 
         void							setFossilRangeIndex(int i) { indx = i; }
         void							setFirstAppearance(double d) { firstAppearance = d; }
@@ -68,11 +70,6 @@ public:
         void                            setFixStart(bool b) { fixStart = b; }
         void                            setFixStop(bool b) { fixStop = b; }
     
-        bool                             getIsFixStart(void) { return fixStart; }
-        bool                             getIsFixStop(void) { return fixStop; }
-    
-    //    int								getFossilIndicatorVar(void) { return ancFossIndicator; }
-
 private:
     int								indx;
     double							firstAppearance; // oi
@@ -87,8 +84,6 @@ private:
     bool                            fixStart;
     bool                            fixStop;
     
-//    int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
-
 };
 
 class MbRandom;
@@ -109,14 +104,13 @@ public:
     void							print(std::ostream & o) const;
     std::string						writeParam(void);
     
-    int                             getNumFossils(void) { return numFossils; }
-    
     double							getFossilRangeGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot); // cf getTreeAncCalBDSSTreeNodePriorProb or getFossilGraphProb
     double                          getFossilRangeGraphAlternativeProb(double lambda, double mu, double fossRate, double sppSampRate, double ot);
     double                          getPhyloProb(double lambda, double mu, double sppSampRate, double ot); // stadler 2010
     double							getActiveFossilRangeGraphProb();
     
     double                          getFossilRangeGraphOriginTime(void) { return originTime; }
+    int                             getNumFossils(void) { return numFossils; }
     
     std::string						getFossilRangeInfoParamNames(void);
     std::string						getFossilRangeInfoParamList(void);
@@ -132,8 +126,6 @@ public:
     double                          phyloBDP0Fxn(double b, double d, double rho, double t); // stadler 2010
     double                          phyloBDP1FxnLog(double b, double d, double rho, double t); // stadler 2010
 
-//    int								getSumIndicatorFG(void);
-
 //    double							getCurrentFossilGraphLnL(void) { return currentFossilGraphLnL; }
     void                            lnSurfaceGenerator(std::string outFile);
     void                            crossValidateFBDfunctions();
@@ -143,14 +135,12 @@ private:
     void                            createFossilRangeVector(std::vector<Calibration *> clb);
     void							initializeFossilRangeVariables(); // cf initializeFossilSpecVariables or initializeOccurrenceSpecVariables
     void							recountFossilRangeAttachNums(); // cf recountFossilAttachNums() or recountOccurrenceAttachNums()
-    void                            printFossilRangeVariables(); //rw: for debugging
-    void                            printFossilRangeVariables(int range); //rw: for debugging
     void                            redefineOriginTime();
     void                            countExtinctLineages();
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
-    //double                          getFossilRangeGraphProb();
     void                            orderRangeAges();
+    //double                          getFossilRangeGraphProb();
     
     int                             numFossils;
     int                             numLineages;
@@ -161,23 +151,23 @@ private:
     bool							printInitialFossilRangeVariables;
     int                             moves;
     int                             proposal;
+    
     std::vector<FossilRange *>		fossilRanges;
+    void                            printFossilRangeVariables(); //debugging code
+    void                            printFossilRangeVariables(int range); //debugging code
     
     double							currentFossilRangeGraphLnL; 
     double                          getNewValSWindoMv(double ov, double vmin, double vmax, double tv);
     double							doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv); //c.f FossilGraph::doAScaleMove
     
-//    double							doSinglePhiMove(void);
-//    int                               numAncFossilsk;
 //    int								treeTimePrior; // this should always be 10
     
     bool                            fixFRG;
+    bool                            fixOrigin;
     int                             fixStart;
     int                             fixStop;
     bool                            getAltProb;
     int                             completeSampling;
-    //bool                            lSurf;
-    bool                            fixOrigin;
     bool                            orderStartStopTimes;
     
     bool                            phyloTest;
