@@ -54,6 +54,7 @@ class OriginTime;
 class FossilGraph;
 class FossilRangeGraph;
 class FossilRangeGraphSkyline;
+class SpeciationSkyline;
 class Model {
 
 	enum TreeDirection 
@@ -90,6 +91,7 @@ class Model {
         FossilGraph*                    getActiveFossilGraph(void);
         FossilRangeGraph*               getActiveFossilRangeGraph(void);
         FossilRangeGraphSkyline*        getActiveFossilRangeGraphSkyline(void);
+        SpeciationSkyline*              getActiveSpeciationSkyline(void);
 		Parameter*						pickParmToUpdate(void);
 		void							printTis(std::ostream &) const;
 		void							setTiProb(void);
@@ -187,7 +189,7 @@ class Model {
         bool                            ignoreFossils;
         int                             numLineages;
         int                             fbdPar;
-        int                             numIntervals;
+        int                             userSpecifiedIntervals;
 		
 		int								totalUpdateWeights;
 	

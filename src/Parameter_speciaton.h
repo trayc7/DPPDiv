@@ -56,6 +56,7 @@ class Speciation : public Parameter {
 		void				print(std::ostream & o) const;
 		double				lnPrior(void);
 		std::string			writeParam(void);
+    
 		double				getRelativeDeath() { return relativeDeath; }
 		void				setRelativeDeath(double v) { relativeDeath = v; }
 		double				getNetDiversification() { return netDiversificaton; }

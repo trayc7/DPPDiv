@@ -30,7 +30,7 @@
 #include "Calibration.h"
 #include "Parameter.h"
 #include "Parameter_fossilrangegraphskyline.h"
-#include "Parameter_speciaton.h" //**skyline - you need to change this
+#include "Parameter_speciationskyline.h"
 #include "MbRandom.h"
 #include "Model.h"
 #include "util.h"
@@ -382,22 +382,22 @@ void FossilRangeGraphSkyline::printFossilRangeVariables(int range){
 }
 
 double FossilRangeGraphSkyline::updateLineageStartTimes(){
+
+// skyline note ** delete this when the implementation is done
+//    double sppSampRate = 1;
+//    vector<double> lambda, mu, fossRate;
+//    for(int i = 0; numIntervals; i++){
+//        lambda.push_back(1);
+//        mu.push_back(0.1);
+//        fossRate.push_back(2);
+//    }
     
-    //**skyline note - these should come from skyline speciation
-    //Speciation *s = modelPtr->getActiveSpeciation();
-    //s->setAllBDFossParams();
-    //double lambda = s->getBDSSSpeciationRateLambda();
-    //double mu = s->getBDSSExtinctionRateMu();
-    //double fossRate = s->getBDSSFossilSampRatePsi();
-    //double sppSampRate = s->getBDSSSppSampRateRho();
-    
-    double sppSampRate = 1;
-    vector<double> lambda, mu, fossRate;
-    for(int i = 0; numIntervals; i++){
-        lambda.push_back(1);
-        mu.push_back(0.1);
-        fossRate.push_back(2);
-    }
+    SpeciationSkyline *s = modelPtr->getActiveSpeciationSkyline();
+    //    s->setAllBDFossParams();
+    double sppSampRate = s->getSppSampRateRho();
+    std::vector<double> lambda = s->getSpeciationRates();
+    std::vector<double> mu = s->getExtinctionRates();
+    std::vector<double> fossRate = s->getFossilSampRates();
     
     vector<int> rndFossilRangeIDs;
     for(int i=0; i<fossilRangesSkyline.size(); i++)
@@ -458,20 +458,12 @@ double FossilRangeGraphSkyline::updateLineageStartTimes(){
 
 double FossilRangeGraphSkyline::updateLineageStopTimes(){
     
-//    Speciation *s = modelPtr->getActiveSpeciation();
-//    s->setAllBDFossParams();
-//    double lambda = s->getBDSSSpeciationRateLambda();
-//    double mu = s->getBDSSExtinctionRateMu();
-//    double fossRate = s->getBDSSFossilSampRatePsi();
-//    double sppSampRate = s->getBDSSSppSampRateRho();
-    
-    double sppSampRate = 1;
-    vector<double> lambda, mu, fossRate;
-    for(int i = 0; numIntervals; i++){
-        lambda.push_back(1);
-        mu.push_back(0.1);
-        fossRate.push_back(2);
-    }
+    SpeciationSkyline *s = modelPtr->getActiveSpeciationSkyline();
+    //    s->setAllBDFossParams();
+    double sppSampRate = s->getSppSampRateRho();
+    std::vector<double> lambda = s->getSpeciationRates();
+    std::vector<double> mu = s->getExtinctionRates();
+    std::vector<double> fossRate = s->getFossilSampRates();
     
     vector<int> rndFossilRangeIDs;
     for(int i=0; i<fossilRangesSkyline.size(); i++)
@@ -555,21 +547,13 @@ double FossilRangeGraphSkyline::getActiveFossilRangeGraphSkylineProb(){
         return 0.0;
     
     double nprb = 0.0;
-    
-//    Speciation *s = modelPtr->getActiveSpeciation();
-//    s->setAllBDFossParams();
-//    double lambda = s->getBDSSSpeciationRateLambda();
-//    double mu = s->getBDSSExtinctionRateMu();
-//    double fossRate = s->getBDSSFossilSampRatePsi();
-//    double sppSampRate = s->getBDSSSppSampRateRho();
-    
-    double sppSampRate = 1;
-    vector<double> lambda, mu, fossRate;
-    for(int i = 0; numIntervals; i++){
-        lambda.push_back(1);
-        mu.push_back(0.1);
-        fossRate.push_back(2);
-    }
+
+    SpeciationSkyline *s = modelPtr->getActiveSpeciationSkyline();
+    //    s->setAllBDFossParams();
+    double sppSampRate = s->getSppSampRateRho();
+    std::vector<double> lambda = s->getSpeciationRates();
+    std::vector<double> mu = s->getExtinctionRates();
+    std::vector<double> fossRate = s->getFossilSampRates();
     
     nprb = getFossilRangeGraphSkylineProb(lambda, mu, fossRate, sppSampRate, originTime);
     return nprb;

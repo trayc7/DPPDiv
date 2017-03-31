@@ -43,6 +43,7 @@
 #include "Parameter_rate.h"
 #include "Parameter_shape.h"
 #include "Parameter_speciaton.h"
+#include "Parameter_speciationskyline.h"
 #include "Parameter_tree.h"
 #include "Parameter_cphyperp.h"
 #include "Parameter_treescale.h"
@@ -191,8 +192,6 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     ranPtr->getSeed(startS1, startS2);
     treeTimePrior = nodpr;
     calibfilen = clfn;
-    numFossils = 0;
-    numLineages = 0;
 	runUnderPrior = rnp;
     rho = rh; //rw: if rho is 0, I think the likelihood will always = NaN
     if(rho < 0.0 || rho > 1.0) {
@@ -200,6 +199,9 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
         exit(1);
     }
     fbdPar = bdp;
+    numFossils = 0;
+    numLineages = 0;
+    myCurLnL = 0.0;
     
     if(calibfilen.empty() == false){
         if(treeTimePrior == 9)
@@ -294,9 +296,6 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool 
     ranPtr->getSeed(startS1, startS2);
     calibfilen = clfn;
     intfilen = intfn;
-    numFossils = 0;
-    numLineages = 0;
-    numIntervals = 0;
     runUnderPrior = rnp;
     rho = rh;
     if(rho < 0.0 || rho > 1.0) {
@@ -304,6 +303,10 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool 
         exit(1);
     }
     fbdPar = bdp;
+    numFossils = 0;
+    numLineages = 0;
+    userSpecifiedIntervals = 0; //**skyline note user specified intervals
+    myCurLnL = 0.0;
     
     // **skynote I don't think you need to change this...
     readFossilRangeFile(); // --> this function will read the file, create a Calibration obj for each fossil range
@@ -311,44 +314,39 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool 
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
-    FossilRangeGraphSkyline *frgsl = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, numIntervals, intervals, runUnderPrior, fixFRG);
-    // create SpeciationSkyline *sp functions
+    FossilRangeGraphSkyline *frg = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, userSpecifiedIntervals, intervals, runUnderPrior, fixFRG);
+    SpeciationSkyline *sp = new SpeciationSkyline(ranPtr, this, userSpecifiedIntervals, rho);
     
-//    for (int i=0; i<2; i++){
-//        //parms[i].push_back( sp );
-//        parms[i].push_back( frgsl );
-//    }
-//    numParms = (int)parms[0].size();
-//    activeParm = 0;
-//    for (int i=0; i<numParms; i++)
-//        *parms[0][i] = *parms[1][i];
-//    
-//    for (int i=0; i<numParms; i++)
-//        parms[0][i]->print(std::cout);
-//    
-//    updateProb.clear();
+    for (int i=0; i<2; i++){
+        parms[i].push_back( sp );
+        parms[i].push_back( frg );
+    }
+    numParms = (int)parms[0].size();
+    activeParm = 0;
+    for (int i=0; i<numParms; i++)
+        *parms[0][i] = *parms[1][i];
     
-//    if(expMode == 1)
-//        updateProb.push_back(0.0); // 1 speciation
-//    else
-//        updateProb.push_back(3.0); // 1 speciation
-//    if(fixFRG)
-//        updateProb.push_back(0.0); // 2 fossil graph
-//    else
-//        updateProb.push_back(4.0); // 2 fossil graph
-//    
-//    double sum = 0.0;
-//    for (unsigned i=0; i<updateProb.size(); i++)
-//        sum += updateProb[i];
-//    for (unsigned i=0; i<updateProb.size(); i++)
-//        updateProb[i] /= sum;
-//    
-//    totalUpdateWeights = (int)sum;
-//    
-//    myCurLnL = this->getActiveFossilRangeGraphSkyline()->getActiveFossilRangeGraphSkylineProb();
-//    cout << "lnL = " << myCurLnL << endl;
+    for (int i=0; i<numParms; i++)
+        parms[0][i]->print(std::cout);
     
-    cout << "I don't do anything meaningful yet\n";
+    updateProb.clear();
+    
+    updateProb.push_back(3.0); // 1 speciation
+    if(fixFRG)
+        updateProb.push_back(0.0); // 2 fossil graph
+    else
+        updateProb.push_back(4.0); // 2 fossil graph
+    
+    double sum = 0.0;
+    for (unsigned i=0; i<updateProb.size(); i++)
+        sum += updateProb[i];
+    for (unsigned i=0; i<updateProb.size(); i++)
+        updateProb[i] /= sum;
+    
+    totalUpdateWeights = (int)sum;
+
+    myCurLnL = this->getActiveFossilRangeGraphSkyline()->getActiveFossilRangeGraphSkylineProb();
+    cout << "lnL = " << myCurLnL << endl;
     
 }
 
@@ -503,6 +501,17 @@ FossilRangeGraphSkyline* Model::getActiveFossilRangeGraphSkyline(void) {
     for (int i=0; i<numParms; i++){
         Parameter *p = parms[activeParm][i];
         FossilRangeGraphSkyline *derivedPtr = dynamic_cast<FossilRangeGraphSkyline *>(p);
+        if ( derivedPtr != 0 )
+            return derivedPtr;
+    }
+    return NULL;
+}
+
+SpeciationSkyline* Model::getActiveSpeciationSkyline(void) {
+    
+    for (int i=0; i<numParms; i++){
+        Parameter *p = parms[activeParm][i];
+        SpeciationSkyline *derivedPtr = dynamic_cast<SpeciationSkyline *>(p);
         if ( derivedPtr != 0 )
             return derivedPtr;
     }
@@ -1067,7 +1076,7 @@ void Model::readIntervalsFile(void){
     string tmp = "";
     ss << ln;
     ss >> tmp;
-    numIntervals = atoi(tmp.c_str());
+    userSpecifiedIntervals = atoi(tmp.c_str());
     
     double nextEnd = 0;
     
@@ -1081,7 +1090,7 @@ void Model::readIntervalsFile(void){
     }
     delete [] intList;
     
-    cout << "\nTotal number of user defined intervals: " << numIntervals << endl;
+    cout << "\nTotal number of user defined intervals: " << userSpecifiedIntervals << endl;
     
 }
 

@@ -40,6 +40,7 @@
 #include "Parameter_cphyperp.h"
 #include "Parameter_treescale.h"
 #include "Parameter_speciaton.h"
+#include "Parameter_speciationskyline.h"
 #include "Parameter_origin.h"
 
 using namespace std;
@@ -165,6 +166,15 @@ Parameter& Parameter::operator=(Parameter &p) {
         {
             FossilRangeGraphSkyline *thatDerivedPtr = dynamic_cast<FossilRangeGraphSkyline *>(&p);
             FossilRangeGraphSkyline *thisDerivedPtr = dynamic_cast<FossilRangeGraphSkyline *>(this);
+            if ( thatDerivedPtr != 0 && thisDerivedPtr != 0 ){
+                thisDerivedPtr->clone( *thatDerivedPtr );
+                goto exitOperator;
+            }
+        }
+        
+        {
+            SpeciationSkyline *thatDerivedPtr = dynamic_cast<SpeciationSkyline *>(&p);
+            SpeciationSkyline *thisDerivedPtr = dynamic_cast<SpeciationSkyline *>(this);
             if ( thatDerivedPtr != 0 && thisDerivedPtr != 0 ){
                 thisDerivedPtr->clone( *thatDerivedPtr );
                 goto exitOperator;
