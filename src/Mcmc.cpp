@@ -27,7 +27,6 @@
  *
  */
 
-
 #include "MbRandom.h"
 #include "Mcmc.h"
 #include "Model.h"
@@ -37,11 +36,13 @@
 #include "Parameter_expcalib.h"
 #include "Parameter_fossilgraph.h"
 #include "Parameter_fossilrangegraph.h"
+#include "Parameter_fossilrangegraphskyline.h"
 #include "Parameter_origin.h"
 #include "Parameter_rate.h"
 #include "Parameter_tree.h"
 #include "Parameter_shape.h"
 #include "Parameter_speciaton.h"
+#include "Parameter_speciationskyline.h"
 #include "Parameter_treescale.h"
 #include "util.h"
 
@@ -71,7 +72,7 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
         runChain();
     else if(treeTimePr == 9)
         runFOFBDChain();
-    else
+    else if(treeTimePr == 10 || treeTimePr == 11)
         runFRGFBDChain();
 }
 
@@ -288,8 +289,13 @@ void Mcmc::runFRGFBDChain() {
     if(writeInfoFile)
         dOut.open(dFile.c_str(), ios::out);
     
-    double oldLnLikelihood = modelPtr->getActiveFossilRangeGraph()->getActiveFossilRangeGraphProb();
+    double oldLnLikelihood = 0.0;
     
+    if(treeTimePr == 10)
+        oldLnLikelihood = modelPtr->getActiveFossilRangeGraph()->getActiveFossilRangeGraphProb();
+    else if(treeTimePr == 11)
+        oldLnLikelihood  = modelPtr->getActiveFossilRangeGraphSkyline()->getActiveFossilRangeGraphSkylineProb();
+        
     // verbose logging
     if(writeInfoFile){
         dOut << "Running MCMC with:\n";
@@ -299,7 +305,6 @@ void Mcmc::runFRGFBDChain() {
         //printAllModelParams(dOut);
     }
     
-
     int timeSt = (int)time(NULL);
     int modifyUProbsGen = (int)numCycles * 0.5;
     
@@ -334,7 +339,10 @@ void Mcmc::runFRGFBDChain() {
 
         // sample chain
         if ( n % sampleFrequency == 0 || n == 1){
-            sampleChainFR(n, frOut, oldLnLikelihood);
+            if(treeTimePr == 10)
+                sampleChainFR(n, frOut, oldLnLikelihood);
+            if(treeTimePr == 11)
+                sampleChainFRSkyline(n, frOut, oldLnLikelihood);
         }
     }
     
@@ -345,7 +353,6 @@ void Mcmc::runFRGFBDChain() {
     //mxOut.close();
     
 }
-
 
 double Mcmc::safeExponentiation(double lnX) {
 
@@ -561,7 +568,6 @@ void Mcmc::sampleFBDExpChain(int gen, std::ofstream &nodeOut, double lnl) {
 	
 }
 
-
 void Mcmc::printAllModelParams(ofstream &dOut){
 	
 	dOut << "\n--------------------------------------------------\n";
@@ -699,6 +705,39 @@ void Mcmc::sampleChainFR(int gen, ofstream &frOut, double lnl) {
     frOut << "\t" << frg->getNumFossils();
     frOut << "\n";
     
+}
+
+void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
+    
+    FossilRangeGraphSkyline *frg = modelPtr->getActiveFossilRangeGraphSkyline();
+    SpeciationSkyline *sp = modelPtr->getActiveSpeciationSkyline();
+    
+    //sp->setAllBDFossParams();
+    
+    int numIntervals = frg->getNumIntervals();
+    
+    if(gen == 1){
+        frOut << "Gen\tlnL";
+        for(int i=0; i < numIntervals; i++){
+            frOut << "\tbirth[" << i << "]\tdeath[" << i << "]\tpsi[" << i << "]";
+        }
+        frOut << "\tFBD.rho";
+        //if(printOrigin)
+          //  frOut << "\tFBD.OriginTime";
+        if(printAttach)
+            frOut << frg->getFossilRangeSkylineInfoParamNames();
+        frOut << "\tnum.fossils(k)";
+        frOut << "\n";
+    }
+    frOut << gen << "\t" <<  lnl;
+    for(int i=0; i < numIntervals; i++){
+        frOut << "\t" << sp->getSpeciationRates()[i] << "\t" << sp->getExtinctionRates()[i] << "\t" << sp->getFossilSampRates()[i];
+    }
+    if(printAttach)
+        frOut << frg->getFossilRangeSkylineInfoParamList();
+    frOut << "\t" << sp->getSppSampRateRho();
+    frOut << "\t" << frg->getNumFossils();
+    frOut << "\n";
 }
 
 // end

@@ -290,14 +290,15 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     
 }
 
-Model::Model(MbRandom *rp, std::string clfn, std::string intfn, double rh, bool rnp, int bdp, bool fixFRG){
+Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
     calibfilen = clfn;
     intfilen = intfn;
-    runUnderPrior = rnp;
+    treeTimePrior = nodpr;
     rho = rh;
+    runUnderPrior = rnp;
     if(rho < 0.0 || rho > 1.0) {
         cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
         exit(1);

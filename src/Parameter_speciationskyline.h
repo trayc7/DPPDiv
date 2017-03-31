@@ -49,14 +49,16 @@ public:
     double                  getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyline *frgsl);
     
     double                  getSppSampRateRho(void) { return extantSampleRate; }
-    //**skyline note: I don't know if I'll use these
-    double                  getSpeciationRate(int i) { return birthRates[i]; }
-    double                  getExtinctionRate(int i) { return deathRates[i]; }
-    double                  getFossilSampRate(int i) { return fossilRates[i]; }
     
     std::vector<double>     getSpeciationRates() { return birthRates; }
     std::vector<double>     getExtinctionRates() { return deathRates; }
     std::vector<double>     getFossilSampRates() { return fossilRates; }
+    
+    double                  getSpeciationRate(int i) { return birthRates[i]; }
+    double                  getExtinctionRate(int i) { return deathRates[i]; }
+    double                  getFossilSampRate(int i) { return fossilRates[i]; }
+    
+    void                    setAllBDFossParams(void);
     
 private:
 
@@ -64,10 +66,30 @@ private:
     std::vector<double>		birthRates;
     std::vector<double>		deathRates;
     std::vector<double>		fossilRates;
+    std::vector<double>		netDiversifications;
+    std::vector<double>		relativeDeaths; // turnover
+    std::vector<double>		probObservations;
+    double                  currentFossilRangeGraphSkylineLnL;
+    
+    int                     parameterization; // 1=d,r,s,rho; 2=d,r,psi,rho; 3=lambda,mu,psi,rho;
     
     int                     numIntervals;
     void                    initializeIntervalVariables();
     void                    printInitialIntervalVariables();
+    
+    // add moves
+    
+    double                  updateFossilRangeGraphSkylineBDParams(double &oldLnL);
+    double                  updateBirthRate(FossilRangeGraphSkyline *frg, int i);
+    double                  updateDeathRate(FossilRangeGraphSkyline *frg, int i);
+    double                  updatePsiRate(FossilRangeGraphSkyline *frg, int i);
+    
+    int                     birthRatePrior;
+    int                     deathRatePrior;
+    int                     fossRatePrior;
+    double                  birthRateExpRate;
+    double                  deathRateExpRate;
+    double                  fossRateExpRate;
 
 };
 

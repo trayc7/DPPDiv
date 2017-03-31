@@ -542,6 +542,60 @@ double FossilRangeGraphSkyline::doAScaleMove(double &nv, double cv, double tv, d
     return c;
 }
 
+string FossilRangeGraphSkyline::getFossilRangeSkylineInfoParamNames(void){
+    
+    stringstream ss;
+    FossilRangeSkyline *frg = NULL;
+    for(int i=0; i<fossilRangesSkyline.size(); i++){
+        frg = fossilRangesSkyline[i];
+        int frgID = frg->getFossilRangeID();
+        ss << "\ty_f(FR_" << frgID << ")"; // first appearance
+        ss << "\tb_f(FR_" << frgID << ")"; // lineage start
+        ss << "\tx_f(FR_" << frgID << ")"; // last appearance
+        ss << "\td_f(FR_" << frgID << ")"; // lineage stop
+    }
+    for(int i=0; i<fossilRangesSkyline.size(); i++){
+        frg = fossilRangesSkyline[i];
+        int frgID = frg->getFossilRangeID();
+        ss << "\ty_I(FR_" << frgID << ")"; // first appearance interval
+        ss << "\tb_I(FR_" << frgID << ")"; // lineage start interval
+        ss << "\td_I(FR_" << frgID << ")"; // lineage stop interval
+    }
+    for(int i=0; i<fossilRangesSkyline.size(); i++){
+        frg = fossilRangesSkyline[i];
+        int frgID = frg->getFossilRangeID();
+        ss << "\tgamma_f(FR_" << frgID << ")"; //".nd" << nID << ")";
+    }
+    string ni = ss.str();
+    return ni;
+}
+
+string FossilRangeGraphSkyline::getFossilRangeSkylineInfoParamList(void){
+    
+    stringstream ss;
+    FossilRangeSkyline *frg = NULL;
+    
+    for(int i=0; i<fossilRangesSkyline.size(); i++){
+        frg = fossilRangesSkyline[i];
+        ss << "\t" << frg->getFirstAppearance(); // first appearance -- note this is fixed in this implementation
+        ss << "\t" << frg->getLineageStart(); // lineage start
+        ss << "\t" << frg->getLastAppearance(); // last appearance
+        ss << "\t" << frg->getLineageStop(); // lineage stop
+    }
+    for(int i=0; i<fossilRangesSkyline.size(); i++){
+        frg = fossilRangesSkyline[i];
+        ss << "\t" << frg->getFossilRangeFirstAppearanceInterval(); // first appearance interval
+        ss << "\t" << frg->getFossilRangeBirthInterval(); // lineage start interval
+        ss << "\t" << frg->getFossilRangeDeathInterval(); // lineage stop interval
+    }
+    for(int i=0; i<fossilRangesSkyline.size(); i++){
+        frg = fossilRangesSkyline[i];
+        ss << "\t" << frg->getFossilRangeBrGamma();
+    }
+    string ni = ss.str();
+    return ni;
+}
+
 double FossilRangeGraphSkyline::getActiveFossilRangeGraphSkylineProb(){
     if(runUnderPrior)
         return 0.0;

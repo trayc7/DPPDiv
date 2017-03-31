@@ -49,8 +49,9 @@ class Mcmc {
 		double			safeExponentiation(double lnX);
 		void			sampleChain(int gen, std::ofstream &paraOut, 
 									std::ofstream &figTOut, std::ofstream &nodeOut, double lnl);
-        void			sampleChain(int gen, std::ofstream &occOut, double lnl); //rw: sample chain overload fxn for fofbd
-        void			sampleChainFR(int gen, std::ofstream &fgOut, double lnl); //rw: sample chain overload fxn for frgfbd
+        void			sampleChain(int gen, std::ofstream &occOut, double lnl); //sample chain overload fxn for fofbd
+        void			sampleChainFR(int gen, std::ofstream &fgOut, double lnl); // sample chain fxn for frgfbd
+        void			sampleChainFRSkyline(int gen, std::ofstream &fgOut, double lnl); // sample chain fxn for frgfbd skyline
 		void			sampleFBDExpChain(int gen, std::ofstream &nodeOut, double lnl);
 		void			sampleRtsFChain(int gen, std::ofstream &rOut);
 		void			printAllModelParams(std::ofstream &dOut);
@@ -64,8 +65,8 @@ class Mcmc {
 		bool			writeInfoFile;
 		bool			printratef;
 		bool			modUpdateProbs;
-        bool            printOrigin; //RW
-        bool            printAttach; //RW
+        bool            printOrigin;
+        bool            printAttach;
         int             treeTimePr;
 };
 

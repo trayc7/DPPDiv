@@ -56,7 +56,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     fossilRate = psi;
     birthRate = 0.02;
     deathRate = 0.01;
-    extantSampleRate = rh; //rh;
+    extantSampleRate = rh;
 	treeTimePrior = modelPtr->getTreeTimePriorNum();
 	currentFossilGraphLnL = 0.0;
     currentFossilRangeGraphLnL = 0.0;

@@ -143,6 +143,10 @@ public:
     
     double                          getFossilRangeGraphOriginTime(void) { return originTime; }
     int                             getNumFossils(void) { return numFossils; }
+    int                             getNumIntervals(void) { return numIntervals; }
+    
+    std::string						getFossilRangeSkylineInfoParamNames(void);
+    std::string						getFossilRangeSkylineInfoParamList(void);
     
     // probability functions
     // constants

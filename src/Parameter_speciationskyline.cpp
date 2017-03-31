@@ -44,6 +44,25 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh)
     numIntervals = ni + 1;
     extantSampleRate = rh;
     initializeIntervalVariables();
+    currentFossilRangeGraphSkylineLnL = 0.0;
+    parameterization = 3; // hard coded at the moment
+    
+    //fixPsi = fxPsi;
+    setAllBDFossParams();
+    
+    // priors on birth death paras
+    int specPr = 2; // 1 = unifrom prior, 2 = exponential prior
+    int psiPr = 1;
+    double bPrRate = 1;
+    double dPrRate = 1;
+    double pPrRate = 1;
+    deathRatePrior = specPr;
+    birthRatePrior = specPr;
+    fossRatePrior = psiPr;
+    birthRateExpRate = bPrRate;
+    deathRateExpRate = dPrRate; ;
+    fossRateExpRate = pPrRate;
+    
     printInitialIntervalVariables();
     
     cout << "BD initialized\n";
@@ -83,9 +102,14 @@ void SpeciationSkyline::clone(const SpeciationSkyline &c) {
 void SpeciationSkyline::initializeIntervalVariables(){
     
     for(int i = 0; i < numIntervals; i++){
-        birthRates.push_back(1);
-        deathRates.push_back(0.1);
-        fossilRates.push_back(2);
+        birthRates.push_back(0.02);
+        deathRates.push_back(0.01);
+        fossilRates.push_back(2); //**skyline note - add user defined flag psi
+    }
+    for(int i=0; i < numIntervals; i++){
+        netDiversifications.push_back(birthRates[i] - deathRates[i]);
+        relativeDeaths.push_back(deathRates[i] / birthRates[i]);
+        probObservations.push_back(fossilRates[i] / (deathRates[i] + fossilRates[i]));
     }
     
 }
@@ -96,11 +120,8 @@ void SpeciationSkyline::print(std::ostream & o) const {
 
 double SpeciationSkyline::update(double &oldLnL) {
     
-    double lnR = 0.0;
+    return updateFossilRangeGraphSkylineBDParams(oldLnL);
     
-    //return updateFossilRangeGraphBDParams(oldLnL);
-    
-    return lnR;
 }
 
 double SpeciationSkyline::lnPrior(void) {
@@ -125,6 +146,52 @@ void SpeciationSkyline::printInitialIntervalVariables(){
         cout << ", mu = " << deathRates[i];
         cout << ", psi = " << fossilRates[i] << endl;
         j++;
+    }
+}
+
+double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
+    
+    currentFossilRangeGraphSkylineLnL = oldLnL;
+    FossilRangeGraphSkyline *frg = modelPtr->getActiveFossilRangeGraphSkyline();
+    
+//    if(fixPsi)
+//        int numMoves =  numIntervals * 2;
+//    else
+        int numMoves =  numIntervals * 3;
+    
+    int I, v;
+    
+    for(int i=0; i < numMoves; i++){
+        // choose random interval
+        I = (int)(ranPtr->uniformRv(0.0, numIntervals - 1));
+        // choose random parameters (never go to 3 if fixPsi = T)
+        v = (int)(ranPtr->uniformRv() * numMoves);
+//        if(v == 0)
+//            updateDeathRate(frg, I); // mu
+//        else if(v == 1)
+//            updateBirthRate(frg, I); // lambda
+//        else if(v == 2)
+//            updatePsiRate(frg, I); // psi // shouldnt reach here if fixpsi = 1
+    }
+    
+    return currentFossilRangeGraphSkylineLnL;
+}
+
+// other functions
+
+
+void SpeciationSkyline::setAllBDFossParams(){
+    
+    if(parameterization == 3){
+        for(int i=0; i < numIntervals; i++){
+            netDiversifications[i] = birthRates[i] - deathRates[i];
+            relativeDeaths[i] = deathRates[i] / birthRates[i];
+            probObservations[i] = fossilRates[i] / (deathRates[i] + fossilRates[i]);
+        }
+    }
+    else {
+        cerr << "Parameterization 1, 2 & 4 not yet available in skyline mode " << endl;
+        exit(1);
     }
 }
 
