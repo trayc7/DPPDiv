@@ -141,7 +141,7 @@ public:
     double							getFossilRangeGraphSkylineProb(std::vector<double> lambda, std::vector<double> mu, std::vector<double> fossRate, double sppSampRate, double ot);
     double							getActiveFossilRangeGraphSkylineProb();
     
-    double                          getFossilRangeGraphOriginTime(void) { return originTime; }
+    double                          getFossilRangeGraphSkylineOriginTime(void) { return originTime; }
     int                             getNumFossils(void) { return numFossils; }
     int                             getNumIntervals(void) { return numIntervals; }
     

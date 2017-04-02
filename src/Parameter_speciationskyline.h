@@ -78,6 +78,10 @@ private:
     void                    printInitialIntervalVariables();
     
     // add moves
+    double                  maxdivV;
+    double                  getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv);
+    
+    double                  getExpPriorRatio(double oldVal, double newVal, double rate, double prior);
     
     double                  updateFossilRangeGraphSkylineBDParams(double &oldLnL);
     double                  updateBirthRate(FossilRangeGraphSkyline *frg, int i);
