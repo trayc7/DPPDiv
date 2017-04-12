@@ -105,8 +105,10 @@ void SpeciationSkyline::initializeIntervalVariables(){
     for(int i = 0; i < numIntervals; i++){
         birthRates.push_back(0.02);
         deathRates.push_back(0.01);
-        fossilRates.push_back(2); //**skyline note - add user defined flag psi
+        fossilRates.push_back(2.0); //**skyline note - add user defined flag psi
+        tipRates.push_back(0.0);
     }
+    tipRates[0] = extantSampleRate;
     for(int i=0; i < numIntervals; i++){
         netDiversifications.push_back(birthRates[i] - deathRates[i]);
         relativeDeaths.push_back(deathRates[i] / birthRates[i]);
@@ -145,7 +147,8 @@ void SpeciationSkyline::printInitialIntervalVariables(){
         cout << "Interval " << j << ": ";
         cout << "lambda = " << birthRates[i];
         cout << ", mu = " << deathRates[i];
-        cout << ", psi = " << fossilRates[i] << endl;
+        cout << ", psi = " << fossilRates[i];
+        cout << ", rho = " << tipRates[i] << endl;
         j++;
     }
 }
@@ -171,8 +174,8 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
             updateBirthRate(frg, t); // lambda
         else if(v == 1)
           updateDeathRate(frg, t); // mu
-        else if(v == 2)
-            updatePsiRate(frg, t); // psi // shouldnt reach here if fixpsi = 1
+        //else if(v == 2)
+          //  updatePsiRate(frg, t); // psi // shouldnt reach here if fixpsi = 1
     }
     
     return currentFossilRangeGraphSkylineLnL;
@@ -294,7 +297,7 @@ double SpeciationSkyline::getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyli
     
     double ot = frg->getFossilRangeGraphSkylineOriginTime();
     setAllBDFossParams();
-    double fgprob = frg->getFossilRangeGraphSkylineProb(birthRates, deathRates, fossilRates, extantSampleRate, ot);
+    double fgprob = frg->getFossilRangeGraphSkylineProb(birthRates, deathRates, fossilRates, tipRates, ot);
     return fgprob;
 }
 

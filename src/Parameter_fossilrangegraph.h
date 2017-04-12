@@ -152,7 +152,7 @@ private:
     int                             moves;
     int                             proposal;
     
-    std::vector<FossilRange *>		fossilRanges;
+    std::vector<FossilRange *>		fossilRanges;    
     void                            printFossilRangeVariables(); //debugging code
     void                            printFossilRangeVariables(int range); //debugging code
     

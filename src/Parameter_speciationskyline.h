@@ -48,8 +48,7 @@ public:
     std::string             writeParam(void);
     double                  getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyline *frgsl);
     
-    double                  getSppSampRateRho(void) { return extantSampleRate; }
-    
+    std::vector<double>     getSppSampRateRho() { return tipRates; }
     std::vector<double>     getSpeciationRates() { return birthRates; }
     std::vector<double>     getExtinctionRates() { return deathRates; }
     std::vector<double>     getFossilSampRates() { return fossilRates; }
@@ -63,6 +62,7 @@ public:
 private:
 
     double                  extantSampleRate;
+    std::vector<double>     tipRates;
     std::vector<double>		birthRates;
     std::vector<double>		deathRates;
     std::vector<double>		fossilRates;
