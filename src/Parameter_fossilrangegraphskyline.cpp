@@ -62,7 +62,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     initializeFossilRangeSkylineVariables();
     currentFossilRangeGraphSkylineLnL = 0.0;
     
-    bool crossValidate = 0;
+    bool crossValidate = 1;
     if(crossValidate)
         crossValidateFBDSkylinefunctions();
     
@@ -746,7 +746,8 @@ double FossilRangeGraphSkyline::fbdSkylinePfxn(std::vector<double> b, std::vecto
     double p;
     
     p = b[i] + d[i] + psi[i];
-    p -= Ai * ( exp(Ai * (t - ti)) * (1 + Bi) - (1 - Bi) ) / ( exp(Ai * (t - ti)) * (1 + Bi) + (1 - Bi) );
+    //p -= Ai * ( exp(Ai * (ti - t)) * (1 + Bi) - (1 - Bi) ) / ( exp(Ai * (ti - t)) * (1 + Bi) + (1 - Bi) );
+    p -= Ai * ( (1 + Bi - (1 - Bi) * exp(Ai * (ti - t))) / (1 + Bi + (1 - Bi) * exp(Ai * (ti - t))) );
     p /= (2 * b[i]);
     
     return p;
