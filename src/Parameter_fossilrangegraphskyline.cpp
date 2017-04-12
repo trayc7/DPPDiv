@@ -62,7 +62,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     initializeFossilRangeSkylineVariables();
     currentFossilRangeGraphSkylineLnL = 0.0;
     
-    bool crossValidate = 1;
+    bool crossValidate = 0;
     if(crossValidate)
         crossValidateFBDSkylinefunctions();
     
@@ -763,8 +763,8 @@ double FossilRangeGraphSkyline::fbdSkylineQfxn(std::vector<double> b, std::vecto
     
     double q;
     
-    q = 4 * exp (Ai * (t - ti) );
-    q /= (exp(-Ai * (t - ti) ) * (1 - Bi) + (1 + Bi)) * (exp(-Ai * (t - ti) ) * (1 - Bi) + (1 + Bi));
+    q = 4 * exp (Ai * (ti - t) );
+    q /= (exp(-Ai * (ti - t) ) * (1 - Bi) + (1 + Bi)) * (exp(-Ai * (ti - t) ) * (1 - Bi) + (1 + Bi));
     
     return q;
 }
@@ -779,8 +779,7 @@ double FossilRangeGraphSkyline::fbdSkylineQfxnLog(std::vector<double> b, std::ve
     
     double q;
     
-    q = log(4) + (Ai * (t - ti));
-    q -= log((exp(-Ai * (t - ti) ) * (1 - Bi) + (1 + Bi)) * (exp(-Ai * (t - ti) ) * (1 - Bi) + (1 + Bi)));
+    q = log(4) + (Ai * (ti - t)) - (2 * (log( (exp(Ai*(ti - t)) * (1-Bi)) + (1+Bi) )));
     
     return q;
 }
@@ -802,22 +801,18 @@ double FossilRangeGraphSkyline::fbdSkylineQTildaFxn(std::vector<double> b, std::
     return qt;
 }
 
-// this is still unsuitable for large values of t - can I use abs?
+// this should be okay for large values of t now
 double FossilRangeGraphSkyline::fbdSkylineQTildaFxnLog(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t){
     
     double Ai = fbdSkylineAfxn(b, d, psi, i);
     double Bi = fbdSkylineBfxn(b, d, psi, rho, i);
     
-    //double f1aLog = log(4) + (-t * (b[i] + d[i] + psi[i])) + (-t * Ai);
-    
-    double f1a = 4 * exp(-t * (b[i] + d[i] + psi[i])) * exp(-t * Ai);
+    double f1aLog = log(4) + (-t * (b[i] + d[i] + psi[i])) + (-t * Ai);
     double f1b = 4 * exp(-t * Ai) + (1 - Bi * Bi) * (1 - exp(-t*Ai)) * (1 - exp(-t*Ai));
     double f2a = (1 + Bi) * exp(-t * Ai) + (1 - Bi);
     double f2b = (1 - Bi) * exp(-t * Ai) + (1 + Bi);
     
-    //double qt = 0.5 * ( f1aLog - log(f1b) + log(f2a) - log(f2b) );
-    
-    double qt = 0.5 * log( (f1a / f1b) * (f2a / f2b) );
+    double qt = 0.5 * (log( (1/f1b) * (f2a/f2b) ) + f1aLog);
     
     return qt;
 }
@@ -892,10 +887,10 @@ void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
     }
 
     // other functions
-    double q = fbdSkylineQfxnLog(lambda, mu, psi, rho, originInterval, originTime);
-    double qt = fbdSkylineQTildaFxnLog(lambda, mu, psi, rho, originInterval, originTime);
+    double q = fbdSkylineQfxnLog(lambda, mu, psi, rho, 0, 2.1);
+    double qt = fbdSkylineQTildaFxnLog(lambda, mu, psi, rho, 0, 2.1);
     
-    cout << "Origin time = " << originTime << ", interval " << originInterval << endl;
+    //cout << "Origin time = " << originTime << ", interval " << originInterval << endl;
     cout << "Log q(t) for the origin = " << q << endl;
     cout << "Log qt(t) for the origin = " << qt << endl;
     
