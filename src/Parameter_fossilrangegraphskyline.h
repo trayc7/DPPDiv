@@ -139,6 +139,7 @@ public:
     std::string                     writeParam(void);
     
     double							getFossilRangeGraphSkylineProb(std::vector<double> lambda, std::vector<double> mu, std::vector<double> fossRate, std::vector<double> sppSampRate, double ot);
+    double							getFossilRangeGraphProb(std::vector<double> b, std::vector<double> d, std::vector<double> s, std::vector<double> r, double ot); // for cross validation
     double							getActiveFossilRangeGraphSkylineProb();
     
     double                          getFossilRangeGraphSkylineOriginTime(void) { return originTime; }
@@ -148,10 +149,6 @@ public:
     std::string						getFossilRangeSkylineInfoParamNames(void);
     std::string						getFossilRangeSkylineInfoParamList(void);
     
-    // probability functions
-    // constants
-    //
-    //
     double							fbdSkylineAfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, int i);
     double							fbdSkylineBfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i);
     double                          fbdSkylinePfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
@@ -161,6 +158,16 @@ public:
     double                          fbdSkylineQTildaFxnLog(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
 
     double                          exampleRevBayesPfxn(std::vector<double> l, std::vector<double> m, std::vector<double> psi, std::vector<double> rho, int i, double t);
+    
+    // frg non-skyline functions
+    double							fbdC1Fxn(double b, double d, double psi);
+    double							fbdC2Fxn(double b, double d, double psi,double rho);
+    double							fbdC3Fxn(double b, double d, double psi,double rho);
+    double							fbdC4Fxn(double b, double d, double psi,double rho);
+    double							fbdPFxn(double b, double d, double psi, double rho, double t);
+    double							fbdQFxnLog(double b, double d, double psi, double rho, double t);
+    double							fbdQTildaFxnLog(double b, double d, double psi, double rho, double t);
+    double							fbdQTildaFxnLogAlt(double b, double d, double psi, double rho, double t);
     
     void                            crossValidateFBDSkylinefunctions();
     

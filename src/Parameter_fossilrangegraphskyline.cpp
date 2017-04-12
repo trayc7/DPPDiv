@@ -62,7 +62,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     initializeFossilRangeSkylineVariables();
     currentFossilRangeGraphSkylineLnL = 0.0;
     
-    bool crossValidate = 0;
+    bool crossValidate = 1;
     if(crossValidate)
         crossValidateFBDSkylinefunctions();
     
@@ -627,6 +627,12 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(std::vector<doubl
     
     double  nprb = 0.0;
     
+    bool frgProb = 0;
+    if(frgProb){
+        nprb = getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
+        return nprb;
+    }
+    
     double rho = sppSampRate[0];
     
     nprb = (numLineages - numExtinctLineages) * log(rho); // double check you can just exclude (1 - rho) ^ (n - m - l);
@@ -685,6 +691,8 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(std::vector<doubl
     }
     
     //cout << "Part 5 " << setprecision(7) << nprb << endl;
+    
+    currentFossilRangeGraphSkylineLnL = nprb;
     
     return nprb;
 }
@@ -895,6 +903,136 @@ void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
     cout << "FRG skyline likelihood " << setprecision(7) << lk << endl;
     
     exit(0);
+}
+
+//FBD process augmenting the start and end of species
+double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, std::vector<double> d, std::vector<double> s, std::vector<double> r, double ot){
+    if(runUnderPrior)
+        return 0.0;
+    
+    double nprb = 0.0;
+    
+    double lambda = b[0];
+    double mu = d[0];
+    double fossRate = s[0];
+    double sppSampRate = r[0];
+    
+    nprb = numFossils*log(fossRate);
+    nprb += numExtinctLineages*log(mu);
+    nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
+    
+    for(int f=0; f < fossilRangesSkyline.size(); f++){
+        
+        FossilRangeSkyline *fr = fossilRangesSkyline[f];
+        
+        double bi = fr->getLineageStart(); // bi
+        double di = fr->getLineageStop();  // di
+        double oi = fr->getFirstAppearance(); // oi
+        
+        nprb += log( lambda * fr->getFossilRangeBrGamma() );
+        
+        double rangePr = 0;
+        
+        rangePr += fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, oi);
+        rangePr -= fbdQTildaFxnLog(lambda, mu, fossRate, sppSampRate, di);
+        
+        rangePr += fbdQFxnLog(lambda, mu, fossRate, sppSampRate, bi);
+        rangePr -= fbdQFxnLog(lambda, mu, fossRate, sppSampRate, oi);
+        
+        nprb += rangePr;
+    }
+    
+    currentFossilRangeGraphSkylineLnL = nprb;
+    
+    return nprb;
+}
+
+double FossilRangeGraphSkyline::fbdC1Fxn(double b, double d, double psi){
+    
+    double v = fabs( sqrt( ( (b-d-psi) * (b-d-psi) ) + 4*b*psi) );
+    return v;
+}
+
+double FossilRangeGraphSkyline::fbdC2Fxn(double b, double d, double psi, double rho){
+    
+    double v = -( ( b-d-(2*b*rho)-psi ) / (fbdC1Fxn(b,d,psi)) );
+    return v;
+}
+
+double FossilRangeGraphSkyline::fbdC3Fxn(double b, double d, double psi, double rho){
+    
+    double v = b * (-psi + rho * (d + b * (-1 +rho) + psi ) );
+    return v;
+}
+
+double FossilRangeGraphSkyline::fbdC4Fxn(double b, double d, double psi, double rho){
+    
+    double v = fbdC3Fxn(b,d,psi,rho) / (fbdC1Fxn(b,d,psi) * fbdC1Fxn(b,d,psi));
+    return v;
+}
+
+double FossilRangeGraphSkyline::fbdPFxn(double b, double d, double psi, double rho, double t){
+    
+    double c1Val = fbdC1Fxn(b,d,psi);
+    double c2Val = fbdC2Fxn(b,d,psi,rho);
+    
+    double expC1MinusC2 = exp(-c1Val * t) * (1.0 - c2Val);
+    
+    double eCfrac = (expC1MinusC2 - (1.0 + c2Val)) / (expC1MinusC2 + (1.0 + c2Val));
+    double v = 1.0 + ((-(b - d - psi)) + (c1Val * eCfrac)) / (2.0 * b);
+    
+    return v;
+}
+
+double FossilRangeGraphSkyline::fbdQFxnLog(double b, double d, double psi, double rho, double t){
+    
+    double c1 = fbdC1Fxn(b,d,psi);
+    double c2 = fbdC2Fxn(b,d,psi,rho);
+    
+    double f1 = log(4) + (-c1 * t);
+    double f2 = 2 * (log( (exp(-c1*t) * (1-c2)) + (1+c2) ));
+    
+    double v = f1 - f2;
+    
+    return v;
+}
+
+// rho = 1
+double FossilRangeGraphSkyline::fbdQTildaFxnLog(double b, double d, double psi, double rho, double t){
+    
+    bool useAlt = 0;
+    if(useAlt)
+        return fbdQTildaFxnLogAlt(b, d, psi, rho, t);
+    
+    double c1 = fbdC1Fxn(b,d,psi);
+    double c2 = fbdC2Fxn(b,d,psi,rho);
+    double c4 = fbdC4Fxn(b,d,psi,rho);
+    
+    double f1aLog = -t * (b + d + psi + c1) ;
+    double f1b = (c4 * ( (1-exp(-t * c1))*(1-exp(-t * c1)) )  -exp(-t * c1) );
+    double f2a = ( (1-c2) * (2 * c4 * (exp(-t*c1) -1) ) + exp(-t*c1) * (1-c2*c2) );
+    double f2b = ( (1+c2) * (2 * c4 * (exp(-t*c1) - 1)) + exp(-t*c1) * (1-c2*c2) );
+    
+    double f  = f1aLog + log(-1/f1b * (f2a/f2b));
+    
+    double v = f*0.5 + log(rho);
+    
+    return v;
+}
+
+double FossilRangeGraphSkyline::fbdQTildaFxnLogAlt(double b, double d, double psi, double rho, double t){
+    
+    double c1 = fbdC1Fxn(b,d,psi);
+    double c2 = fbdC2Fxn(b,d,psi,rho);
+    
+    double f1a = 4 * exp(-t * c1) * exp(-t * (b + d + psi));
+    double f1b = 4 * exp(-t * c1) + (1 - c2 * c2) * (1 - exp(-t * c1)) *(1 - exp(-t * c1));
+    double f2a = (1 + c2) * exp(-t * c1) + (1 - c2);
+    double f2b = (1 - c2) * exp(-t * c1) + (1 + c2);
+    
+    double v = 0.5 * log( (f1a/f1b) * (f2a/f2b) );
+    
+    return v;
 }
 
 //END
