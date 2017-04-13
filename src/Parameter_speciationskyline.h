@@ -77,7 +77,7 @@ private:
     void                    initializeIntervalVariables();
     void                    printInitialIntervalVariables();
     
-    // add moves
+    // moves
     double                  maxdivV;
     double                  getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv);
     
@@ -87,6 +87,8 @@ private:
     double                  updateBirthRate(FossilRangeGraphSkyline *frg, int i);
     double                  updateDeathRate(FossilRangeGraphSkyline *frg, int i);
     double                  updatePsiRate(FossilRangeGraphSkyline *frg, int i);
+    double                  updateBirthOneRate(FossilRangeGraphSkyline *frg);
+    double                  updateDeathOneRate(FossilRangeGraphSkyline *frg);
     
     int                     birthRatePrior;
     int                     deathRatePrior;
@@ -94,6 +96,9 @@ private:
     double                  birthRateExpRate;
     double                  deathRateExpRate;
     double                  fossRateExpRate;
+    
+    bool                    fixPsi;
+    bool                    constantRateModel;
 
 };
 

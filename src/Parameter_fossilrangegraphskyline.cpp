@@ -62,7 +62,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     initializeFossilRangeSkylineVariables();
     currentFossilRangeGraphSkylineLnL = 0.0;
     
-    bool crossValidate = 1;
+    bool crossValidate = 0;
     if(crossValidate)
         crossValidateFBDSkylinefunctions();
     
@@ -518,7 +518,6 @@ double FossilRangeGraphSkyline::updateLineageStopTimes(){
             currentFossilRangeGraphSkylineLnL = oldLike;
         }
     }
-    
     return 0.0;
 }
 
@@ -638,34 +637,12 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(std::vector<doubl
     nprb = (numLineages - numExtinctLineages) * log(rho); // double check you can just exclude (1 - rho) ^ (n - m - l);
     nprb -= log(1 - fbdSkylinePfxn(lambda, mu, fossRate, sppSampRate, originInterval, originTime));
     
-    //cout << "Part 1 " << setprecision(7) << nprb << endl;
-    
     // fossils
     for(int h = 0; h < intervals.size(); h++){
         Interval *interval = intervals[h];
         int numFossils = interval->getIntervalFossils();
         nprb += numFossils * log(fossRate[h]);
     }
-    
-    //cout << "Part 2 " << setprecision(7) << nprb << endl;
-    
-    // extinction events
-    for(int f = 0; f < fossilRangesSkyline.size(); f++){
-        FossilRangeSkyline *fr = fossilRangesSkyline[f];
-        if(!fr->getIsExtant())
-            nprb += log(mu[fr->getFossilRangeDeathInterval()]);
-    }
-    
-    //cout << "Part 3 " << setprecision(7) << nprb << endl;
-    
-    // birth events (excluding the origin)
-    for(int f = 0; f < fossilRangesSkyline.size(); f++){
-        FossilRangeSkyline *fr = fossilRangesSkyline[f];
-        if(fr->getLineageStart() != originTime)
-            nprb += log(lambda[fr->getFossilRangeBirthInterval()]);
-    }
-    
-    //cout << "Part 4 " << setprecision(7) << nprb << endl;
     
     // for each range
     for(int f = 0; f < fossilRangesSkyline.size(); f++){
@@ -678,6 +655,14 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(std::vector<doubl
         int bint = fr->getFossilRangeBirthInterval();
         int dint = fr->getFossilRangeDeathInterval();
         int oint = fr->getFossilRangeFirstAppearanceInterval();
+        
+        // speciation events
+        if(bi != originTime)
+            nprb += log(lambda[bint]);
+        
+        // extinction events
+        if(!fr->getIsExtant())
+            nprb += log(mu[dint]);
         
         nprb += log( fr->getFossilRangeBrGamma() );
         
