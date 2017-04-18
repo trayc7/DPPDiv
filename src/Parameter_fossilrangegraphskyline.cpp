@@ -55,12 +55,16 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     originInterval = 0;
     ancientBound = 0.0;
     fixOrigin = 0;
-    fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
+    //fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
+    fixFRG = 0;
+    fixStart = 0;
+    fixStop = 0;
     printInitialFossilRangeSkylineVariables = 1;
     createIntervalsVector(ints);
     createFossilRangeSkylineVector(clb);
     initializeFossilRangeSkylineVariables();
     currentFossilRangeGraphSkylineLnL = 0.0;
+    counter = 0; // debugging
     
     bool crossValidate = 0;
     if(crossValidate)
@@ -79,25 +83,25 @@ FossilRangeGraphSkyline::~FossilRangeGraphSkyline(void){
     
 }
 
-FossilRangeGraphSkyline& FossilRangeGraphSkyline::operator=(const FossilRangeGraphSkyline &frgsl) {
+FossilRangeGraphSkyline& FossilRangeGraphSkyline::operator=(const FossilRangeGraphSkyline &frgs) {
     
-    if (this != &frgsl)
-        clone(frgsl);
+    if (this != &frgs)
+        clone(frgs);
     return *this;
     
 }
 
-void FossilRangeGraphSkyline::clone(const FossilRangeGraphSkyline &frgsl){
+void FossilRangeGraphSkyline::clone(const FossilRangeGraphSkyline &frgs){
 
-    numFossils = frgsl.numFossils;
-    numLineages = frgsl.numLineages;
-    numExtinctLineages = frgsl.numExtinctLineages;
-    originTime = frgsl.originTime;
-    numIntervals = frgsl.numIntervals;
+    numFossils = frgs.numFossils;
+    numLineages = frgs.numLineages;
+    numExtinctLineages = frgs.numExtinctLineages;
+    originTime = frgs.originTime;
+    numIntervals = frgs.numIntervals;
     
-    for(int i=0; i<fossilRangesSkyline.size(); i++){
-        FossilRangeSkyline *frTo = fossilRangesSkyline[i];
-        FossilRangeSkyline *frFrom = frgsl.fossilRangesSkyline[i];
+    for(int f = 0; f < fossilRangesSkyline.size(); f++){
+        FossilRangeSkyline *frTo = fossilRangesSkyline[f];
+        FossilRangeSkyline *frFrom = frgs.fossilRangesSkyline[f];
         frTo->setFossilRangeIndex(frFrom->getFossilRangeIndex());
         frTo->setFirstAppearance(frFrom->getFirstAppearance());
         frTo->setLastAppearance(frFrom->getLastAppearance());
@@ -111,7 +115,6 @@ void FossilRangeGraphSkyline::clone(const FossilRangeGraphSkyline &frgsl){
         frTo->setFossilRangeBirthInterval(frFrom->getFossilRangeBirthInterval());
         frTo->setFossilRangeDeathInterval(frFrom->getFossilRangeDeathInterval());
     }
-    
 }
 
 double FossilRangeGraphSkyline::update(double &oldLnL){
@@ -174,9 +177,9 @@ void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
 
 void FossilRangeGraphSkyline::printIntervalVariables(){
     
-    for(int h = 0; h < numIntervals; h++){
-        Interval *interval = intervals[h];
-        cout << "Interval index: " << h << endl;
+    for(int i = 0; i < numIntervals; i++){
+        Interval *interval = intervals[i];
+        cout << "Interval index: " << i << endl;
         cout << "Interval ID: " << interval->getIntervalID() << endl;
         cout << "Interval start: " << interval->getIntervalStart() << endl;
         cout << "Interval end: " << interval->getIntervalEnd() << endl;
@@ -195,8 +198,8 @@ void FossilRangeGraphSkyline::createFossilRangeSkylineVector(vector<Calibration 
         bool e = p->getIsExtant();
         bool eo = p->getIsExtantOnly();
         
-        FossilRangeSkyline *frsl = new FossilRangeSkyline(fa, la, at, e, eo, frid);
-        fossilRangesSkyline.push_back(frsl);
+        FossilRangeSkyline *frs = new FossilRangeSkyline(fa, la, at, e, eo, frid);
+        fossilRangesSkyline.push_back(frs);
         
         frid ++;
     }
@@ -246,7 +249,15 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
             fr->setFixStop(1);
         }
     }
-    
+//    if(fixStart){
+//        for(int f = 0; f < numLineages; f++){
+//            FossilRangeSkyline *fr = fossilRangesSkyline[f];
+//            fr->setLineageStart(fr->getAttachmentTime());
+//            fr->setLineageStop(fr->getLastAppearance());
+//            fr->setFixStart(1);
+//        }
+//    }
+
     // this is only used for expmo = 1
     if(fixOrigin){
         int of = 0;
@@ -296,7 +307,6 @@ void FossilRangeGraphSkyline::redefineOriginTime(){
     
     originTime = ot;
     originInterval = assignInterval(ot);
-    
 }
 
 void FossilRangeGraphSkyline::recountFossilRangeAttachNums(){
@@ -319,7 +329,6 @@ void FossilRangeGraphSkyline::recountFossilRangeAttachNums(){
         
         fr->setFossilRangeBrGamma(g);
     }
-    
 }
 
 void FossilRangeGraphSkyline::countExtinctLineages(){
@@ -333,7 +342,6 @@ void FossilRangeGraphSkyline::countExtinctLineages(){
     }
     
     numExtinctLineages = el;
-    
 }
 
 int FossilRangeGraphSkyline::assignInterval(double time){
@@ -365,7 +373,6 @@ void FossilRangeGraphSkyline::printFossilRangeSkylineVariables(){
     }
     
     cout << "Origin time: " << originTime << " sampled in interval " << originInterval << endl;
-    
 }
 
 void FossilRangeGraphSkyline::printFossilRangeVariables(int range){
@@ -388,29 +395,20 @@ void FossilRangeGraphSkyline::printFossilRangeVariables(int range){
 }
 
 double FossilRangeGraphSkyline::updateLineageStartTimes(){
-
-// skyline note ** delete this when the implementation is done
-//    double sppSampRate = 1;
-//    vector<double> lambda, mu, fossRate;
-//    for(int i = 0; numIntervals; i++){
-//        lambda.push_back(1);
-//        mu.push_back(0.1);
-//        fossRate.push_back(2);
-//    }
     
     SpeciationSkyline *s = modelPtr->getActiveSpeciationSkyline();
-    //    s->setAllBDFossParams();
+    s->setAllBDFossParams();
     std::vector<double> rho = s->getSppSampRateRho();
     std::vector<double> lambda = s->getSpeciationRates();
     std::vector<double> mu = s->getExtinctionRates();
     std::vector<double> fossRate = s->getFossilSampRates();
     
     vector<int> rndFossilRangeIDs;
-    for(int i=0; i<fossilRangesSkyline.size(); i++)
+    for(int i = 0; i < fossilRangesSkyline.size(); i++)
         rndFossilRangeIDs.push_back(i);
     random_shuffle(rndFossilRangeIDs.begin(), rndFossilRangeIDs.end());
     
-    for(vector<int>::iterator it=rndFossilRangeIDs.begin(); it!=rndFossilRangeIDs.end(); it++){
+    for(vector<int>::iterator it = rndFossilRangeIDs.begin(); it != rndFossilRangeIDs.end(); it++){
         
         FossilRangeSkyline *fr = fossilRangesSkyline[(*it)];
         
@@ -428,10 +426,9 @@ double FossilRangeGraphSkyline::updateLineageStartTimes(){
         // propose new values
         double newStart = 0.0;
         double c = 0.0;
-        
     
         double rv = ranPtr->uniformRv();
-        double tv = 2.0; //rw: tuningVal
+        double tv = 2.0; // tuningVal
         c = doAScaleMove(newStart, oldStart, tv, fa, ancientBound, rv);
         
         // redefine values
@@ -455,17 +452,13 @@ double FossilRangeGraphSkyline::updateLineageStartTimes(){
             currentFossilRangeGraphSkylineLnL = oldLike;
         }
     }
-    
-    // debugging code
-    //printFossilRangeVariables(0);
-    
     return 0.0;
 }
 
 double FossilRangeGraphSkyline::updateLineageStopTimes(){
     
     SpeciationSkyline *s = modelPtr->getActiveSpeciationSkyline();
-    //    s->setAllBDFossParams();
+    s->setAllBDFossParams();
     std::vector<double> rho = s->getSppSampRateRho();
     std::vector<double> lambda = s->getSpeciationRates();
     std::vector<double> mu = s->getExtinctionRates();
@@ -550,27 +543,29 @@ double FossilRangeGraphSkyline::doAScaleMove(double &nv, double cv, double tv, d
 string FossilRangeGraphSkyline::getFossilRangeSkylineInfoParamNames(void){
     
     stringstream ss;
-    FossilRangeSkyline *frg = NULL;
-    for(int i=0; i<fossilRangesSkyline.size(); i++){
-        frg = fossilRangesSkyline[i];
-        int frgID = frg->getFossilRangeID();
+    FossilRangeSkyline *fr = NULL;
+    
+    for(int f = 0;  f < fossilRangesSkyline.size(); f++){
+        fr = fossilRangesSkyline[f];
+        int frgID = fr->getFossilRangeID();
         ss << "\ty_f(FR_" << frgID << ")"; // first appearance
         ss << "\tb_f(FR_" << frgID << ")"; // lineage start
         ss << "\tx_f(FR_" << frgID << ")"; // last appearance
         ss << "\td_f(FR_" << frgID << ")"; // lineage stop
     }
-    for(int i=0; i<fossilRangesSkyline.size(); i++){
-        frg = fossilRangesSkyline[i];
-        int frgID = frg->getFossilRangeID();
+    for(int f = 0;  f < fossilRangesSkyline.size(); f++){
+        fr = fossilRangesSkyline[f];
+        int frgID = fr->getFossilRangeID();
         ss << "\ty_I(FR_" << frgID << ")"; // first appearance interval
         ss << "\tb_I(FR_" << frgID << ")"; // lineage start interval
         ss << "\td_I(FR_" << frgID << ")"; // lineage stop interval
     }
-    for(int i=0; i<fossilRangesSkyline.size(); i++){
-        frg = fossilRangesSkyline[i];
-        int frgID = frg->getFossilRangeID();
+    for(int f = 0;  f < fossilRangesSkyline.size(); f++){
+        fr = fossilRangesSkyline[f];
+        int frgID = fr->getFossilRangeID();
         ss << "\tgamma_f(FR_" << frgID << ")"; //".nd" << nID << ")";
     }
+    
     string ni = ss.str();
     return ni;
 }
@@ -578,25 +573,26 @@ string FossilRangeGraphSkyline::getFossilRangeSkylineInfoParamNames(void){
 string FossilRangeGraphSkyline::getFossilRangeSkylineInfoParamList(void){
     
     stringstream ss;
-    FossilRangeSkyline *frg = NULL;
+    FossilRangeSkyline *fr = NULL;
     
-    for(int i=0; i<fossilRangesSkyline.size(); i++){
-        frg = fossilRangesSkyline[i];
-        ss << "\t" << frg->getFirstAppearance(); // first appearance -- note this is fixed in this implementation
-        ss << "\t" << frg->getLineageStart(); // lineage start
-        ss << "\t" << frg->getLastAppearance(); // last appearance
-        ss << "\t" << frg->getLineageStop(); // lineage stop
+    for(int f = 0;  f < fossilRangesSkyline.size(); f++){
+        fr = fossilRangesSkyline[f];
+        ss << "\t" << fr->getFirstAppearance(); // first appearance -- note this is fixed in this implementation
+        ss << "\t" << fr->getLineageStart(); // lineage start
+        ss << "\t" << fr->getLastAppearance(); // last appearance
+        ss << "\t" << fr->getLineageStop(); // lineage stop
     }
-    for(int i=0; i<fossilRangesSkyline.size(); i++){
-        frg = fossilRangesSkyline[i];
-        ss << "\t" << frg->getFossilRangeFirstAppearanceInterval(); // first appearance interval
-        ss << "\t" << frg->getFossilRangeBirthInterval(); // lineage start interval
-        ss << "\t" << frg->getFossilRangeDeathInterval(); // lineage stop interval
+    for(int f = 0;  f < fossilRangesSkyline.size(); f++){
+        fr = fossilRangesSkyline[f];
+        ss << "\t" << fr->getFossilRangeFirstAppearanceInterval(); // first appearance interval
+        ss << "\t" << fr->getFossilRangeBirthInterval(); // lineage start interval
+        ss << "\t" << fr->getFossilRangeDeathInterval(); // lineage stop interval
     }
-    for(int i=0; i<fossilRangesSkyline.size(); i++){
-        frg = fossilRangesSkyline[i];
-        ss << "\t" << frg->getFossilRangeBrGamma();
+    for(int f = 0;  f < fossilRangesSkyline.size(); f++){
+        fr = fossilRangesSkyline[f];
+        ss << "\t" << fr->getFossilRangeBrGamma();
     }
+    
     string ni = ss.str();
     return ni;
 }
@@ -638,10 +634,11 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(std::vector<doubl
     nprb -= log(1 - fbdSkylinePfxn(lambda, mu, fossRate, sppSampRate, originInterval, originTime));
     
     // fossils
-    for(int h = 0; h < intervals.size(); h++){
-        Interval *interval = intervals[h];
+    for(int i = 0; i < intervals.size(); i++){
+        Interval *interval = intervals[i];
         int numFossils = interval->getIntervalFossils();
-        nprb += numFossils * log(fossRate[h]);
+        if(numFossils > 0)
+            nprb += numFossils * log(fossRate[i]);
     }
     
     // for each range
@@ -656,6 +653,8 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(std::vector<doubl
         int dint = fr->getFossilRangeDeathInterval();
         int oint = fr->getFossilRangeFirstAppearanceInterval();
         
+        nprb += log( fr->getFossilRangeBrGamma() );
+        
         // speciation events
         if(bi != originTime)
             nprb += log(lambda[bint]);
@@ -664,18 +663,25 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(std::vector<doubl
         if(!fr->getIsExtant())
             nprb += log(mu[dint]);
         
-        nprb += log( fr->getFossilRangeBrGamma() );
-        
         nprb += fbdSkylineQTildaFxnLog(lambda, mu, fossRate, sppSampRate, oint, oi);
         nprb -= fbdSkylineQTildaFxnLog(lambda, mu, fossRate, sppSampRate, dint, di);
         
         nprb += fbdSkylineQfxnLog(lambda, mu, fossRate, sppSampRate, bint, bi);
         nprb -= fbdSkylineQfxnLog(lambda, mu, fossRate, sppSampRate, oint, oi);
         
-        //cout << "f " << f << " lk " << setprecision(7) << nprb << endl;
+        for(int i = oint; i < bint; i++){
+            Interval *interval = intervals[i];
+            double t = interval->getIntervalStart();
+            nprb += fbdSkylineQfxnLog(lambda, mu, fossRate, sppSampRate, i, t);
+        }
+        
+        for(int i = dint; i < oint ; i++){
+            Interval *interval = intervals[i];
+            double t = interval->getIntervalStart();
+            nprb += fbdSkylineQTildaFxnLog(lambda, mu, fossRate, sppSampRate, i, t);
+        }
+        
     }
-    
-    //cout << "Part 5 " << setprecision(7) << nprb << endl;
     
     currentFossilRangeGraphSkylineLnL = nprb;
     
@@ -731,7 +737,6 @@ double FossilRangeGraphSkyline::fbdSkylinePfxn(std::vector<double> b, std::vecto
     double p;
     
     p = b[i] + d[i] + psi[i];
-    //p -= Ai * ( exp(Ai * (ti - t)) * (1 + Bi) - (1 - Bi) ) / ( exp(Ai * (ti - t)) * (1 + Bi) + (1 - Bi) );
     p -= Ai * ( (1 + Bi - (1 - Bi) * exp(Ai * (ti - t))) / (1 + Bi + (1 - Bi) * exp(Ai * (ti - t))) );
     p /= (2 * b[i]);
     
@@ -793,6 +798,11 @@ double FossilRangeGraphSkyline::fbdSkylineQTildaFxnLog(std::vector<double> b, st
     double Ai = fbdSkylineAfxn(b, d, psi, i);
     double Bi = fbdSkylineBfxn(b, d, psi, rho, i);
     
+    Interval *interval = intervals[i];
+    double ti = interval->getIntervalEnd();
+    
+    t -= ti;
+    
     double f1aLog = log(4) + (-t * (b[i] + d[i] + psi[i])) + (-t * Ai);
     double f1b = 4 * exp(-t * Ai) + (1 - Bi * Bi) * (1 - exp(-t*Ai)) * (1 - exp(-t*Ai));
     double f2a = (1 + Bi) * exp(-t * Ai) + (1 - Bi);
@@ -835,8 +845,8 @@ void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
     std::vector<double> lambda, mu, psi, rho;
     
     for(int i = 0; i < numIntervals; i++){
-        lambda.push_back(0.8);
-        mu.push_back(0.1);
+        lambda.push_back(0.74925947030125672);
+        mu.push_back(0.063759991238979255);
         psi.push_back(2.0);
         rho.push_back(0.0);
     }
@@ -860,7 +870,7 @@ void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
     }
     cout << "Constant B" << endl;
     for(int i = 0; i < numIntervals; i++){
-        cout << "B for interval " << i << " = " << intervalConstantsB[i] << endl;
+        cout << "B for interval " << i << " = " << setprecision(15) << intervalConstantsB[i] << endl;
     }
     cout << "P(t) function" << endl;
     for(int i = 0; i < numIntervals; i++){
@@ -882,6 +892,11 @@ void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
     
     double lk = getFossilRangeGraphSkylineProb(lambda, mu, psi, rho, originTime);
     cout << "FRG skyline likelihood " << setprecision(7) << lk << endl;
+    
+    cout << "0.5 " << assignInterval(0.5) << endl;
+    cout << "1.3 " << assignInterval(1.3) << endl;
+    cout << "2.9 " << assignInterval(2.9) << endl;
+    cout << "4.6 " << assignInterval(4.6) << endl;
     
     exit(0);
 }
@@ -1001,6 +1016,7 @@ double FossilRangeGraphSkyline::fbdQTildaFxnLog(double b, double d, double psi, 
     return v;
 }
 
+// rho < 1
 double FossilRangeGraphSkyline::fbdQTildaFxnLogAlt(double b, double d, double psi, double rho, double t){
     
     double c1 = fbdC1Fxn(b,d,psi);

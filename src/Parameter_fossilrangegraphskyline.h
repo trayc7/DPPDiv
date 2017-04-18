@@ -131,8 +131,8 @@ public:
 
     ~FossilRangeGraphSkyline(void);
     
-    FossilRangeGraphSkyline			&operator=(const FossilRangeGraphSkyline &frgsl);
-    void							clone(const FossilRangeGraphSkyline &frgsl);
+    FossilRangeGraphSkyline			&operator=(const FossilRangeGraphSkyline &frgs);
+    void							clone(const FossilRangeGraphSkyline &frgs);
     double                          update(double &oldLnL);
     double                          lnPrior();
     void							print(std::ostream & o) const;
@@ -149,6 +149,7 @@ public:
     std::string						getFossilRangeSkylineInfoParamNames(void);
     std::string						getFossilRangeSkylineInfoParamList(void);
     
+    // frg skyline functions
     double							fbdSkylineAfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, int i);
     double							fbdSkylineBfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i);
     double                          fbdSkylinePfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
@@ -159,7 +160,7 @@ public:
 
     double                          exampleRevBayesPfxn(std::vector<double> l, std::vector<double> m, std::vector<double> psi, std::vector<double> rho, int i, double t);
     
-    // frg non-skyline functions
+    // frg functions
     double							fbdC1Fxn(double b, double d, double psi);
     double							fbdC2Fxn(double b, double d, double psi,double rho);
     double							fbdC3Fxn(double b, double d, double psi,double rho);
@@ -203,10 +204,13 @@ private:
     double							currentFossilRangeGraphSkylineLnL;
     double							doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv);
     
-    //    int								treeTimePrior; // this should always be 11
+//  int								treeTimePrior; // this should always be 11
     
     bool                            fixFRG;
     bool                            fixOrigin;
+    bool                            fixStart;
+    bool                            fixStop;
+    int                             counter; // debugging
     
 };
 

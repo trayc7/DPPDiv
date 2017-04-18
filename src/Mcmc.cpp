@@ -722,8 +722,8 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
             frOut << "\tbirth[" << i << "]\tdeath[" << i << "]\tpsi[" << i << "]";
         }
         frOut << "\tFBD.rho[0]\t";
-        //if(printOrigin)
-          //  frOut << "\tFBD.OriginTime";
+        if(printOrigin)
+          frOut << "\tFBD.OriginTime";
         if(printAttach)
             frOut << frg->getFossilRangeSkylineInfoParamNames();
         frOut << "\tnum.fossils(k)";
@@ -734,6 +734,8 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
         frOut << "\t" << sp->getSpeciationRates()[i] << "\t" << sp->getExtinctionRates()[i] << "\t" << sp->getFossilSampRates()[i];
     }
     frOut << "\t" << sp->getSppSampRateRho()[0];
+    if(printOrigin)
+        frOut << "\t" << frg->getFossilRangeGraphSkylineOriginTime();
     if(printAttach)
         frOut << frg->getFossilRangeSkylineInfoParamList();
     frOut << "\t" << frg->getNumFossils();

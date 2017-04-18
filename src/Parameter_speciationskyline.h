@@ -46,7 +46,7 @@ public:
     void                    print(std::ostream & o) const;
     double                  lnPrior(void);
     std::string             writeParam(void);
-    double                  getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyline *frgsl);
+    double                  getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyline *frgs);
     
     std::vector<double>     getSppSampRateRho() { return tipRates; }
     std::vector<double>     getSpeciationRates() { return birthRates; }
@@ -84,11 +84,11 @@ private:
     double                  getExpPriorRatio(double oldVal, double newVal, double rate, double prior);
     
     double                  updateFossilRangeGraphSkylineBDParams(double &oldLnL);
-    double                  updateBirthRate(FossilRangeGraphSkyline *frg, int i);
-    double                  updateDeathRate(FossilRangeGraphSkyline *frg, int i);
-    double                  updatePsiRate(FossilRangeGraphSkyline *frg, int i);
-    double                  updateBirthOneRate(FossilRangeGraphSkyline *frg);
-    double                  updateDeathOneRate(FossilRangeGraphSkyline *frg);
+    double                  updateBirthRate(FossilRangeGraphSkyline *frgs, int i);
+    double                  updateDeathRate(FossilRangeGraphSkyline *frgs, int i);
+    double                  updatePsiRate(FossilRangeGraphSkyline *frgs, int i);
+    double                  updateBirthOneRate(FossilRangeGraphSkyline *frgs);
+    double                  updateDeathOneRate(FossilRangeGraphSkyline *frgs);
     
     int                     birthRatePrior;
     int                     deathRatePrior;

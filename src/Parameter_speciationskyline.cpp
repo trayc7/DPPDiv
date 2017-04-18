@@ -106,8 +106,8 @@ void SpeciationSkyline::clone(const SpeciationSkyline &c) {
 void SpeciationSkyline::initializeIntervalVariables(){
     
     for(int i = 0; i < numIntervals; i++){
-        birthRates.push_back(0.02);
-        deathRates.push_back(0.01);
+        birthRates.push_back(0.9);
+        deathRates.push_back(0.3);
         fossilRates.push_back(2.0); //**skyline note - add user defined flag psi
         tipRates.push_back(0.0);
     }
@@ -159,7 +159,7 @@ void SpeciationSkyline::printInitialIntervalVariables(){
 double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
     
     currentFossilRangeGraphSkylineLnL = oldLnL;
-    FossilRangeGraphSkyline *frg = modelPtr->getActiveFossilRangeGraphSkyline();
+    FossilRangeGraphSkyline *frgs = modelPtr->getActiveFossilRangeGraphSkyline();
     
     int numMoves;
     
@@ -177,9 +177,9 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
             // choose random parameters (never go to 3 if fixPsi = T)
             v = (int)(ranPtr->uniformRv() * numMoves);
             if(v == 0)
-                updateBirthRate(frg, t); // lambda
+                updateBirthRate(frgs, t); // lambda
             else if(v == 1)
-                updateDeathRate(frg, t); // mu
+                updateDeathRate(frgs, t); // mu
         }
     }
     else{
@@ -187,9 +187,9 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
             // choose random parameters
             v = (int)(ranPtr->uniformRv() * numMoves);
             if(v == 0)
-                updateBirthOneRate(frg); // lambda
+                updateBirthOneRate(frgs); // lambda
             else if(v == 1)
-              updateDeathOneRate(frg); // mu
+              updateDeathOneRate(frgs); // mu
             //else if(v == 2)
               //updatePsiRate(frg);
         }
@@ -197,7 +197,7 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
     return currentFossilRangeGraphSkylineLnL;
 }
 
-double SpeciationSkyline::updateBirthRate(FossilRangeGraphSkyline *frg, int i) {
+double SpeciationSkyline::updateBirthRate(FossilRangeGraphSkyline *frgs, int i) {
     
     double oldfgprob = currentFossilRangeGraphSkylineLnL;
     double lpr = 0.0;
@@ -208,7 +208,7 @@ double SpeciationSkyline::updateBirthRate(FossilRangeGraphSkyline *frg, int i) {
     double c = getNewValScaleMv(newLambda, oldLambda, minV, maxdivV, tuning);
     birthRates[i] = newLambda;
     lpr = c;
-    double newfgprob = getLnFossilRangeGraphSkylineProb(frg);
+    double newfgprob = getLnFossilRangeGraphSkylineProb(frgs);
     double lnPriorRat = getExpPriorRatio(oldLambda, newLambda, birthRateExpRate, birthRatePrior);
     double lnLikeRat = (newfgprob - oldfgprob);
     double lnR = lnLikeRat + lpr + lnPriorRat;
@@ -225,7 +225,7 @@ double SpeciationSkyline::updateBirthRate(FossilRangeGraphSkyline *frg, int i) {
     return 0.0;
 }
 
-double SpeciationSkyline::updateDeathRate(FossilRangeGraphSkyline *frg, int i) {
+double SpeciationSkyline::updateDeathRate(FossilRangeGraphSkyline *frgs, int i) {
     
     double oldfgprob = currentFossilRangeGraphSkylineLnL;
     double lpr = 0.0;
@@ -236,7 +236,7 @@ double SpeciationSkyline::updateDeathRate(FossilRangeGraphSkyline *frg, int i) {
     double c = getNewValScaleMv(newMu, oldMu, minV, maxdivV, tuning);
     deathRates[i] = newMu;
     lpr = c;
-    double newfgprob = getLnFossilRangeGraphSkylineProb(frg);
+    double newfgprob = getLnFossilRangeGraphSkylineProb(frgs);
     double lnPriorRat = getExpPriorRatio(oldMu, newMu, deathRateExpRate, deathRatePrior);
     double lnLikeRat = (newfgprob - oldfgprob);
     double lnR = lnLikeRat + lpr + lnPriorRat;
@@ -253,7 +253,7 @@ double SpeciationSkyline::updateDeathRate(FossilRangeGraphSkyline *frg, int i) {
     return 0.0;
 }
 
-double SpeciationSkyline::updatePsiRate(FossilRangeGraphSkyline *frg, int i) {
+double SpeciationSkyline::updatePsiRate(FossilRangeGraphSkyline *frgs, int i) {
     
     double oldfgprob = currentFossilRangeGraphSkylineLnL;
     double lpr = 0.0;
@@ -266,7 +266,7 @@ double SpeciationSkyline::updatePsiRate(FossilRangeGraphSkyline *frg, int i) {
     //double c = getNewValScaleMv(newPsi, oldPsi, minV, maxV, tuning);
     fossilRates[i] = newPsi;
     lpr = c;
-    double newfgprob = getLnFossilRangeGraphSkylineProb(frg);
+    double newfgprob = getLnFossilRangeGraphSkylineProb(frgs);
     double lnPriorRat = getExpPriorRatio(oldPsi, newPsi, fossRateExpRate, fossRatePrior);
     double lnLikeRat = (newfgprob - oldfgprob);
     double lnR = lnLikeRat + lpr + lnPriorRat;
@@ -283,7 +283,7 @@ double SpeciationSkyline::updatePsiRate(FossilRangeGraphSkyline *frg, int i) {
     return 0.0;
 }
 
-double SpeciationSkyline::updateBirthOneRate(FossilRangeGraphSkyline *frg) {
+double SpeciationSkyline::updateBirthOneRate(FossilRangeGraphSkyline *frgs) {
     
     double oldfgprob = currentFossilRangeGraphSkylineLnL;
     double lpr = 0.0;
@@ -296,7 +296,7 @@ double SpeciationSkyline::updateBirthOneRate(FossilRangeGraphSkyline *frg) {
         birthRates[i] = newLambda;
     }
     lpr = c;
-    double newfgprob = getLnFossilRangeGraphSkylineProb(frg);
+    double newfgprob = getLnFossilRangeGraphSkylineProb(frgs);
     double lnPriorRat = getExpPriorRatio(oldLambda, newLambda, birthRateExpRate, birthRatePrior);
     double lnLikeRat = (newfgprob - oldfgprob);
     double lnR = lnLikeRat + lpr + lnPriorRat;
@@ -315,7 +315,7 @@ double SpeciationSkyline::updateBirthOneRate(FossilRangeGraphSkyline *frg) {
     return 0.0;
 }
 
-double SpeciationSkyline::updateDeathOneRate(FossilRangeGraphSkyline *frg) {
+double SpeciationSkyline::updateDeathOneRate(FossilRangeGraphSkyline *frgs) {
     
     double oldfgprob = currentFossilRangeGraphSkylineLnL;
     double lpr = 0.0;
@@ -328,7 +328,7 @@ double SpeciationSkyline::updateDeathOneRate(FossilRangeGraphSkyline *frg) {
         deathRates[i] = newMu;
     }
     lpr = c;
-    double newfgprob = getLnFossilRangeGraphSkylineProb(frg);
+    double newfgprob = getLnFossilRangeGraphSkylineProb(frgs);
     double lnPriorRat = getExpPriorRatio(oldMu, newMu, deathRateExpRate, deathRatePrior);
     double lnLikeRat = (newfgprob - oldfgprob);
     double lnR = lnLikeRat + lpr + lnPriorRat;
@@ -372,11 +372,11 @@ double SpeciationSkyline::getExpPriorRatio(double oldVal, double newVal, double 
         return 0.0;
 }
 
-double SpeciationSkyline::getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyline *frg) {
+double SpeciationSkyline::getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyline *frgs) {
     
-    double ot = frg->getFossilRangeGraphSkylineOriginTime();
+    double ot = frgs->getFossilRangeGraphSkylineOriginTime();
     setAllBDFossParams();
-    double fgprob = frg->getFossilRangeGraphSkylineProb(birthRates, deathRates, fossilRates, tipRates, ot);
+    double fgprob = frgs->getFossilRangeGraphSkylineProb(birthRates, deathRates, fossilRates, tipRates, ot);
     return fgprob;
 }
 
