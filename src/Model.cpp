@@ -346,6 +346,7 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, doubl
     
     totalUpdateWeights = (int)sum;
 
+    this->getActiveFossilRangeGraphSkyline()->setAllIntervalConstants();
     myCurLnL = this->getActiveFossilRangeGraphSkyline()->getActiveFossilRangeGraphSkylineProb();
     cout << "lnL = " << myCurLnL << endl;
     

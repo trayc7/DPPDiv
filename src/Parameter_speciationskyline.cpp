@@ -220,6 +220,7 @@ double SpeciationSkyline::updateBirthRate(FossilRangeGraphSkyline *frgs, int i) 
     else{
         birthRates[i] = oldLambda;
         setAllBDFossParams();
+        frgs->setAllIntervalConstants();
         currentFossilRangeGraphSkylineLnL = oldfgprob;
     }
     return 0.0;
@@ -248,6 +249,7 @@ double SpeciationSkyline::updateDeathRate(FossilRangeGraphSkyline *frgs, int i) 
     else{
         deathRates[i] = oldMu;
         setAllBDFossParams();
+        frgs->setAllIntervalConstants();
         currentFossilRangeGraphSkylineLnL = oldfgprob;
     }
     return 0.0;
@@ -278,6 +280,7 @@ double SpeciationSkyline::updatePsiRate(FossilRangeGraphSkyline *frgs, int i) {
     else{
         fossilRates[i] = oldPsi;
         setAllBDFossParams();
+        frgs->setAllIntervalConstants();
         currentFossilRangeGraphSkylineLnL = oldfgprob;
     }
     return 0.0;
@@ -310,6 +313,7 @@ double SpeciationSkyline::updateBirthOneRate(FossilRangeGraphSkyline *frgs) {
             birthRates[i] = oldLambda;
         }
         setAllBDFossParams();
+        frgs->setAllIntervalConstants();
         currentFossilRangeGraphSkylineLnL = oldfgprob;
     }
     return 0.0;
@@ -342,6 +346,7 @@ double SpeciationSkyline::updateDeathOneRate(FossilRangeGraphSkyline *frgs) {
             deathRates[i] = oldMu;
         }
         setAllBDFossParams();
+        frgs->setAllIntervalConstants();
         currentFossilRangeGraphSkylineLnL = oldfgprob;
     }
     return 0.0;
@@ -374,12 +379,17 @@ double SpeciationSkyline::getExpPriorRatio(double oldVal, double newVal, double 
 
 double SpeciationSkyline::getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyline *frgs) {
     
-    double ot = frgs->getFossilRangeGraphSkylineOriginTime();
+    //setAllIntervalConstants
+    //double ot = frgs->getFossilRangeGraphSkylineOriginTime();
     setAllBDFossParams();
-    double fgprob = frgs->getFossilRangeGraphSkylineProb(birthRates, deathRates, fossilRates, tipRates, ot);
+    //double fgprob = frgs->getFossilRangeGraphSkylineProb(birthRates, deathRates, fossilRates, tipRates, ot);
+    
+    frgs->setAllIntervalConstants();    
+    double fgprob = frgs->getFossilRangeGraphSkylineProb();
     return fgprob;
 }
 
+// is there any point in doing this right now?
 void SpeciationSkyline::setAllBDFossParams(){
     
     if(parameterization == 3){

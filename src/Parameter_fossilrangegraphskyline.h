@@ -138,7 +138,8 @@ public:
     void							print(std::ostream & o) const;
     std::string                     writeParam(void);
     
-    double							getFossilRangeGraphSkylineProb(std::vector<double> lambda, std::vector<double> mu, std::vector<double> fossRate, std::vector<double> sppSampRate, double ot);
+    //double							getFossilRangeGraphSkylineProb(std::vector<double> lambda, std::vector<double> mu, std::vector<double> fossRate, std::vector<double> sppSampRate, double ot);
+    double							getFossilRangeGraphSkylineProb();
     double							getFossilRangeGraphProb(std::vector<double> b, std::vector<double> d, std::vector<double> s, std::vector<double> r, double ot); // for cross validation
     double							getActiveFossilRangeGraphSkylineProb();
     
@@ -150,6 +151,8 @@ public:
     std::string						getFossilRangeSkylineInfoParamList(void);
     
     // frg skyline functions
+    void                            setAllIntervalConstants(void);
+    double                            fbdSkylineABPfxnInterval(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
     double							fbdSkylineAfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, int i);
     double							fbdSkylineBfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i);
     double                          fbdSkylinePfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
@@ -157,6 +160,7 @@ public:
     double                          fbdSkylineQfxnLog(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
     double                          fbdSkylineQTildaFxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
     double                          fbdSkylineQTildaFxnLog(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
+    double                          fbdSkylineQTildaFxnLogSimplified(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t, double q);
 
     double                          exampleRevBayesPfxn(std::vector<double> l, std::vector<double> m, std::vector<double> psi, std::vector<double> rho, int i, double t);
     
@@ -177,6 +181,7 @@ private:
     void                            createIntervalsVector(std::vector<Calibration *> ints);
     void                            createFossilRangeSkylineVector(std::vector<Calibration *> clb);
     void							initializeFossilRangeSkylineVariables();
+    void                            initializeIntervalConstants();
     void							recountFossilRangeAttachNums();
     void                            redefineOriginTime();
     void                            countExtinctLineages();
@@ -196,6 +201,11 @@ private:
     
     std::vector<Interval *>         intervals;
     std::vector<FossilRangeSkyline *>		fossilRangesSkyline;
+    std::vector<double>           intervalAs;
+    std::vector<double>           intervalBs;
+    std::vector<double>           intervalPs;
+    std::vector<double>           intervalQs;
+    std::vector<double>           intervalQts;
     
     void                            printIntervalVariables();
     void                            printFossilRangeSkylineVariables(); //debugging code
