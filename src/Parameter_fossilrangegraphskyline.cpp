@@ -43,7 +43,7 @@
 
 using namespace std;
 
-FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni, vector<Calibration *> ints, bool rnp, bool fxFRG) : Parameter(rp, mp){
+FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni, vector<Calibration *> ints, bool rnp, bool fxFRG, int expMode) : Parameter(rp, mp){
 
     name = "FRGS";
     numFossils = nf;
@@ -53,12 +53,19 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     numExtinctLineages = 0;
     originTime = 0.0;
     originInterval = 0;
-    ancientBound = 0.0;
+    ancientBound = 1000.0;
     fixOrigin = 0;
-    //fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
-    fixFRG = 1;
+    orderStartStopTimes = 0;
+    fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
+    //fixFRG = 1;
     fixStart = 0;
     fixStop = 0;
+    if(expMode == 1){
+        fixOrigin = 1;
+        originTime = 1.233376;
+        ancientBound = originTime;
+        orderStartStopTimes = 1;
+    }
     printInitialFossilRangeSkylineVariables = 1;
     createIntervalsVector(ints);
     createFossilRangeSkylineVector(clb);
@@ -127,6 +134,9 @@ double FossilRangeGraphSkyline::update(double &oldLnL){
     else
         updateLineageStopTimes();
     
+    if(orderStartStopTimes)
+        orderRangeAges();
+    
     return currentFossilRangeGraphSkylineLnL;
 }
 
@@ -165,16 +175,13 @@ void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
         intid ++;
     }
     
-    // skyline note: this probably inappropriate
-    ancientBound = start + 200;
-    
     Interval *interval = new Interval(ancientBound, start, 0, intid);
     intervals.push_back(interval);
     
     if(printIntVariables)
         printIntervalVariables();
     
-}
+}   
 
 void FossilRangeGraphSkyline::printIntervalVariables(){
     
@@ -291,6 +298,34 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
     if(printInitialFossilRangeSkylineVariables)
         printFossilRangeSkylineVariables();
     
+}
+
+// debugging code
+void FossilRangeGraphSkyline::orderRangeAges(){
+    
+    double start, stop;
+    std::vector<double> agesStart, agesStop;
+    
+    for(int f = 0; f < numLineages; f++){
+        FossilRangeSkyline *fr = fossilRangesSkyline[f];
+        start = fr->getLineageStart();
+        agesStart.push_back(start);
+        stop = fr->getLineageStop();
+        agesStop.push_back(stop);
+        
+    }
+    
+    std::sort(agesStart.begin(), agesStart.end(), std::greater<double>());
+    std::sort(agesStop.begin(), agesStop.end(), std::greater<double>());
+    
+    for(int f = 0; f < numLineages; f++){
+        FossilRangeSkyline *fr = fossilRangesSkyline[f];
+        fr->setLineageStart(agesStart[f]);
+        fr->setLineageStop(agesStop[f]);
+    }
+    
+    agesStart.clear();
+    agesStop.clear();
 }
 
 void FossilRangeGraphSkyline::redefineOriginTime(){

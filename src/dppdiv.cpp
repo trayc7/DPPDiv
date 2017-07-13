@@ -374,7 +374,7 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior == 11){
-        Model myModel(&myRandom, calibFN, intFN, treeNodePrior, rho, runPrior, bdpar, fixFRG);
+        Model myModel(&myRandom, calibFN, intFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, expMode);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return  0;
     }

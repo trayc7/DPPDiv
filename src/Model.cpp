@@ -290,7 +290,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     
 }
 
-Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG){
+Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, int expMode){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
@@ -315,7 +315,7 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, doubl
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
-    FossilRangeGraphSkyline *frg = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, userSpecifiedIntervals, intervals, runUnderPrior, fixFRG);
+    FossilRangeGraphSkyline *frg = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, userSpecifiedIntervals, intervals, runUnderPrior, fixFRG, expMode);
     SpeciationSkyline *sp = new SpeciationSkyline(ranPtr, this, userSpecifiedIntervals, rho);
     
     for (int i=0; i<2; i++){
@@ -332,7 +332,10 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, doubl
     
     updateProb.clear();
     
-    updateProb.push_back(3.0); // 1 speciation
+    if(expMode == 1)
+        updateProb.push_back(0.0); // 1 speciation
+    else
+        updateProb.push_back(3.0); // 1 speciation
     if(fixFRG)
         updateProb.push_back(0.0); // 2 fossil graph
     else

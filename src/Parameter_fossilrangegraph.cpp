@@ -58,7 +58,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     phyloTest = 0;
     if(expMode == 1){
         fixOrigin = 1;
-        originTime = 1.291039;
+        originTime = 1.233376;
         ancientBound = originTime;
         orderStartStopTimes = 1;
     }

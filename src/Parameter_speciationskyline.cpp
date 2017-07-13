@@ -48,8 +48,8 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh)
     parameterization = 3; // hard coded at the moment
     maxdivV = 10000.0;
     
-    constantRateModel = 1;
-    fixPsi = 1;
+    constantRateModel = 0;
+    fixPsi = 0;
     
     //fixPsi = fxPsi;
     setAllBDFossParams();
@@ -106,9 +106,12 @@ void SpeciationSkyline::clone(const SpeciationSkyline &c) {
 void SpeciationSkyline::initializeIntervalVariables(){
     
     for(int i = 0; i < numIntervals; i++){
-        birthRates.push_back(0.9);
-        deathRates.push_back(0.3);
-        fossilRates.push_back(2.0); //**skyline note - add user defined flag psi
+        //birthRates.push_back(0.9);
+        //deathRates.push_back(0.3);
+        //fossilRates.push_back(2.0); //**skyline note - add user defined flag psi
+        birthRates.push_back(2.0);
+        deathRates.push_back(0.4);
+        fossilRates.push_back(0.001);
         tipRates.push_back(0.0);
     }
     tipRates[0] = extantSampleRate;
@@ -180,6 +183,8 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
                 updateBirthRate(frgs, t); // lambda
             else if(v == 1)
                 updateDeathRate(frgs, t); // mu
+            else if(v == 2)
+                updatePsiRate(frgs, t); // psi
         }
     }
     else{
