@@ -50,7 +50,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	
 	maxdivV = 10000.0;
 	name = "SP";
-	relativeDeath = 0.7; //ranPtr->uniformRv();
+	relativeDeath = 0.7; //ranPtr->unifhormRv();
 	netDiversificaton = 0.5; //ranPtr->uniformRv();
 	probSpeciationS = 0.01; //ranPtr->uniformRv();
     fossilRate = psi;

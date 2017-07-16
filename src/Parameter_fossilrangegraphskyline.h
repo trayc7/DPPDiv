@@ -58,7 +58,7 @@ private:
 class FossilRangeSkyline {
     
 public:
-    FossilRangeSkyline(double fa, double la, double at, bool e, bool eo, int frid) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0) {}
+    FossilRangeSkyline(double fa, double la, double at, bool e, bool eo, int frid, std::vector<bool> gi) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0), gammaInteractions(gi) {}
     
     bool                              getIsExtant(void) { return extant; }
     bool                              getIsExtantOnly(void) { return extantOnly; }
@@ -99,6 +99,10 @@ public:
     void                            setFixStart(bool b) { fixStart = b; }
     void                            setFixStop(bool b) { fixStop = b; }
     
+    //fxns required for gamma trick
+    bool                            getFossilRangeGammaInteractions(int i) { return gammaInteractions[i]; }
+    void                            setFossilRangeGammaInteractions(int i, bool b) { gammaInteractions[i] = b; }
+    
 private:
     int								indx;
     double							firstAppearance; // oi
@@ -117,6 +121,8 @@ private:
     int                             birthInterval;
     int                             deathInterval;
     int                             firstAppearanceInterval;
+    
+    std::vector<bool>               gammaInteractions;
     
 };
 
@@ -183,6 +189,7 @@ private:
     void							initializeFossilRangeSkylineVariables();
     void                            initializeIntervalConstants();
     void							recountFossilRangeAttachNums();
+    void							recountFossilRangeAttachNumsSpeedy(int i);
     void                            redefineOriginTime();
     void                            countExtinctLineages();
     int                             assignInterval(double d);
@@ -223,6 +230,8 @@ private:
     bool                            fixStop;
     int                             counter; // debugging
     bool                            orderStartStopTimes;
+    
+    bool                            speedy;
     
 };
 

@@ -60,6 +60,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     //fixFRG = 1;
     fixStart = 0;
     fixStop = 0;
+    speedy = 1;
     if(expMode == 1){
         fixOrigin = 1;
         originTime = 1.233376;
@@ -206,7 +207,10 @@ void FossilRangeGraphSkyline::createFossilRangeSkylineVector(vector<Calibration 
         bool e = p->getIsExtant();
         bool eo = p->getIsExtantOnly();
         
-        FossilRangeSkyline *frs = new FossilRangeSkyline(fa, la, at, e, eo, frid);
+        // vector for gamma interactions
+        std::vector<bool> gi(numLineages, 0);
+        
+        FossilRangeSkyline *frs = new FossilRangeSkyline(fa, la, at, e, eo, frid, gi);
         fossilRangesSkyline.push_back(frs);
         
         frid ++;
@@ -346,7 +350,7 @@ void FossilRangeGraphSkyline::redefineOriginTime(){
 }
 
 void FossilRangeGraphSkyline::recountFossilRangeAttachNums(){
-    
+
     for(int f = 0; f < numLineages; f++){
         FossilRangeSkyline *fr = fossilRangesSkyline[f];
         double zf = fr->getLineageStart();
@@ -356,15 +360,85 @@ void FossilRangeGraphSkyline::recountFossilRangeAttachNums(){
                 FossilRangeSkyline *p = fossilRangesSkyline[j];
                 double zj = p->getLineageStart();
                 double bj = p->getLineageStop();
-                if(zj > zf && zf > bj)
+                if(zj > zf && zf > bj){
                     g++;
+                    fr->setFossilRangeGammaInteractions(j, 1);
+                }
             }
         }
-        if(zf == originTime)
-            g++;
-        
+        // gamma associated with the origin is now handled by the likelihood function
+        //if(zf == originTime){
+        //    g++;
+        //    fr->setFossilRangeGammaInteractions(f, 1);
+        // }
+
         fr->setFossilRangeBrGamma(g);
     }
+}
+
+
+// gamma trick
+void FossilRangeGraphSkyline::recountFossilRangeAttachNumsSpeedy(int i){
+    
+    FossilRangeSkyline *fr = fossilRangesSkyline[i];
+    double zf = fr->getLineageStart();
+    double bf = fr->getLineageStop();
+    
+    int gf;
+    
+    bool newInteraction = 0;
+    bool oldInteraction = 0;
+    
+    for(int j = 0; j < numLineages; j++){
+        
+        gf = fr->getFossilRangeBrGamma();
+        
+        if(i != j){
+            
+            FossilRangeSkyline *o = fossilRangesSkyline[j];
+            double zj = o->getLineageStart();
+            double bj = o->getLineageStop();
+            int gj = o->getFossilRangeBrGamma();
+            
+            // first deal with range f
+            if(zj > zf && zf > bj)
+                newInteraction = 1;
+            else
+                newInteraction = 0;
+            
+            // what was the previous interaction?
+            oldInteraction = fr->getFossilRangeGammaInteractions(j);
+            
+            if(oldInteraction != newInteraction){
+                if(newInteraction == 0)
+                    gf = gf - 1;
+                else
+                    gf = gf + 1;
+                fr->setFossilRangeBrGamma(gf);
+                fr->setFossilRangeGammaInteractions(j, newInteraction);
+            } // else do nothing
+            
+            // then deal with range j
+            if(zf > zj && zj > bf)
+                newInteraction = 1;
+            else
+                newInteraction = 0;
+            
+            // what was the previous interaction?
+            oldInteraction = o->getFossilRangeGammaInteractions(i);
+            
+            if(oldInteraction != newInteraction){
+                if(newInteraction == 0)
+                    gj = gj - 1;
+                else
+                    gj = gj + 1;
+                o->setFossilRangeBrGamma(gj);
+                o->setFossilRangeGammaInteractions(i, newInteraction);
+            } // else do nothing
+            
+        }
+    }
+    //eof
 }
 
 void FossilRangeGraphSkyline::countExtinctLineages(){
@@ -397,6 +471,8 @@ int FossilRangeGraphSkyline::assignInterval(double time){
 
 void FossilRangeGraphSkyline::printFossilRangeSkylineVariables(){
     
+    double gamma = 0;
+    
     for(int f = 0; f < numLineages; f++){
         FossilRangeSkyline *fr = fossilRangesSkyline[f];
         cout << "Fossil range ID: " << fr->getFossilRangeID() << endl;
@@ -406,6 +482,27 @@ void FossilRangeGraphSkyline::printFossilRangeSkylineVariables(){
         cout << "Lineage end: " << fr->getLineageStop() << " sampled in interval " << fr->getFossilRangeDeathInterval() << endl;
         cout << "Is extant: " << fr->getIsExtant() << endl;
         cout << "Gamma: " << fr->getFossilRangeBrGamma() << endl;
+        gamma += fr->getFossilRangeBrGamma();
+    }
+    
+    cout << "Total  gamma = " << gamma << endl;
+    
+    bool printGammaInteractions = 0;
+    
+    if(printGammaInteractions){
+        
+        double interactions = 0;
+        
+        for(int f = 0; f < numLineages; f++){
+            cout << "Gamma interactions for range : " << f << endl;
+            FossilRangeSkyline *fr = fossilRangesSkyline[f];
+            for(int j = 0; j < numLineages; j++){
+                cout << "Range : " << j << " = " << fr->getFossilRangeGammaInteractions(j) << endl;
+                if(fr->getFossilRangeGammaInteractions(j))
+                    interactions++;
+            }
+        }
+        cout << "Total  interactions = " << gamma << endl;
     }
     
     cout << "Origin time: " << originTime << " sampled in interval " << originInterval << endl;
@@ -470,7 +567,10 @@ double FossilRangeGraphSkyline::updateLineageStartTimes(){
         // redefine values
         fr->setLineageStart(newStart);
         redefineOriginTime();
-        recountFossilRangeAttachNums();
+        if(speedy)
+            recountFossilRangeAttachNumsSpeedy((*it));
+        else
+            recountFossilRangeAttachNums();
         fr->setFossilRangeBirthInterval(assignInterval(newStart));
         
         // recalculate the FRG probability
@@ -484,11 +584,23 @@ double FossilRangeGraphSkyline::updateLineageStartTimes(){
         if(ranPtr->uniformRv() > r){
             fr->setLineageStart(oldStart);
             redefineOriginTime();
-            recountFossilRangeAttachNums();
+            if(speedy)
+                recountFossilRangeAttachNumsSpeedy((*it));
+            else
+                recountFossilRangeAttachNums();
             fr->setFossilRangeBirthInterval(assignInterval(oldStart));
             currentFossilRangeGraphSkylineLnL = oldLike;
         }
     }
+    
+    // debugging gamma code
+//    double gamma = 0;
+//    for(int f = 0; f < numLineages; f++){
+//        FossilRangeSkyline *fr = fossilRangesSkyline[f];
+//        gamma += fr->getFossilRangeBrGamma();
+//    }
+//    cout << "Total  interactions = " << gamma << endl;
+    
     return 0.0;
 }
 
@@ -531,7 +643,10 @@ double FossilRangeGraphSkyline::updateLineageStopTimes(){
         
         // redefine values
         fr->setLineageStop(newEnd);
-        recountFossilRangeAttachNums();
+        if(speedy)
+            recountFossilRangeAttachNumsSpeedy((*it));
+        else
+            recountFossilRangeAttachNums();
         fr->setFossilRangeDeathInterval(assignInterval(newEnd));
         
         // recalculate the FRG probability
@@ -544,11 +659,23 @@ double FossilRangeGraphSkyline::updateLineageStopTimes(){
         
         if(ranPtr->uniformRv() > r){
             fr->setLineageStop(oldEnd);
-            recountFossilRangeAttachNums();
+            if(speedy)
+                recountFossilRangeAttachNumsSpeedy((*it));
+            else
+                recountFossilRangeAttachNums();
             fr->setFossilRangeDeathInterval(assignInterval(oldEnd));
             currentFossilRangeGraphSkylineLnL = oldLike;
         }
     }
+    
+    // debugging gamma code
+//    double gamma = 0;
+//    for(int f = 0; f < numLineages; f++){
+//        FossilRangeSkyline *fr = fossilRangesSkyline[f];
+//        gamma += fr->getFossilRangeBrGamma();
+//    }
+//    cout << "Total  interactions = " << gamma << endl;
+    
     return 0.0;
 }
 
@@ -667,7 +794,7 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     
     double  nprb = 0.0;
     
-    bool frgProb = 1;
+    bool frgProb = 0;
     if(frgProb){
         nprb = getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
         return nprb;
@@ -698,7 +825,10 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         int dint = fr->getFossilRangeDeathInterval();
         int oint = fr->getFossilRangeFirstAppearanceInterval();
         
-        nprb += log( fr->getFossilRangeBrGamma() );
+       if(bi == originTime)
+            nprb += log( 1 );
+        else
+            nprb += log( fr->getFossilRangeBrGamma() );
         
         // speciation events
         if(bi != originTime)
@@ -1110,7 +1240,10 @@ double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, s
         double di = fr->getLineageStop();  // di
         double oi = fr->getFirstAppearance(); // oi
         
-        nprb += log( lambda * fr->getFossilRangeBrGamma() );
+        if(bi == originTime)
+            nprb += log( lambda * 1.0 );
+        else
+            nprb += log( lambda * fr->getFossilRangeBrGamma() );
         
         double rangePr = 0;
         
