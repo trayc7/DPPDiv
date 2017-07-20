@@ -58,7 +58,7 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh)
     int specPr = 2; // 1 = unifrom prior, 2 = exponential prior
     int psiPr = 2;
     double bPrRate = 1;
-    double dPrRate = 1;
+    double dPrRate = 10;
     double pPrRate = 1;
     deathRatePrior = specPr;
     birthRatePrior = specPr;
@@ -106,12 +106,9 @@ void SpeciationSkyline::clone(const SpeciationSkyline &c) {
 void SpeciationSkyline::initializeIntervalVariables(){
     
     for(int i = 0; i < numIntervals; i++){
-        //birthRates.push_back(0.9);
-        //deathRates.push_back(0.3);
-        //fossilRates.push_back(2.0); //**skyline note - add user defined flag psi
-        birthRates.push_back(2.0);
-        deathRates.push_back(0.4);
-        fossilRates.push_back(0.001);
+        birthRates.push_back(0.9);
+        deathRates.push_back(0.3);
+        fossilRates.push_back(2.0); //**skyline note - add user defined flag psi
         tipRates.push_back(0.0);
     }
     tipRates[0] = extantSampleRate;
