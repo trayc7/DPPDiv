@@ -1,4 +1,4 @@
-#DPPDiv
+# DPPDiv
 
 DPPDiv is a program for estimating divergence times on a fixed, rooted tree topology
 
