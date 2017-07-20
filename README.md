@@ -1,3 +1,5 @@
+#DPPDiv
+
 DPPDiv is a program for estimating divergence times on a fixed, rooted tree topology
 
 Details about this program are available in the following papers:
@@ -11,9 +13,6 @@ Details about this program are available in the following papers:
 *Flouri, Stamatakis. 2012. An Improvement to DPPDIV. Heidelberg Institute for Theoretical Studies, Exelixis-RRDR-2012-7. (Technical report on optimization and parallelization of DPPDiv)
 
 *Darriba, Aberer, Flouri, Heath, Izquierdo-Carrasco, Stamatakis: "Boosting the performance of Bayesian divergence time estimation with the Phylogenetic Likelihood Library", accepted for publication at IPDPS 2013, Boston, USA, 2013. (peer-reviewed conference paper) 
-
-Links to these papers can be found here: 
-http://phylo.bio.ku.edu/content/tracy-heath-dppdiv
 
 The DPPDiv users discussion group: 
 https://groups.google.com/forum/#!forum/dppdiv-users
