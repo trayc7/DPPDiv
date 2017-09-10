@@ -238,7 +238,7 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
     recountFossilRangeAttachNums();
     countExtinctLineages();
     
-    if(printInitialFossilRangeVariables) //rw: debugging code
+    if(printInitialFossilRangeVariables) // debugging code
         printFossilRangeVariables();
     
 }
@@ -397,14 +397,14 @@ double FossilRangeGraph::updateLineageStartTimes(){
         double newStart = 0.0;
         double c = 0.0;
         
-        if(proposal == 1){ //rw: probably not appropriate for this parameter
+        if(proposal == 1){ // probably not appropriate for this parameter
             double rdwindow = 0.2;
             newStart = getNewValSWindoMv(oldStart, fa, ancientBound, rdwindow);
         }
         
         if(proposal == 2){
             double rv = ranPtr->uniformRv();
-            double tv = 2.0; //rw: tuningVal
+            double tv = 2.0; // tuningVal
             c = doAScaleMove(newStart, oldStart, tv, fa, ancientBound, rv);
         }
         
@@ -464,20 +464,20 @@ double FossilRangeGraph::updateLineageStopTimes(){
         // define old values
         double la = fr->getLastAppearance(); // af
         double oldEnd = fr->getLineageStop(); // bf
-        double oldLike = currentFossilRangeGraphLnL; //rw: where is this initially defined?
+        double oldLike = currentFossilRangeGraphLnL;
         
         // propose new values
         double newEnd = 0.0;
         double c = 0.0;
         
-        if(proposal == 1){ //rw: probably not appropriate for this parameter
+        if(proposal == 1){ // probably not appropriate for this parameter
             double rdwindow = 0.2;
             newEnd = getNewValSWindoMv(oldEnd, 0.0, la, rdwindow);
         }
         
-        if(proposal == 2){ //rw: double check this move w/ TAH
+        if(proposal == 2){
             double rv = ranPtr->uniformRv();
-            double tv = log(2.0); //rw: tuningVal
+            double tv = log(2.0); //tuningVal
             c = doAScaleMove(newEnd, oldEnd, tv, 0.0, la, rv);
         }
         
@@ -631,8 +631,8 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             
             FossilRange *fr = fossilRanges[f];
             
-            double bi = fr->getLineageStart(); //rw: bi (zf)
-            double di = fr->getLineageStop();  //rw: di
+            double bi = fr->getLineageStart(); // bi (zf)
+            double di = fr->getLineageStop();  // di
             
             nprb += log( lambda * fr->getFossilRangeBrGamma() );
             
@@ -742,7 +742,7 @@ double FossilRangeGraph::fbdPFxn(double b, double d, double psi, double rho, dou
     return v;
 }
 
-//rw: this is unsuitable for large values of t
+// this is unsuitable for large values of t
 double FossilRangeGraph::fbdQTildaFxn(double b, double d, double psi, double rho, double t){
     
     double c1 = fbdC1Fxn(b,d,psi);
@@ -793,7 +793,7 @@ double FossilRangeGraph::fbdQFxnLog(double b, double d, double psi, double rho, 
     return v;
 }
 
-//rw: another test; sppSampRate not used
+// another test; sppSampRate not used
 double FossilRangeGraph::getFossilRangeGraphAlternativeProb(double lambda, double mu, double fossRate, double sppSampRate, double ot){
     if(runUnderPrior)
         return 0.0;
@@ -808,8 +808,8 @@ double FossilRangeGraph::getFossilRangeGraphAlternativeProb(double lambda, doubl
         
         FossilRange *fr = fossilRanges[f];
         
-        double bi = fr->getLineageStart(); //rw: zf
-        double di = fr->getLineageStop();  //rw: bf
+        double bi = fr->getLineageStart(); // zf
+        double di = fr->getLineageStop();  // bf
         
         int gamma = fr->getFossilRangeBrGamma();
         

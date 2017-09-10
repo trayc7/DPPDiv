@@ -247,7 +247,7 @@ void Calibration::initializeFossilRange(string calstr){
     ss >> tmp;
     firstAppearance = atof(tmp.c_str());
     ss >> tmp;
-    attachmentTime = atof(tmp.c_str()); // consider giving this a more informative name
+    attachmentTime = atof(tmp.c_str());
     
     if(firstAppearance == 0)
         isExtantOnly = true;

@@ -81,7 +81,7 @@ class Speciation : public Parameter {
 		double				birthRate;  // lambda
 		double				deathRate;  // mu
 		double				fossilRate; // psi
-		double				extantSampleRate; // rho = 1 //rw: now flexible, specify using flag -rho
+		double				extantSampleRate; // rho = 1 // now flexible, specify using flag -rho
 		double				fossilStratSampleProb; // omega = ? This is for later
 		double				probSpeciationS;  // \psi / (\mu + \psi) // Need hyperprior
 		double				currentFossilGraphLnL;
@@ -98,10 +98,10 @@ class Speciation : public Parameter {
         double				updateFossilRangeGraphBDParams(double &oldLnL);
 
 		
-		double				updateRelDeathRt(); //rw: function never used?
-		double				updateNetDivRate(); //rw: this is for trpr = 2
-		double				updateBDSSFossilProbS(); //rw: function never used?
-		double				updateBDSSSampleProbRho(); //rw: function never used?
+		double				updateRelDeathRt(); // function never used?
+		double				updateNetDivRate(); // this is for trpr = 2
+		double				updateBDSSFossilProbS(); // function never used?
+		double				updateBDSSSampleProbRho(); // function never used?
 
 		double				updateRelDeathRt(Tree *t);
 		double				updateNetDivRate(Tree *t);

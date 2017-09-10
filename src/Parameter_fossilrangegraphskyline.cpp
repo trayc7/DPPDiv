@@ -631,14 +631,14 @@ double FossilRangeGraphSkyline::updateLineageStopTimes(){
         // define old values
         double la = fr->getLastAppearance(); // af
         double oldEnd = fr->getLineageStop(); // bf
-        double oldLike = currentFossilRangeGraphSkylineLnL; //rw: where is this initially defined?
+        double oldLike = currentFossilRangeGraphSkylineLnL;
         
         // propose new values
         double newEnd = 0.0;
         double c = 0.0;
         
         double rv = ranPtr->uniformRv();
-        double tv = log(2.0); //rw: tuningVal
+        double tv = log(2.0); // tuningVal
         c = doAScaleMove(newEnd, oldEnd, tv, 0.0, la, rv);
         
         // redefine values

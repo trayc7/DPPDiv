@@ -208,7 +208,7 @@ void Mcmc::runChain(void) {
 
 void Mcmc::runFOFBDChain() {
     
-    string dFile = fileNamePref + ".info.out"; // what's this?
+    string dFile = fileNamePref + ".info.out"; // I don't think we use this
     string occFile = fileNamePref + ".occ.out"; // info about occurrences, speciation parameters
     ofstream oOut(occFile.c_str(), ios::out);
     ofstream mxOut; //?
@@ -219,7 +219,7 @@ void Mcmc::runFOFBDChain() {
     if(writeInfoFile)
         dOut.open(dFile.c_str(), ios::out);
     
-    double oldLnLikelihood = modelPtr->getActiveFossilGraph()->getActiveFossilGraphProb(); //rw: revisit this
+    double oldLnLikelihood = modelPtr->getActiveFossilGraph()->getActiveFossilGraphProb();
     
     // verbose logging
     if(writeInfoFile){
@@ -277,7 +277,7 @@ void Mcmc::runFOFBDChain() {
 
 void Mcmc::runFRGFBDChain() {
     
-    string dFile = fileNamePref + ".info.out"; // what's this?
+    string dFile = fileNamePref + ".info.out"; // I don't think we use this
     string frFile = fileNamePref + ".FR.out"; // info about occurrences, speciation parameters
     
     ofstream frOut(frFile.c_str(), ios::out);
@@ -310,7 +310,7 @@ void Mcmc::runFRGFBDChain() {
     
     for (int n=1; n<=numCycles; n++){
         
-        if(modUpdateProbs && n == modifyUProbsGen) //rw: do we need this here?
+        if(modUpdateProbs && n == modifyUProbsGen) // do we need this here?
             modelPtr->setUpdateProbabilities(false);
         
         double prevlnl = oldLnLikelihood;
@@ -321,7 +321,7 @@ void Mcmc::runFRGFBDChain() {
             Parameter *parm = modelPtr->pickParmToUpdate();
 
             prevlnl = oldLnLikelihood;
-            newLnLikelihood = parm->update(oldLnLikelihood); //all of the moves for FOFBD return the new likelihood for reporting
+            newLnLikelihood = parm->update(oldLnLikelihood); // all of the moves for FRGFBD return the new likelihood for reporting
             bool isAccepted = true;
             if (isAccepted == true){
                 oldLnLikelihood = newLnLikelihood;
@@ -397,7 +397,7 @@ void Mcmc::sampleChain(int gen, ofstream &paraOut, ofstream &figTOut,
 		if(treePr > 5)
 			nodeOut << "\tFBD.lambda\tFBD.mu\tFBD.prsp";
         if(treePr == 8){
-            if(printOrigin)//RW
+            if(printOrigin)
             nodeOut << "\tFBD.OriginTime";
         }
 		nodeOut << "\tPr(speciation)\tave.subrate\tnum.DPMgroups\tDPM.conc";
@@ -513,7 +513,7 @@ void Mcmc::sampleFBDExpChain(int gen, std::ofstream &nodeOut, double lnl) {
 		if(treePr > 5)
 			nodeOut << "\tFBD.lambda\tFBD.mu\tFBD.prsp";
         if(treePr == 8){
-            if(printOrigin)//RW
+            if(printOrigin)
             nodeOut << "\tFBD.OriginTime";
         }
 		nodeOut << "\tPr(speciation)\tave.subrate\tnum.DPMgroups\tDPM.conc";

@@ -355,7 +355,7 @@ class Tree : public Parameter {
 		
 		double							computeLogFirstProductFBDSProb(double b, double d, double rho, double tt);
 		
-        int                             fbdsExperimentalMode;//rw:
+        int                             fbdsExperimentalMode;
 		
 		Alignment						*alignmentPtr;
 		int								numTaxa;

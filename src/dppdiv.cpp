@@ -96,7 +96,7 @@ void printHelp(bool files)
 		cout << "\t\t-npr  : 1=uniform, 2=yule, 3=cbd, 4=cbd fix with given vals\n";
 		cout << "\t\t-bdr  : initial diversification rate (lambda - mu)\n";
 		cout << "\t\t-bda  : initial relative death rate (mu / lambda)\n"; // what about bds?
-        cout << "\t\t-rho  : extant species sampling (fixed) \n"; //rw: only active in experimental mode
+        cout << "\t\t-rho  : extant species sampling (fixed) \n"; // only active in experimental mode
 		cout << "\t\t-soft : turn on soft bounds on calibrated nodes\n";
 		cout << "\t\t-clok : run under strict clock (and estimate substitution rate)\n";
 		cout << "\t\t-urg  : run under uncorrelated gamma-distributed rates\n";
@@ -106,8 +106,8 @@ void printHelp(bool files)
 		cout << "\t\t-mup  : modify update probabilities mid run\n";
 		cout << "\t\t-fxm  : fix some model params\n";
 		cout << "\t\t-ihp  : run under independent hyperprior on exp cals\n";
-        cout << "\t\t-po   : print origin to log file\n"; //rw
-        //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; //rw: right now this also prints yf times (probably not neccessary)
+        cout << "\t\t-po   : print origin to log file\n";
+        //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; // right now this also prints yf times (probably not neccessary)
 		cout << "\t\t** required\n\n";
 	}
 }
@@ -133,7 +133,7 @@ int main (int argc, char * const argv[]) {
 	double relDeath		= -1.0;		// initial relative death rate (mu / lambda)
 	double ssbdPrS		= -1.0;
 	double fixclokrt	= -1.0;		// fix the clock rate to this
-    double rho          = 1.0;      //rw: extant species sampling
+    double rho          = 1.0;      // extant species sampling
 	int offmove			= 0;		// used to turn off one particular move
 	int printFreq		= 100;
 	int sampleFreq		= 100;
@@ -162,7 +162,7 @@ int main (int argc, char * const argv[]) {
 	bool doAbsRts		= false;
 	bool fixTest		= false;
     bool printOrigin    = false;    // print origin to log file
-    bool printAttach    = false;    //rw: maybe issue a warning if cal file is large & printAttach = true
+    bool printAttach    = false;    // if printAttach = true and the number of cals is large there will be a lot of output
     int expMode         = 0;        // experimental mode for testing the fbds model and extensions. 1: fix branch lengths; 2: fix branch lengths & ignore calibrations
     bool igfoss         = false;
     int bdpar           = 2;        // FBD parameterization flag
@@ -254,9 +254,9 @@ int main (int argc, char * const argv[]) {
 					netDiv = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-bda"))	// (mu / lambda)
 					relDeath = atof(argv[i+1]);
-				else if(!strcmp(curArg, "-bds"))	// (mu / lambda) //rw: is this correct, is this not psi? how do these flags work?
+				else if(!strcmp(curArg, "-bds"))	// psi / (mu + psi)
 					ssbdPrS = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-rho"))	//rw: extant species sampling
+                else if(!strcmp(curArg, "-rho"))	// extant species sampling
                     rho = atof(argv[i+1]);
 				else if(!strcmp(curArg, "-fix")){	// fix clock
 					fixclokrt = atof(argv[i+1]);
@@ -304,42 +304,42 @@ int main (int argc, char * const argv[]) {
 					printHelp(true);
 					return 0;
 				}
-                else if(!strcmp(curArg, "-po")){// print origin
+                else if(!strcmp(curArg, "-po")){ // print origin
                     printOrigin = true;
                 }
-                else if(!strcmp(curArg, "-pfat")){// print attach times
+                else if(!strcmp(curArg, "-pfat")){ // print attach times
                     printAttach = true;
                 }
                 else if(!strcmp(curArg, "-expmo")){// experimental mode
                     expMode = atof(argv[i+1]);
                     priorMean = 2;
                 }
-                else if(!strcmp(curArg, "-igf")){// ignore fossils
+                else if(!strcmp(curArg, "-igf")){ // ignore fossils
                     igfoss = true;
                 }
-                else if(!strcmp(curArg, "-bdp"))// FBD parameterization
+                else if(!strcmp(curArg, "-bdp")) // FBD parameterization
                     bdpar = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-fixfrg")){// fixed fossil range graph
+                else if(!strcmp(curArg, "-fixfrg")){ // fixed fossil range graph
                     fixFRG = true;
                 }
-                else if(!strcmp(curArg, "-lsurf"))// print out likelihood surface info
+                else if(!strcmp(curArg, "-lsurf")) // print out likelihood surface info
                     lSurf = true;
-                else if(!strcmp(curArg, "-fixpsi"))// fix psi
+                else if(!strcmp(curArg, "-fixpsi")) // fix psi
                     fixPsi = true;
-                else if(!strcmp(curArg, "-psi"))// initial or fixed value for psi
+                else if(!strcmp(curArg, "-psi")) // initial or fixed value for psi
                     psi = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-comps")){ // complete sampling
                     compS = atof(argv[i+1]);
                 }
-                else if(!strcmp(curArg, "-specPrior"))// prior on birth and death
+                else if(!strcmp(curArg, "-specPrior")) // prior on birth and death
                     specPr = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-psiPrior"))// prior on psi
+                else if(!strcmp(curArg, "-psiPrior")) // prior on psi
                     psiPr = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-bexpR"))// mean of exp prior on birth rate
+                else if(!strcmp(curArg, "-bexpR")) // mean of exp prior on birth rate
                     bPrRate = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-dexpR"))// mean of exp prior on death rate
+                else if(!strcmp(curArg, "-dexpR")) // mean of exp prior on death rate
                     dPrRate = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-pexpR"))// mean of exp prior on sampling rate
+                else if(!strcmp(curArg, "-pexpR")) // mean of exp prior on sampling rate
                     pPrRate = atof(argv[i+1]);
 				else {
 					cout << "\n############################ !!! ###########################\n";
@@ -374,11 +374,13 @@ int main (int argc, char * const argv[]) {
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior == 11){
+        // fossil range skyline FBD
         Model myModel(&myRandom, calibFN, intFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, expMode);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return  0;
     }
     else if(treeNodePrior == 9 || treeNodePrior == 10){
+        // fossil occurrence or fossil range FBD
         Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, lSurf, fixPsi, psi, compS, specPr, psiPr, bPrRate, dPrRate, pPrRate, expMode);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return 0;

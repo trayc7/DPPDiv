@@ -45,7 +45,7 @@ public:
     double							getFossilSppTime(void) { return phi; }
     int								getFossilFossBrGamma(void) { return fossilBrGamma; }
     int								getFossilIndicatorVar(void) { return ancFossIndicator; }
-    int								getFossilID(void) { return occurrenceID; } //rw: what does getFossilIndex do?
+    int								getFossilID(void) { return occurrenceID; }
     bool                            getIsTerminal(void) { return isTerminal; }
 
     
@@ -63,7 +63,7 @@ private:
     double							phi;
     int								gamma;
     int                             occurrenceID;
-    //double							nodeAge; //rw: not used
+    //double							nodeAge; // not used
     int								fossilBrGamma;
     int								ancFossIndicator; // {\cal I} = 0 if anc fossil, 1 otherwise
     bool                            isTerminal;

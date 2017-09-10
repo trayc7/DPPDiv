@@ -817,12 +817,12 @@ double Tree::update(double &oldLnL) {
         if(fbdsExperimentalMode == 0)
             updateAllTGSNodes(oldLnL);
 		
-		updateFossilBDSSAttachmentTimePhi(); //rw:** might be very similar
+		updateFossilBDSSAttachmentTimePhi();
         if(fbdsExperimentalMode == 0) treeUpdateNodeOldestBoundsAttchTimes();
 
-		for(int i=0; i<fossSpecimens.size(); i++){//rw:** for each numfossils
-			updateRJMoveAddDelEdge();//rw:**
-            if(fbdsExperimentalMode == 0) treeUpdateNodeOldestBoundsAttchTimes();//rw:** recount gamma
+		for(int i=0; i<fossSpecimens.size(); i++){
+			updateRJMoveAddDelEdge();
+            if(fbdsExperimentalMode == 0) treeUpdateNodeOldestBoundsAttchTimes(); // recount gamma
 		}
 		if(sampleFossilAges){
 			updateFossilAges();
@@ -2442,6 +2442,7 @@ double Tree::getTreeStemAncCalBDSSTreeNodePriorProb(double lambda, double mu, do
     OriginTime *ot = modelPtr->getActiveOriginTime();
     originTime = ot->getOriginTime();
     
+//    debugging code
 //    cout << "lambda " << setprecision(15) << lambda << endl;
 //    cout << "mu " << mu << endl;
 //    cout << "psi " << fossRate << endl;

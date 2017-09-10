@@ -382,7 +382,7 @@ double OriginTime::getFBDProbOriginTime(Tree *t, Speciation *s){
     return otPrb;
 }
 
-//rw: new fxn - double check the maths
+// double check the maths
 double OriginTime::getFOFBDProbOriginTime(FossilGraph *fg, Speciation *s){
     
     // this returns log[ 1 / ((lambda*(1-Phat(x_0))) ]

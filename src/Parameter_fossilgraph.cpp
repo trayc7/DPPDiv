@@ -75,8 +75,6 @@ void FossilGraph::clone(const FossilGraph &fg){
         cerr << "ERROR: Attempting to clone trees of unequal size" << endl;
         exit(1);
     */
-    
-    //rw: any other info required to clone the fossil graph ?
         
     for(int i=0; i<occurrenceSpecimens.size(); i++){
         Occurrence *fTo = occurrenceSpecimens[i];
@@ -161,7 +159,7 @@ void FossilGraph::initializeOccurrenceSpecVariables(){
     for(int f = 0; f < numFossils; f++){
         Occurrence *o = occurrenceSpecimens[f];
         if(o->getIsTerminal()){
-            numAncFossilsk += 1; //rw: should this be here? I think so.
+            numAncFossilsk += 1;
             o->setFossilSppTime(o->getFossilAge());
             o->setFossilIndicatorVar(0);
         }
@@ -182,7 +180,7 @@ void FossilGraph::initializeOccurrenceSpecVariables(){
         }
     }
     recountOccurrenceAttachNums();
-    cout << "1. num anc Fossils = " << numAncFossilsk << endl;//rw:
+    cout << "1. num anc Fossils = " << numAncFossilsk << endl;
     
 }
 
@@ -201,12 +199,11 @@ void FossilGraph::recountOccurrenceAttachNums(){
                     g++;
             }
         }
-        //cout << "gamma :" << g << endl; //rw: gamma is correct
+        //cout << "gamma :" << g << endl; // gamma is correct
         o->setFossilFossBrGamma(g);
     }
 }
 
-//rw: new fxn - double check
 double FossilGraph::getOldestFossilGraphSpeciationTime(){
     
     double oldestTime = 0.0;
@@ -334,7 +331,7 @@ string FossilGraph::getOccInfoParamNames(void){
     for(int i=0; i<occurrenceSpecimens.size(); i++){
         o = occurrenceSpecimens[i];
         int oID = o->getFossilID();
-        //rw: we probably not want it to print the fossil age forever
+        // we probably don't want it to print the fossil age forever
         ss << "\ty_f(Oc_" << oID << ")";
         ss << "\tz_f(Oc_" << oID << ")";
     }
@@ -354,7 +351,7 @@ string FossilGraph::getOccInfoParamList(void){
 
     for(int i=0; i<occurrenceSpecimens.size(); i++){
         o = occurrenceSpecimens[i];
-        //rw: we probably not want it to print the fossil age forever
+        // we probably don't want it to print the fossil age forever
         ss << "\t" << o->getFossilAge();
         ss << "\t" << o->getFossilSppTime();
     }
@@ -498,7 +495,7 @@ double FossilGraph::updateRJMoveAddDelEdge() {
     return 0.0;
 }
 
-//rw: new fxn - double check the maths
+// double check the maths
 void FossilGraph::doAddEdgeMove(int k){
     
 	int b = k;

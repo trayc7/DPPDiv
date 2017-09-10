@@ -48,9 +48,9 @@ class Calibration {
         bool            isStem;
         bool            isOrigin;
 		bool			isSampledAge;
-        bool            isFixedAge; //rw: for -x in the calibration file
-        bool            isExtant; //rw: fossil range taxa that are also extant
-        bool            isExtantOnly; //rw: lineages only sampled at the present
+        bool            isFixedAge; // for -x in the calibration file
+        bool            isExtant; // fossil range taxa that are also extant
+        bool            isExtantOnly; // lineages only sampled at the present
 		
 	public:
 						Calibration(std::string calstr, int tip);

@@ -40,7 +40,7 @@
 #include <iomanip>
 #include <sstream>
 
-#include <unistd.h>//rw: remember to remove
+//#include <unistd.h>
 
 using namespace std;
 
@@ -48,11 +48,15 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
                        int psiPr, double bPrRate, double dPrRate, double pPrRate) : Parameter(rp, mp) {
 	
 	
-	maxdivV = 10000.0;
+	//maxdivV = 10000.0;
+    maxdivV = 30000.0;
 	name = "SP";
-	relativeDeath = 0.7; //ranPtr->unifhormRv();
-	netDiversificaton = 0.5; //ranPtr->uniformRv();
-	probSpeciationS = 0.01; //ranPtr->uniformRv();
+	//relativeDeath = 0.7; //ranPtr->unifhormRv();
+	//netDiversificaton = 0.5; //ranPtr->uniformRv();
+	//probSpeciationS = 0.01; //ranPtr->uniformRv();
+    relativeDeath = ranPtr->uniformRv();
+    netDiversificaton = ranPtr->uniformRv();
+    probSpeciationS = ranPtr->uniformRv();
     fossilRate = psi;
     birthRate = 0.02;
     deathRate = 0.01;
@@ -72,7 +76,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
     deathRatePrior = specPr; // 1 = unifrom prior, 2 = exponential prior
     birthRatePrior = specPr;
     fossilSamplingRatePrior = psiPr;
-    netDivRatePrior = 1;
+    netDivRatePrior = 1; // only used by FG and FRG models
     birthRateExpRate = bPrRate;
     deathRateExpRate = dPrRate;
     fossilSamplingRateExpRate = pPrRate;
@@ -109,7 +113,7 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
 	if(treeTimePrior > 5){
         cout << "Paramterization: " << parameterization << endl;
 		cout << "Speciaton parameters are initialized with: d = " << netDiversificaton << " , r = " << relativeDeath<< " , s = " << probSpeciationS << endl;
-		cout << "                                   l = " << birthRate << " , m = " << deathRate << " , psi = " << fossilRate << " , rho = " << extantSampleRate << endl; //rw:
+		cout << "                                   l = " << birthRate << " , m = " << deathRate << " , psi = " << fossilRate << " , rho = " << extantSampleRate << endl;
 	}
     cout << "BD initialized\n";
 	
@@ -199,12 +203,15 @@ double Speciation::updateTreeBDParams(double &oldLnL) {
 		v = (int)(ranPtr->uniformRv() * 3);
 		
 		if(parameterization == 1){
-			if(v == 0)
-				updateRelDeathRt(t); // r
-			else if(v == 1)
-				updateNetDivRate(t); // d
-			else
-				updateBDSSFossilProbS(t); // s
+//			if(v == 0)
+//				updateRelDeathRt(t); // r
+//			else if(v == 1)
+//				updateNetDivRate(t); // d
+//			else
+//				updateBDSSFossilProbS(t); // s
+            updateRelDeathRt(t); // r
+            updateNetDivRate(t); // d
+            updateBDSSFossilProbS(t); // s
 		}
 		else if(parameterization == 2){
 			if(v == 0)
@@ -214,8 +221,8 @@ double Speciation::updateTreeBDParams(double &oldLnL) {
 			else
 				updatePsiRate(t); // psi
 		}
-		//rw: this parameterization is currently problematic
-		//because it allows mu >> lambda
+		// this parameterization is currently problematic
+		// because it allows mu >> lambda
 		else if(parameterization == 3){
 		  
 			if(v == 0){
@@ -347,7 +354,7 @@ double Speciation::updateFossilRangeGraphBDParams(double &oldLnL){
           //  updateBirthAndDeath(fg); // mu and lambda
     }
     
-    //cout << "Now = " << netDiversificaton << " , r = " << relativeDeath<< " , s = " << probSpeciationS << endl; //rw: debugging
+    //cout << "Now = " << netDiversificaton << " , r = " << relativeDeath<< " , s = " << probSpeciationS << endl; // debugging
     
     return currentFossilRangeGraphLnL;
 }
@@ -636,13 +643,13 @@ double Speciation::updateBDSSSampleProbRho(FossilGraph *fg) {
     double r = modelPtr->safeExponentiation(lnR);
     if(ranPtr->uniformRv() < r){
         //setAllBDFossParams();
-        //rw: move not yet implemented
+        // move not yet implemented
         currentFossilGraphLnL = newfgprob;
     }
     else{
         extantSampleRate = oldSP;
         //setAllBDFossParams();
-        //rw: move not yet implemented
+        // move not yet implemented
         currentFossilGraphLnL = oldfgprob;
     }
     return 0.0;

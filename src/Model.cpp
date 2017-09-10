@@ -95,7 +95,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	rootNExpRate = -1.0;
 	bool rtCalib = false;
     cout << "expmo" << expmo << endl;
-    fbdsExperimentalMode = expmo;//rw: experimental mode = 1: fix user specified branch lengths; = 2 fix user specified branch lengths and ignore the calibrations
+    fbdsExperimentalMode = expmo;// experimental mode = 1: fix user specified branch lengths; = 2 fix user specified branch lengths and ignore the calibrations
     ignoreFossils = igfoss;
         
 	if(calibfilen.empty() == false){
@@ -218,7 +218,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
         Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho, bdp, fxPsi, psi, specPr, psiPr, bPrRate, dPrRate, pPrRate);
         for (int i=0; i<2; i++){
             parms[i].push_back( ot );
-            parms[i].push_back( sp ); //rw: bdr = netDiversificaton, bda = relativeDeath, bds = probSpeciationS, initRootH, rho
+            parms[i].push_back( sp );
             parms[i].push_back( fg );
             
         }
@@ -804,15 +804,15 @@ double Model::readCalibFile(void) {
 	bool rootIs = false;
 	Calibration *rooCal;
 	string ln = getLineFromFile(calibfilen, 1);
-    string tg = "-s"; //RW total group fossil indicator
-    string fx = "-x"; //RW fix node age
+    string tg = "-s"; // total group fossil indicator
+    string fx = "-x"; // fix node age
     int nlins = atoi(ln.c_str());
 	int nnodes = alignmentPtr->getNumTaxa() - 1;
 	string *calList = new string[nlins];
 	for(int i=0; i<nlins; i++){
 		calList[i] = getLineFromFile(calibfilen, i+2);
         if (calList[i].find(tg) != string::npos) {
-            if (treeTimePrior != 8) { //RW
+            if (treeTimePrior != 8) {
                 cerr << "ERROR: Total group fossils (-s) cannot be included with the -tga option!\nTry using -fbds." << endl;
                 exit(1);
             }
@@ -893,7 +893,7 @@ double Model::readCalibFile(void) {
             }
             rHtY = yb;
             rHtO = ob;
-            initOT = initTScale * 2.0; //rw: I dont understand why these werent previously defined here
+            initOT = initTScale * 2.0;
         }
         else{
             yb = 0.0;
@@ -1059,7 +1059,7 @@ void Model::readFossilRangeFile(void){
     
     delete [] calList;
     
-    //initOT = ot * 2.0; //rw: origin time initiated by class frg
+    //initOT = ot * 2.0; // origin time initiated by class frg
 
     cout << "\nTotal number of lineages: " << numLineages << endl;
     cout << "\nTotal number of fossils: " << numFossils << endl;

@@ -40,7 +40,7 @@ class Mcmc {
 
 	public:
 						Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, 
-                             std::string ofp, bool wdf, bool modUpP, bool po, bool pfat); //RW
+                             std::string ofp, bool wdf, bool modUpP, bool po, bool pfat);
 							
 	private:
 		void			runChain(void);
@@ -49,7 +49,7 @@ class Mcmc {
 		double			safeExponentiation(double lnX);
 		void			sampleChain(int gen, std::ofstream &paraOut, 
 									std::ofstream &figTOut, std::ofstream &nodeOut, double lnl);
-        void			sampleChain(int gen, std::ofstream &occOut, double lnl); //sample chain overload fxn for fofbd
+        void			sampleChain(int gen, std::ofstream &occOut, double lnl); // sample chain overload fxn for fofbd
         void			sampleChainFR(int gen, std::ofstream &fgOut, double lnl); // sample chain fxn for frgfbd
         void			sampleChainFRSkyline(int gen, std::ofstream &fgOut, double lnl); // sample chain fxn for frgfbd skyline
 		void			sampleFBDExpChain(int gen, std::ofstream &nodeOut, double lnl);
