@@ -290,7 +290,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     
 }
 
-Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, int expMode){
+Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, int expMode, int fbdLk){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
@@ -315,7 +315,7 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, doubl
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
-    FossilRangeGraphSkyline *frg = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, userSpecifiedIntervals, intervals, runUnderPrior, fixFRG, expMode);
+    FossilRangeGraphSkyline *frg = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, userSpecifiedIntervals, intervals, runUnderPrior, fixFRG, expMode, fbdLk);
     SpeciationSkyline *sp = new SpeciationSkyline(ranPtr, this, userSpecifiedIntervals, rho);
     
     for (int i=0; i<2; i++){

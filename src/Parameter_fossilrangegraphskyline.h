@@ -38,27 +38,34 @@
 class Interval {
     
 public:
-    Interval(double start, double end, int fossils, int intid) : intervalStart(start), intervalEnd(end), intervalFossils(fossils), intervalID(intid) {}
+    Interval(double start, double end, int fossils, int intid, double durations, int kP) : intervalStart(start), intervalEnd(end), intervalFossils(fossils), intervalID(intid),
+    intervalSumRangeLengths(durations), intervalKappaPrime(kP) {}
 
     double          getIntervalStart(void){ return intervalStart; }
     double          getIntervalEnd(void){ return intervalEnd; }
     int			    getIntervalFossils(void){ return intervalFossils; }
     int			    getIntervalID(void){ return intervalID; }
+    double          getIntervalSumRangeLengths(void) { return intervalSumRangeLengths; }
+    int             getIntervalKappaPrime(void) {return intervalKappaPrime; }
     
     void            setIntervalStart(double d) { intervalStart = d; };
     void            setIntervalEnd(double d) { intervalEnd = d; };
+    void            setIntervalSumRangeLengths(double d) { intervalSumRangeLengths = d; }
+    void            setIntervalKappaPrime(int i) { intervalKappaPrime = i; }
     
 private:
     double          intervalStart;
     double          intervalEnd;
     int             intervalFossils;
     int             intervalID;
+    double          intervalSumRangeLengths;
+    int             intervalKappaPrime;
 };
 
 class FossilRangeSkyline {
     
 public:
-    FossilRangeSkyline(double fa, double la, double at, bool e, bool eo, int frid, std::vector<bool> gi) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0), gammaInteractions(gi) {}
+    FossilRangeSkyline(double fa, double la, double at, double et, bool e, bool eo, int frid, std::vector<bool> gi) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), endTime(et), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0), gammaInteractions(gi) {}
     
     bool                              getIsExtant(void) { return extant; }
     bool                              getIsExtantOnly(void) { return extantOnly; }
@@ -66,6 +73,7 @@ public:
     double                            getFirstAppearance(void) { return firstAppearance; }
     double                            getLastAppearance(void) { return lastAppearance; }
     double                            getAttachmentTime(void) { return attachmentTime; } // only used when the FRG is fixed
+    double                            getEndTime(void) {return endTime; } // only used when the FRG is fixed
     double                            getLineageStart(void) { return lineageStart; }
     double                            getLineageStop(void) { return lineageStop; }
     int                               getFossilRangeBrGamma(void) { return fossilBrGamma; }
@@ -108,6 +116,7 @@ private:
     double							firstAppearance; // oi
     double							lastAppearance; // yi
     double							attachmentTime; // note this is for fixed ranges
+    double							endTime; // note this is for fixed ranges
     bool                            extant;
     bool                            extantOnly;
     int                             fossilRangeID;
@@ -133,7 +142,7 @@ class Calibration;
 class FossilRangeGraphSkyline : public Parameter {
     
 public:
-    FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, int ni, std::vector<Calibration *> ints, bool rnp, bool fxFRG, int expMode);
+    FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, int ni, std::vector<Calibration *> ints, bool rnp, bool fxFRG, int expMode, int fbdLk);
 
     ~FossilRangeGraphSkyline(void);
     
@@ -158,7 +167,7 @@ public:
     
     // frg skyline functions
     void                            setAllIntervalConstants(void);
-    double                            fbdSkylineABPfxnInterval(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
+    double                          fbdSkylineABPfxnInterval(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
     double							fbdSkylineAfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, int i);
     double							fbdSkylineBfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i);
     double                          fbdSkylinePfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
@@ -196,6 +205,7 @@ private:
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
     void                            orderRangeAges();
+    void                            calculateIntervalSumRanges(); // L_S
     
     int                             numFossils;
     int                             numLineages;
@@ -206,6 +216,7 @@ private:
     double                          ancientBound;
     bool							runUnderPrior;
     bool                            printInitialFossilRangeSkylineVariables;
+    int                             fbdLikelihood;
     
     std::vector<Interval *>         intervals;
     std::vector<FossilRangeSkyline *>		fossilRangesSkyline;

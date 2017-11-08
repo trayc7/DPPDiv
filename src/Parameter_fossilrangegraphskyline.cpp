@@ -43,13 +43,14 @@
 
 using namespace std;
 
-FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni, vector<Calibration *> ints, bool rnp, bool fxFRG, int expMode) : Parameter(rp, mp){
+FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni, vector<Calibration *> ints, bool rnp, bool fxFRG, int expMode, int fbdLk) : Parameter(rp, mp){
 
     name = "FRGS";
     numFossils = nf;
     numLineages = nl;
     numIntervals = ni + 1; // user defined intervals + the interval incorporating the ancient bound
     runUnderPrior = rnp;
+    fbdLikelihood = fbdLk;
     numExtinctLineages = 0;
     originTime = 0.0;
     originInterval = 0;
@@ -85,6 +86,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     cout << "Number of intervals (inc ancient bound): " << numIntervals << endl;
     cout << "\nInitial origin time: " << originTime << endl;
     cout << "Fossil range graph skyline initialized" << endl;
+    cout << "Using likelihood function " << fbdLikelihood << endl;
     
 }
 
@@ -158,7 +160,6 @@ string FossilRangeGraphSkyline::writeParam(void){
 
 void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
     
-    bool printIntVariables = 1;
     double start = 0;
     double end = 0;
     int fossils = 0;
@@ -170,17 +171,14 @@ void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
         end = h->getIntervalEnd();
         fossils = h->getIntervalFossils();
         
-        Interval *interval = new Interval(start, end, fossils, intid);
+        Interval *interval = new Interval(start, end, fossils, intid, 0, 0);
         intervals.push_back(interval);
         
         intid ++;
     }
     
-    Interval *interval = new Interval(ancientBound, start, 0, intid);
+    Interval *interval = new Interval(ancientBound, start, 0, intid, 0, 0);
     intervals.push_back(interval);
-    
-    if(printIntVariables)
-        printIntervalVariables();
     
 }   
 
@@ -192,7 +190,9 @@ void FossilRangeGraphSkyline::printIntervalVariables(){
         cout << "Interval ID: " << interval->getIntervalID() << endl;
         cout << "Interval start: " << interval->getIntervalStart() << endl;
         cout << "Interval end: " << interval->getIntervalEnd() << endl;
-        cout << "Number of fossils: " << interval->getIntervalFossils() << endl << endl;
+        cout << "Number of fossils: " << interval->getIntervalFossils() << endl;
+        cout << "Total sum of range durations (Ls): " << interval->getIntervalSumRangeLengths() << endl;
+        cout << "Number of FAs & LAs (kappa'): " << interval->getIntervalKappaPrime() << endl << endl;
     }
 }
 
@@ -204,13 +204,14 @@ void FossilRangeGraphSkyline::createFossilRangeSkylineVector(vector<Calibration 
         double fa = p->getFirstAppearance();
         double la = p->getLastAppearance();
         double at = p->getAttachmentTime();
+        double et = p->getEndTime();
         bool e = p->getIsExtant();
         bool eo = p->getIsExtantOnly();
         
         // vector for gamma interactions
         std::vector<bool> gi(numLineages, 0);
         
-        FossilRangeSkyline *frs = new FossilRangeSkyline(fa, la, at, e, eo, frid, gi);
+        FossilRangeSkyline *frs = new FossilRangeSkyline(fa, la, at, et, e, eo, frid, gi);
         fossilRangesSkyline.push_back(frs);
         
         frid ++;
@@ -256,7 +257,8 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
         for(int f = 0; f < numLineages; f++){
             FossilRangeSkyline *fr = fossilRangesSkyline[f];
             fr->setLineageStart(fr->getAttachmentTime());
-            fr->setLineageStop(fr->getLastAppearance());
+            //fr->setLineageStop(fr->getLastAppearance());
+            fr->setLineageStop(fr->getEndTime());
             fr->setFixStart(1);
             fr->setFixStop(1);
         }
@@ -299,9 +301,69 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
         fr->setFossilRangeDeathInterval(assignInterval(fr->getLineageStop()));
     }
     
+    calculateIntervalSumRanges();
+    //calculateKappaPrime();
+    
+    bool printIntVariables = 1;
+    
+    if(printIntVariables)
+        printIntervalVariables();
+    
     if(printInitialFossilRangeSkylineVariables)
         printFossilRangeSkylineVariables();
     
+}
+
+// REQUIRES DOUBLE CHECKING & ADD KAPPA PRIME TO DESCRIPTOR
+void FossilRangeGraphSkyline::calculateIntervalSumRanges(){
+    
+    double fa, la, start, end, duration, sumInterval;
+    int kappaPrime;
+    
+    for(int i = 0; i < numIntervals; i++){
+        
+        Interval *interval = intervals[i];
+        
+        start = interval->getIntervalStart();
+        end = interval->getIntervalEnd();
+        duration = start - end; // maybe this should be an interval variable
+        
+        sumInterval = 0;
+        kappaPrime = 0;
+        
+        for(int f = 0; f < numLineages; f++){
+            
+            FossilRangeSkyline *fr = fossilRangesSkyline[f];
+            fa = fr->getFirstAppearance();
+            la = fr->getLastAppearance();
+            
+            // range through taxa
+            if(fa > start && end > la){
+                sumInterval += duration;
+            } // first and last appearance occur within the interval (singleton)
+            else if (fa < start && fa > end && la < start && la > end){
+                sumInterval += fa - la;
+                if(fa == la)
+                    kappaPrime += 1;
+                else
+                    kappaPrime += 2;
+            }
+            // first appearance within interval
+            else if (fa < start && fa >= end){
+                sumInterval += fa - end;
+                if(fa != 0)
+                    kappaPrime += 1;
+            }
+            // last appearance within interval
+            else if (la <= start && (la > end || (la == 0 && end == 0) )){
+                sumInterval += start - la;
+                if(la != 0)
+                    kappaPrime += 1;
+            }
+        }
+        interval->setIntervalSumRangeLengths(sumInterval);
+        interval->setIntervalKappaPrime(kappaPrime);
+    }
 }
 
 // debugging code
@@ -766,15 +828,6 @@ double FossilRangeGraphSkyline::getActiveFossilRangeGraphSkylineProb(){
     if(runUnderPrior)
         return 0.0;
     
-//    double nprb = 0.0;
-
-//    SpeciationSkyline *s = modelPtr->getActiveSpeciationSkyline();
-//    s->setAllBDFossParams();
-//    std::vector<double> rho = s->getSppSampRateRho();
-//    std::vector<double> lambda = s->getSpeciationRates();
-//    std::vector<double> mu = s->getExtinctionRates();
-//    std::vector<double> fossRate = s->getFossilSampRates();
-    
     double nprb = getFossilRangeGraphSkylineProb();
     return nprb;
     
@@ -807,10 +860,26 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     
     // fossils
     for(int i = 0; i < intervals.size(); i++){
+        
         Interval *interval = intervals[i];
-        int numFossils = interval->getIntervalFossils();
-        if(numFossils > 0)
-            nprb += numFossils * log(fossRate[i]);
+        
+        if(fbdLikelihood == 1){
+            
+            int numFossils = interval->getIntervalFossils(); // for fbdlk = 1 this will be k, for fbdlk = 2 this will be kappaPrime
+            
+            if(numFossils > 0) nprb += numFossils * log(fossRate[i]);
+            
+        } else if (fbdLikelihood == 2) {
+            
+            int kappaPrime = interval->getIntervalKappaPrime();
+            
+            if(kappaPrime > 0) nprb += kappaPrime * log(fossRate[i]);
+            
+            nprb += fossRate[i] * interval->getIntervalSumRangeLengths();
+        }
+        
+        // if(fbdLikelihood == 3 
+            
     }
     
     // for each range

@@ -176,6 +176,7 @@ int main (int argc, char * const argv[]) {
     double bPrRate      = 1;        // mean of exponential prior on birth
     double dPrRate      = 1;        // mean of exponential prior on death
     double pPrRate      = 1;        // mean of exponential prior on psi
+    int fbdRangeLikelihood = 1;     // 1 = poisson sampling, 2 = marginalize over k within ranges, 3 = marginalize over k within intervals (presence/absence sampling)
     //bool maxSpecRate  = 10000;
 	
 	if(argc > 1){
@@ -246,9 +247,12 @@ int main (int argc, char * const argv[]) {
                     treeNodePrior = 9;
                 else if(!strcmp(curArg, "-frofbd")) // fossil range only fossilised birth death process
                     treeNodePrior = 10;
-                else if(!strcmp(curArg, "-frofbdsky")){ // fossil range only fossilised birth death process skyline
+                else if(!strcmp(curArg, "-fbdrsky")){ // fossil range only fossilised birth death process skyline
                     treeNodePrior = 11;
                     bdpar = 3;
+                }
+                else if(!strcmp(curArg, "-fbdrlk")){ // likelihood model for the fossilised birth death process skyline
+                    fbdRangeLikelihood = atof(argv[i+1]); // 1, 2 or 3
                 }
 				else if(!strcmp(curArg, "-bdr"))	// (lambda - mu)
 					netDiv = atof(argv[i+1]);
@@ -375,7 +379,7 @@ int main (int argc, char * const argv[]) {
 	
     if(treeNodePrior == 11){
         // fossil range skyline FBD
-        Model myModel(&myRandom, calibFN, intFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, expMode);
+        Model myModel(&myRandom, calibFN, intFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, expMode, fbdRangeLikelihood);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return  0;
     }

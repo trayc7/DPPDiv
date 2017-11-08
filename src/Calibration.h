@@ -38,7 +38,7 @@ class Calibration {
 	private:
 		std::string		txn1, txn2;
 		double			youngtime, oldtime;
-        double			firstAppearance, lastAppearance, attachmentTime;
+        double			firstAppearance, lastAppearance, attachmentTime, endTime;
         double			intervalStart, intervalEnd;
         int             intervalFossils;
 		int				nodeIDX;
@@ -83,6 +83,7 @@ class Calibration {
         double			getFirstAppearance() { return firstAppearance; }
         double			getLastAppearance() { return lastAppearance; }
         double			getAttachmentTime() { return attachmentTime; }
+        double          getEndTime() { return endTime; }
         bool			getIsExtant(void) { return isExtant; }
         bool            getIsExtantOnly(void) { return isExtantOnly; }
     
