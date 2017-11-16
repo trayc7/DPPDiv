@@ -664,8 +664,8 @@ void FossilRangeGraphSkyline::countExtinctLineages(){
 
 int FossilRangeGraphSkyline::assignInterval(double time){
     
-    if(time == 0.0)
-        return -1;
+    //if(time == 0.0)
+      //  return -1;
     
     int assingment = 0;
     for(int i = 0; i < numIntervals; i++){
