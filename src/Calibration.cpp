@@ -42,7 +42,7 @@ Calibration::Calibration(string calstr, int tip){
 		initializeNodeCalibration(calstr);
 	else if(tip == 1)
 		initialzeTipCalibration(calstr);
-    else if (tip==2)
+    else if (tip == 2)
         initializeOccurrence(calstr);
     else if (tip == 3)
         initializeFixedNodeAge(calstr);
@@ -52,6 +52,12 @@ Calibration::Calibration(string calstr, int tip){
         initializeInterval(calstr);
 }
 
+// overload function for reading presence absence data
+Calibration::Calibration(string calstr, string pastr, int intNum){
+
+    initializePresenceAbsenceRange(calstr, pastr, intNum);
+    
+}
 
 void Calibration::initializeNodeCalibration(string calstr){
 
@@ -273,6 +279,47 @@ void Calibration::initializeInterval(string calstr){
 
     cout << "Interval start: " << intervalStart << " fossils: " << intervalFossils << endl;
     
+}
+
+void Calibration::initializePresenceAbsenceRange(string calstr, string pastr, int intNum){
+    
+    isExtant = false;
+    isExtantOnly = false;
+    
+    stringstream ss;
+    string tmp = "";
+    ss << calstr;
+    
+    ss >> tmp;
+    lastAppearance = atof(tmp.c_str());
+    ss >> tmp;
+    firstAppearance = atof(tmp.c_str());
+    ss >> tmp;
+    attachmentTime = atof(tmp.c_str());
+    ss >> tmp;
+    endTime = atof(tmp.c_str());
+    
+    if(firstAppearance == 0)
+        isExtantOnly = true;
+    if(lastAppearance == 0)
+        isExtant = true;
+    
+    cout << firstAppearance << " - " << lastAppearance << endl;
+    
+    stringstream pp;
+    tmp = "";
+    pp << pastr;
+    
+    for(int i=0; i < intNum; i++){
+        pp >> tmp;
+        int fossilNum = atof(tmp.c_str());
+        kappa.push_back(fossilNum);
+    }
+    
+    // for the extra empty time bin
+    kappa.push_back(0);
+    
+    //cout << "Presence absence: " << endl;
 }
 
 /*

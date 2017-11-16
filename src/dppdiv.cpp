@@ -123,6 +123,7 @@ int main (int argc, char * const argv[]) {
 	string calibFN		= "";
 	string tipDateFN	= "";
     string intFN        = "";
+    string paFN         = "";
 	string outName		= "out";
 	double priorMean    = 3.0;		// prior mean number of rate cats
 	double rateSh       = 2.0;		// shape param for gamma dist on rates
@@ -235,6 +236,8 @@ int main (int argc, char * const argv[]) {
 					tipDateFN = argv[i+1];
                 else if(!strcmp(curArg, "-int"))
                     intFN = argv[i+1];
+                else if(!strcmp(curArg, "-pa")) // file for presence absence data
+                    paFN = argv[i+1];
 				else if(!strcmp(curArg, "-npr"))
 					treeNodePrior = atoi(argv[i+1]);
 				else if(!strcmp(curArg, "-tgs"))		// set treeNodePrior to do calibrated birth-death
@@ -379,7 +382,7 @@ int main (int argc, char * const argv[]) {
 	
     if(treeNodePrior == 11){
         // fossil range skyline FBD
-        Model myModel(&myRandom, calibFN, intFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, expMode, fbdRangeLikelihood);
+        Model myModel(&myRandom, calibFN, intFN, paFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, expMode, fbdRangeLikelihood);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return  0;
     }

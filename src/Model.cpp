@@ -290,12 +290,13 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     
 }
 
-Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, int expMode, int fbdLk){
+Model::Model(MbRandom *rp, std::string clfn, std::string intfn, std::string pafn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, int expMode, int fbdLk){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
     calibfilen = clfn;
     intfilen = intfn;
+    pafilen = pafn;
     treeTimePrior = nodpr;
     rho = rh;
     runUnderPrior = rnp;
@@ -309,9 +310,11 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, int nodpr, doubl
     userSpecifiedIntervals = 0; //**skyline note user specified intervals
     myCurLnL = 0.0;
     
-    // **skynote I don't think you need to change this...
-    readFossilRangeFile(); // --> this function will read the file, create a Calibration obj for each fossil range
-    readIntervalsFile(); // --> this function will read the file, create a Calibration obj for each interval
+    if(fbdLk == 1 || fbdLk == 2)
+        readFossilRangeFile(); // this function will read the file and create a Calibration obj for each fossil range
+    else if(fbdLk == 3)
+        readPresenceAbsenceFile(); // this function will read the file and create a Calibration obj for each fossil range, inc presence / absence data
+    readIntervalsFile(); // this function will read the file, create a Calibration obj for each interval
     
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
@@ -1066,6 +1069,63 @@ void Model::readFossilRangeFile(void){
 
 }
 
+void Model::readPresenceAbsenceFile(void){
+    /*
+     
+     */
+    
+    cout << "\nFossil ranges:" << endl;
+    string lnCal = getLineFromFile(calibfilen, 1);
+    string lnPa = getLineFromFile(pafilen, 1);
+    
+    int nlins = atoi(lnCal.c_str());
+    int nlinsPa = atoi(lnPa.c_str());
+    
+    if(nlins != nlinsPa){
+        cout << "ERROR: There's a problem with the calibration files \n";
+        exit(1);
+    }
+    
+    // fetch the number of lineages and fossils
+    stringstream ss;
+    string tmp = "";
+    ss << lnCal;
+    ss >> tmp;
+    numLineages = atoi(tmp.c_str());
+    ss >> tmp;
+    numFossils = atoi(tmp.c_str());
+    
+    stringstream pp;
+    tmp = "";
+    pp << lnPa;
+    pp >> tmp;
+    int lnNum = atoi(tmp.c_str());
+    pp >> tmp;
+    int intNum = atoi(tmp.c_str());
+    
+    // do some cross checking here with the pa file
+    //if(numLineages != lnNum){
+    //    cout << "ERROR: There's a problem with the calibration files \n";
+    //    exit(1);
+    //}
+    
+    string *calList = new string[nlins];
+    string *paList = new string[nlins];
+    
+    for(int i=0; i<nlins; i++){
+        calList[i] = getLineFromFile(calibfilen, i+2);
+        paList[i] = getLineFromFile(pafilen, i+2);
+        Calibration *cal = new Calibration(calList[i], paList[i], intNum);
+        calibrs.push_back(cal);
+    }
+    
+    delete [] calList;
+    
+    cout << "\nTotal number of lineages: " << numLineages << endl;
+    cout << "\nTotal number of fossils: " << numFossils << endl;
+    
+}
+
 void Model::readIntervalsFile(void){
     /*
      i
@@ -1098,6 +1158,7 @@ void Model::readIntervalsFile(void){
     cout << "\nTotal number of user defined intervals: " << userSpecifiedIntervals << endl;
     
 }
+
 
 Calibration* Model::getRootCalibration(void) {
 

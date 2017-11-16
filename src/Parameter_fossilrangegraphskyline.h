@@ -65,7 +65,8 @@ private:
 class FossilRangeSkyline {
     
 public:
-    FossilRangeSkyline(double fa, double la, double at, double et, bool e, bool eo, int frid, std::vector<bool> gi) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), endTime(et), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0), gammaInteractions(gi) {}
+    FossilRangeSkyline(double fa, double la, double at, double et, bool e, bool eo, int frid, std::vector<bool> gi, std::vector<double> ls) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), endTime(et),
+    extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0), gammaInteractions(gi), subBranchLengths(ls) {}
     
     bool                              getIsExtant(void) { return extant; }
     bool                              getIsExtantOnly(void) { return extantOnly; }
@@ -89,10 +90,12 @@ public:
     int                               getFossilRangeBirthInterval(void) { return birthInterval; }
     int                               getFossilRangeDeathInterval(void) { return deathInterval; }
     int                               getFossilRangeFirstAppearanceInterval(void) { return firstAppearanceInterval; }
+    int                               getFossilRangeLastAppearanceInterval(void) { return lastAppearanceInterval; }
     
     void                              setFossilRangeBirthInterval(int i) { birthInterval = i; }
     void                              setFossilRangeDeathInterval(int i) { deathInterval = i; }
     void                              setFossilRangeFirstAppearanceInterval(int i) { firstAppearanceInterval = i; }
+    void                              setFossilRangeLastAppearanceInterval(int i) { lastAppearanceInterval = i; }
     
     // fxns required for cloning only
     int								getFossilRangeIndex(void) { return indx; }   // this isn't used
@@ -111,6 +114,14 @@ public:
     bool                            getFossilRangeGammaInteractions(int i) { return gammaInteractions[i]; }
     void                            setFossilRangeGammaInteractions(int i, bool b) { gammaInteractions[i] = b; }
     
+    // fxns required for lk model 3
+    void                            setKappaFromCal(std::vector<int> i) { kappaS = i; }
+    int                             getFossilRangeKappaS(int i) { return kappaS[i]; }
+    double                          getFossilRangeSubBranchLength(int i) { return subBranchLengths[i]; }
+    void                            setFossilRangeSubBranchLength(int i, double d) { subBranchLengths[i] = d; }
+    double                          getChangeableOi() { return changeableOi; }
+    void                            setChangeableOi(double d) { changeableOi = d; }
+    
 private:
     int								indx;
     double							firstAppearance; // oi
@@ -121,8 +132,8 @@ private:
     bool                            extantOnly;
     int                             fossilRangeID;
     int								fossilBrGamma;
-    double                          lineageStart; // note this is the speciation time = zf or phi
-    double                          lineageStop;
+    double                          lineageStart; // bi
+    double                          lineageStop; // di
     bool                            fixStart;
     bool                            fixStop;
     
@@ -130,8 +141,14 @@ private:
     int                             birthInterval;
     int                             deathInterval;
     int                             firstAppearanceInterval;
+    int                             lastAppearanceInterval; // used for model 3
     
     std::vector<bool>               gammaInteractions;
+    
+    // lk model 3 parameters
+    std::vector<int>                kappaS;
+    std::vector<double>             subBranchLengths;
+    double                          changeableOi;
     
 };
 
@@ -205,7 +222,14 @@ private:
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
     void                            orderRangeAges();
-    void                            calculateIntervalSumRanges(); // L_S
+    // fxns required for model 2
+    void                            calculateIntervalSumRanges(); // L_s & kappa prime
+    // fxns required for model 3
+    void                            initializeIntervalSubBranchLengths(); // L_S & changeable o_i
+    void                            recalculateIntervalSubBranchLengths(int i); // L_S & changeable o_i
+    double                          updateLineageBi();
+    double                          updateLineageDi();
+    double                          updateLineageOi();
     
     int                             numFossils;
     int                             numLineages;
@@ -220,11 +244,11 @@ private:
     
     std::vector<Interval *>         intervals;
     std::vector<FossilRangeSkyline *>		fossilRangesSkyline;
-    std::vector<double>           intervalAs;
-    std::vector<double>           intervalBs;
-    std::vector<double>           intervalPs;
-    std::vector<double>           intervalQs;
-    std::vector<double>           intervalQts;
+    std::vector<double>             intervalAs;
+    std::vector<double>             intervalBs;
+    std::vector<double>             intervalPs;
+    std::vector<double>             intervalQs;
+    std::vector<double>             intervalQts;
     
     void                            printIntervalVariables();
     void                            printFossilRangeSkylineVariables(); //debugging code

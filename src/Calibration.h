@@ -32,6 +32,7 @@
 #define CALIBRATION_H
 
 #include <string>
+#include <vector>
 
 
 class Calibration {
@@ -54,6 +55,7 @@ class Calibration {
 		
 	public:
 						Calibration(std::string calstr, int tip);
+                        Calibration(std::string calstr, std::string pastr, int intervals); // overload fxn for reading presence absence file
 		std::string		getTxN1() { return txn1; }
 		std::string		getTxN2() { return txn2; }
 		double			getYngTime() { return youngtime; }
@@ -78,6 +80,7 @@ class Calibration {
         void            initializeFixedNodeAge(std::string calstr);
         void            initializeFossilRange(std::string calstr);
         void            initializeInterval(std::string calstr);
+        void            initializePresenceAbsenceRange(std::string calstr, std::string pastr, int intervalNum);
     
         // for the fossil range graph model (constant rate and skyline)
         double			getFirstAppearance() { return firstAppearance; }
@@ -92,6 +95,11 @@ class Calibration {
        double			getIntervalStart() { return intervalStart; }
        double			getIntervalEnd() { return intervalEnd; }
        int              getIntervalFossils() { return intervalFossils; }
+    
+      // for presence absence data
+      std::vector<int>  kappa;
+      std::vector<int>  getKappa() { return kappa; }
+    
 };
 
 
