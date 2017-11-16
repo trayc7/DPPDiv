@@ -170,7 +170,6 @@ public:
     void							print(std::ostream & o) const;
     std::string                     writeParam(void);
     
-    //double							getFossilRangeGraphSkylineProb(std::vector<double> lambda, std::vector<double> mu, std::vector<double> fossRate, std::vector<double> sppSampRate, double ot);
     double							getFossilRangeGraphSkylineProb();
     double							getFossilRangeGraphProb(std::vector<double> b, std::vector<double> d, std::vector<double> s, std::vector<double> r, double ot); // for cross validation
     double							getActiveFossilRangeGraphSkylineProb();
@@ -227,6 +226,8 @@ private:
     // fxns required for model 3
     void                            initializeIntervalSubBranchLengths(); // L_S & changeable o_i
     void                            recalculateIntervalSubBranchLengths(int i); // L_S & changeable o_i
+    
+    void                            calculateChangeableOi(int i);
     double                          updateLineageBi();
     double                          updateLineageDi();
     double                          updateLineageOi();
