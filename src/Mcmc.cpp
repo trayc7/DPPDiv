@@ -259,7 +259,6 @@ void Mcmc::runFOFBDChain() {
 //            }
         }
         
-        
         // sample chain
         if ( n % sampleFrequency == 0 || n == 1){
             sampleChain(n, oOut, oldLnLikelihood);

@@ -241,6 +241,7 @@ private:
     double                          ancientBound;
     bool							runUnderPrior;
     bool                            printInitialFossilRangeSkylineVariables;
+    bool                            conditionOnSurvival;
     int                             fbdLikelihood;
     
     std::vector<Interval *>         intervals;

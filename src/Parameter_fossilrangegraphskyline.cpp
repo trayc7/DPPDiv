@@ -51,6 +51,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     numIntervals = ni + 1; // user defined intervals + the interval incorporating the ancient bound
     runUnderPrior = rnp;
     fbdLikelihood = fbdLk;
+    conditionOnSurvival = 0;
     numExtinctLineages = 0;
     originTime = 0.0;
     originInterval = 0;
@@ -138,7 +139,7 @@ double FossilRangeGraphSkyline::update(double &oldLnL){
         int v = (int)(ranPtr->uniformRv() * numMoves);
         
         if(v == 0)
-            updateLineageBi();
+           updateLineageBi();
         else if (v == 1)
             updateLineageOi();
         else
@@ -1231,8 +1232,11 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     
     double rho = sppSampRate[0];
     
-    nprb = (numLineages - numExtinctLineages) * log(rho); //TODO: double check you can just exclude (1 - rho) ^ (n - m - l);
-    nprb -= log(1 - fbdSkylinePfxn(lambda, mu, fossRate, sppSampRate, originInterval, originTime));
+    if(rho > 0)
+        nprb += (numLineages - numExtinctLineages) * log(rho); //TODO: double check you can just exclude (1 - rho) ^ (n - m - l);
+    
+    if(conditionOnSurvival) //TODO: double check this
+        nprb -= log(1 - fbdSkylinePfxn(lambda, mu, fossRate, sppSampRate, originInterval, originTime));
     
     // fossils
     for(int i = 0; i < intervals.size(); i++){
@@ -1298,8 +1302,13 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
             nprb += log( fr->getFossilRangeBrGamma() );
         
         // speciation events
-        if(bi != originTime)
-            nprb += log(lambda[bint]);
+        //if(bi != originTime)
+          //  nprb += log(lambda[bint]);
+        
+        //TODO: double check this is correct
+        nprb += log(lambda[bint]);
+        if(bi == originTime && conditionOnSurvival)
+            nprb -= log(lambda[bint]);
         
         // extinction events
         if(!fr->getIsExtant())
@@ -1666,6 +1675,8 @@ double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, s
     double sppSampRate = r[0];
     
     nprb = numFossils*log(fossRate);
+    nprb += (numLineages - numExtinctLineages)*log(sppSampRate);
+    //nprb += (numLineages - numExtinctLineages - (numLineages - numExtinctLineages))*log(1 - sppSampRate);
     nprb += numExtinctLineages*log(mu);
     nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
     

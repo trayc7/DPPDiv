@@ -71,7 +71,7 @@ private:
     std::vector<double>		probObservations;
     double                  currentFossilRangeGraphSkylineLnL;
     
-    int                     parameterization; // 1=d,r,s,rho; 2=d,r,psi,rho; 3=lambda,mu,psi,rho;
+    int                     parameterization; // 1 = d, r, s, rho; 2 = d, r, psi, rho; 3 = lambda, mu, psi, rho;
     
     int                     numIntervals;
     void                    initializeIntervalVariables();
