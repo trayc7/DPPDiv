@@ -1302,13 +1302,8 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
             nprb += log( fr->getFossilRangeBrGamma() );
         
         // speciation events
-        //if(bi != originTime)
-          //  nprb += log(lambda[bint]);
-        
-        //TODO: double check this is correct
-        nprb += log(lambda[bint]);
-        if(bi == originTime && conditionOnSurvival)
-            nprb -= log(lambda[bint]);
+        if(bi != originTime)
+          nprb += log(lambda[bint]);
         
         // extinction events
         if(!fr->getIsExtant())
