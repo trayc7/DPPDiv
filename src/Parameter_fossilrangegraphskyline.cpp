@@ -51,7 +51,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     numIntervals = ni + 1; // user defined intervals + the interval incorporating the ancient bound
     runUnderPrior = rnp;
     fbdLikelihood = fbdLk;
-    conditionOnSurvival = 0;
+    conditionOnSurvival = 1;
     numExtinctLineages = 0;
     originTime = 0.0;
     originInterval = 0;
@@ -1224,7 +1224,7 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     
     double  nprb = 0.0;
     
-    bool frgProb = 0;
+    bool frgProb = 1;
     if(frgProb){
         nprb = getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
         return nprb;
@@ -1233,7 +1233,7 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     double rho = sppSampRate[0];
     
     if(rho > 0)
-        nprb += (numLineages - numExtinctLineages) * log(rho); //TODO: double check you can just exclude (1 - rho) ^ (n - m - l);
+        nprb += (numLineages - numExtinctLineages) * log(rho); // you can exclude (1 - rho) ^ (n - m - l) -- THIS IS INCORRECT;
     
     if(conditionOnSurvival) //TODO: double check this
         nprb -= log(1 - fbdSkylinePfxn(lambda, mu, fossRate, sppSampRate, originInterval, originTime));
@@ -1275,6 +1275,9 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
             }
         }
     }
+    
+    //TODO: keep track of this elsewhere
+    int numUnsampled = 0;
     
     // for each range
     for(int f = 0; f < fossilRangesSkyline.size(); f++){
@@ -1323,6 +1326,9 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         }
         
     }
+    
+    //TODO: take care of this else where
+    nprb += numUnsampled * log(1 - rho);
     
     currentFossilRangeGraphSkylineLnL = nprb;
     
@@ -1669,11 +1675,11 @@ double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, s
     double fossRate = s[0];
     double sppSampRate = r[0];
     
-    nprb = numFossils*log(fossRate);
-    nprb += (numLineages - numExtinctLineages)*log(sppSampRate);
-    //nprb += (numLineages - numExtinctLineages - (numLineages - numExtinctLineages))*log(1 - sppSampRate);
-    nprb += numExtinctLineages*log(mu);
+    nprb = numFossils * log(fossRate);
+    nprb += numExtinctLineages * log(mu);
     nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
+    
+    int numUnsampled = 0;
     
     for(int f=0; f < fossilRangesSkyline.size(); f++){
         
@@ -1682,6 +1688,11 @@ double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, s
         double bi = fr->getLineageStart(); // bi
         double di = fr->getLineageStop();  // di
         double oi = fr->getFirstAppearance(); // oi
+        
+        //TAKE CARE OF THIS ELSEWHERE
+        double yi = fr->getLastAppearance(); // yi
+        if (di == 0 && yi != 0)
+            numUnsampled += 1;
         
         if(bi == originTime)
             nprb += log( lambda * 1.0 );
@@ -1698,6 +1709,10 @@ double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, s
         
         nprb += rangePr;
     }
+    
+    //TODO: take care of this else where
+    nprb += (numLineages - numExtinctLineages - numUnsampled) * log(sppSampRate);
+    nprb += numUnsampled * log(1 - sppSampRate);
     
     currentFossilRangeGraphSkylineLnL = nprb;
     
@@ -1757,7 +1772,7 @@ double FossilRangeGraphSkyline::fbdQFxnLog(double b, double d, double psi, doubl
 // rho = 1
 double FossilRangeGraphSkyline::fbdQTildaFxnLog(double b, double d, double psi, double rho, double t){
     
-    bool useAlt = 0;
+    bool useAlt = 1;
     if(useAlt)
         return fbdQTildaFxnLogAlt(b, d, psi, rho, t);
     
@@ -1789,6 +1804,10 @@ double FossilRangeGraphSkyline::fbdQTildaFxnLogAlt(double b, double d, double ps
     double f2b = (1 - c2) * exp(-t * c1) + (1 + c2);
     
     double v = 0.5 * log( (f1a/f1b) * (f2a/f2b) );
+    
+    //TODO: add this to a seperate fxn:
+    //double q = fbdQFxnLog(b, d, psi, rho, t);
+    //double v = (q + (- (b + d + psi)*t) ) * 0.5;
     
     return v;
 }

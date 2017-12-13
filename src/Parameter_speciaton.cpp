@@ -176,7 +176,7 @@ double Speciation::update(double &oldLnL) {
 double Speciation::updateTreeBDParams(double &oldLnL) {
 	
 	double lnR = 0.0;
-	int v;
+	//int v;
 
 	Tree *t = modelPtr->getActiveTree();
 	double oldtreeprob = getLnTreeProb(t); 
@@ -194,60 +194,31 @@ double Speciation::updateTreeBDParams(double &oldLnL) {
 		
 		return 0.0;
 	}
-	else if(treeTimePrior > 3){ 
+	else if(treeTimePrior > 3){
 		
-		//updateRelDeathRt(t);
-		//updateNetDivRate(t);
-		//updateBDSSFossilProbS(t);
-		
-		v = (int)(ranPtr->uniformRv() * 3);
+		//v = (int)(ranPtr->uniformRv() * 3);
 		
 		if(parameterization == 1){
-//			if(v == 0)
-//				updateRelDeathRt(t); // r
-//			else if(v == 1)
-//				updateNetDivRate(t); // d
-//			else
-//				updateBDSSFossilProbS(t); // s
             updateRelDeathRt(t); // r
             updateNetDivRate(t); // d
             updateBDSSFossilProbS(t); // s
 		}
 		else if(parameterization == 2){
-			if(v == 0)
-				updateRelDeathRt(t); // r
-			else if(v == 1)
-				updateNetDivRate(t); // d
-			else
-				updatePsiRate(t); // psi
+			updateRelDeathRt(t); // r
+			updateNetDivRate(t); // d
+			updatePsiRate(t); // psi
 		}
 		// this parameterization is currently problematic
 		// because it allows mu >> lambda
 		else if(parameterization == 3){
-		  
-			if(v == 0){
-				updateBirthRate(t); // lambda
-			}
-			else if(v == 1){
-				updateDeathRate(t); // mu
-				
-			}
-			else {
-				updatePsiRate(t); // psi
-			}
+            updateBirthRate(t); // lambda
+			updateDeathRate(t); // mu
+			updatePsiRate(t); // psi
 		}
 		else if(parameterization == 4){
-			
-			if(v == 0){
-				updateNetDivRate(t); // d
-			}
-			else if(v == 1){
-				updateDeathRate(t); // mu
-				
-			}
-			else {
-				updatePsiRate(t); // psi
-			}
+			updateNetDivRate(t); // d
+            updateDeathRate(t); // mu
+			updatePsiRate(t); // psi
 		}
 		modelPtr->setLnLGood(true);
 		modelPtr->setMyCurrLnl(oldLnL);
