@@ -144,6 +144,7 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
                 initializeCalibratedNodeDepths();
             }
         }
+        
 		initializeFossilSpecVariables();
 
 	}
@@ -2935,11 +2936,12 @@ int Tree::recountFossilAttachNums(){
 	for(int i=0; i<fossSpecimens.size(); i++){
 		Fossil *fi = fossSpecimens[i];
 		int fgammCur = fi->getFossilFossBrGamma();
-		double fiPhi = fi->getFossilSppTime(); // z_f
+        double fiPhi = fi->getFossilSppTime(); // z_f
 		Node *p = &nodes[fi->getFossilMRCANodeID()];
-        double xi = p->getNodeDepth() * treeScale;
+        double xi = p->getNodeDepth(); // this was the bug * treeScale;
         int fiGamma = 0;
-        if(fi->getIsTotalGroupFossil()){
+        if
+            (fi->getIsTotalGroupFossil()){
             if(fiPhi > xi)
                 fiGamma = 1;
             else fiGamma = getDecendantFossilAttachBranches(p, fiPhi, i);
