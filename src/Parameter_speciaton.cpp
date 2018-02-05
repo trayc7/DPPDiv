@@ -48,12 +48,8 @@ Speciation::Speciation(MbRandom *rp, Model *mp, double bdr, double bda, double b
                        int psiPr, double bPrRate, double dPrRate, double pPrRate) : Parameter(rp, mp) {
 	
 	
-	//maxdivV = 10000.0;
     maxdivV = 30000.0;
 	name = "SP";
-	//relativeDeath = 0.7; //ranPtr->unifhormRv();
-	//netDiversificaton = 0.5; //ranPtr->uniformRv();
-	//probSpeciationS = 0.01; //ranPtr->uniformRv();
     relativeDeath = ranPtr->uniformRv();
     netDiversificaton = ranPtr->uniformRv();
     probSpeciationS = ranPtr->uniformRv();
@@ -270,15 +266,12 @@ double Speciation::updateFossilGraphBDParams(double &oldLnL){
 			updateBirthAndDeath(fg); // mu and lambda
 	}
 	else if(parameterization == 4){
-		if(v == 0){
+		if(v == 0)
 			updateNetDivRate(fg); // d
-		}
-		else if(v == 1){
+		else if(v == 1)
 			updateDeathRate(fg); // mu
-		}
-		else {
+		else
 			updatePsiRate(fg); // psi
-		}
 	}
 	return currentFossilGraphLnL;
 }
@@ -796,7 +789,6 @@ double Speciation::updatePsiRate(FossilRangeGraph *frg) {
     double minV = 0.0001;
     double maxV = 100000;
     double c = getNewValScaleMv(newPsi, oldPsi, minV, maxV, tuning);
-    //double c = getNewValScaleMv(newPsi, oldPsi, minV, maxV, tuning);
     fossilRate = newPsi;
     lpr = c;
     double newfgprob = getLnFossilRangeGraphProb(frg);

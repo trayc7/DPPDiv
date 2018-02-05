@@ -87,7 +87,7 @@ class Speciation : public Parameter {
 		double				currentFossilGraphLnL;
         double              currentFossilRangeGraphLnL;
 		
-		int					parameterization; // 1=d,r,s,rho; 2=d,r,psi,rho; 3=lambda,mu,psi,rho;
+		int					parameterization; // 1 = d,r,s,rho; 2 = d,r,psi,rho; 3 = lambda,mu,psi,rho;
 		
 		double				getNewValScaleMv(double &nv, double ov, double vmin, double vmax, double tv);
 		double				getNewValSWindoMv(double ov, double vmin, double vmax, double tv);
@@ -98,10 +98,10 @@ class Speciation : public Parameter {
         double				updateFossilRangeGraphBDParams(double &oldLnL);
 
 		
-		double				updateRelDeathRt(); // function never used?
-		double				updateNetDivRate(); // this is for trpr = 2
-		double				updateBDSSFossilProbS(); // function never used?
-		double				updateBDSSSampleProbRho(); // function never used?
+		double				updateRelDeathRt();
+		double				updateNetDivRate();
+		double				updateBDSSFossilProbS(); // function never called
+		double				updateBDSSSampleProbRho(); // function never called
 
 		double				updateRelDeathRt(Tree *t);
 		double				updateNetDivRate(Tree *t);

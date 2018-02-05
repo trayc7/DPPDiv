@@ -126,7 +126,7 @@ public:
     double                          phyloBDP0Fxn(double b, double d, double rho, double t); // stadler 2010
     double                          phyloBDP1FxnLog(double b, double d, double rho, double t); // stadler 2010
 
-//    double							getCurrentFossilGraphLnL(void) { return currentFossilGraphLnL; }
+    //double						getCurrentFossilGraphLnL(void) { return currentFossilGraphLnL; }
     void                            lnSurfaceGenerator(std::string outFile);
     void                            crossValidateFBDfunctions();
 
@@ -160,7 +160,7 @@ private:
     double                          getNewValSWindoMv(double ov, double vmin, double vmax, double tv);
     double							doAScaleMove(double &nv, double cv, double tv, double lb, double hb, double rv); //c.f FossilGraph::doAScaleMove
     
-//    int								treeTimePrior; // this should always be 10
+    //int							treeTimePrior; // this should always be 10
     
     bool                            fixFRG;
     bool                            fixOrigin;

@@ -83,7 +83,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 	fixTestRun = fxtr;
 	estAbsRts = false;
     originMax = 100000.0;
-    rho = rh; //rw: only active in experimental mode
+    rho = rh; //RW: only active in experimental mode
     fbdPar = bdp;
     if(treeTimePrior == 8)
         conditionOnOrigin = true; // some redundancy for now
@@ -193,8 +193,8 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     treeTimePrior = nodpr;
     calibfilen = clfn;
 	runUnderPrior = rnp;
-    rho = rh; //rw: if rho is 0, I think the likelihood will always = NaN
-    if(rho < 0.0 || rho > 1.0) {
+    rho = rh; //RW: can not currently handle rho = 0
+    if(rho <= 0.0 || rho > 1.0) {
         cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
         exit(1);
     }
@@ -844,7 +844,7 @@ double Model::readCalibFile(void) {
     
     bool rootDone = false;
     
-    // Put initialization of the origin time here
+    // initialization of the origin time here
 	
 	double oldest = 0.0;
 	for(vector<Calibration *>::iterator v = calibrs.begin(); v != calibrs.end(); v++){
@@ -1070,9 +1070,6 @@ void Model::readFossilRangeFile(void){
 }
 
 void Model::readPresenceAbsenceFile(void){
-    /*
-     
-     */
     
     cout << "\nFossil ranges:" << endl;
     string lnCal = getLineFromFile(calibfilen, 1);
