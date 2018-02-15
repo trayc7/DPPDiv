@@ -124,6 +124,7 @@ public:
     double							fbdPFxn(double b, double d, double psi, double rho, double t);
     double							fbdQTildaFxn(double b, double d, double psi, double rho, double t);
     double							fbdQTildaFxnLog(double b, double d, double psi, double rho, double t);
+    double							fbdQTildaFxnLogAlt(double b, double d, double psi, double rho, double t);
     double							fbdQFxnLog(double b, double d, double psi, double rho, double t);
     double                          phyloBDP0Fxn(double b, double d, double rho, double t); // stadler 2010
     double                          phyloBDP1FxnLog(double b, double d, double rho, double t); // stadler 2010
@@ -147,7 +148,7 @@ private:
     int                             numFossils;
     int                             numLineages;
     int                             numExtinctLineages;
-    int                             numExtantLineages;
+    int                             numExtantSamples;
     double                          originTime;
     double                          ancientBound;
     bool							runUnderPrior;

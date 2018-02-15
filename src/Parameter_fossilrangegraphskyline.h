@@ -235,6 +235,7 @@ private:
     int                             numFossils;
     int                             numLineages;
     int                             numExtinctLineages;
+    int                             numExtantSamples;
     int                             numIntervals;
     int                             originInterval;
     double                          originTime;

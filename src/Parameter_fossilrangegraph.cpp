@@ -50,7 +50,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     numLineages = nl;
     runUnderPrior = rnp;
     numExtinctLineages = 0;
-    numExtantLineages = 0;
+    numExtantSamples = 0;
     originTime = 0.0;
     ancientBound = 1000.0;
     fixOrigin = 0;
@@ -77,7 +77,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;
-    cout << "Number of extant ranges: " << numExtantLineages << endl;
+    cout << "Number of extant samples: " << numExtantSamples << endl;
     cout << "Number of fossils: " << numFossils << endl;
     cout << "\nInitial origin time: " << originTime << endl;
     cout << "Fossil range graph initialized" << endl;
@@ -174,7 +174,6 @@ void FossilRangeGraph::createFossilRangeVector(vector<Calibration *> clb){
         frid ++;
     }
 }
-
 
 void FossilRangeGraph::initializeFossilRangeVariables(){
     
@@ -315,16 +314,19 @@ void FossilRangeGraph::recountFossilRangeAttachNums(){
 
 void FossilRangeGraph::countExtinctLineages(){
     
-    int el = 0;
+    int m = 0;
+    int l = 0;
     
     for(int f = 0; f < numLineages; f++){
         FossilRange *fr = fossilRanges[f];
-        if(!fr->getIsExtant())
-            el += 1;
+        if(!(fr->getLineageStop() == 0))
+            m += 1;
+        if(fr->getLastAppearance() == 0)
+            l += 1;
     }
     
-    numExtinctLineages = el;
-    numExtantLineages = numLineages - numExtinctLineages;
+    numExtinctLineages = m;
+    numExtantSamples = l;
     
 }
 
@@ -374,7 +376,7 @@ double FossilRangeGraph::updateLineageStartTimes(){
     double fossRate = s->getBDSSFossilSampRatePsi();
     double sppSampRate = s->getBDSSSppSampRateRho();
     
-    // this shouldn't be necessary here now
+    // debugging
     // getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
     
     vector<int> rndFossilRangeIDs;
@@ -609,7 +611,6 @@ string FossilRangeGraph::getFossilRangeInfoParamList(void){
 }
 
 //FBD process augmenting the start and end of species
-
 double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot){
     if(runUnderPrior)
         return 0.0;
@@ -682,7 +683,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
         nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
         
         if(sppSampRate < 1 & sppSampRate > 0)
-            nprb += ( numExtantLineages * log(sppSampRate) ) + ( (numLineages - numExtinctLineages - numExtantLineages) * log(1 - sppSampRate) );
+            nprb += ( numExtantSamples * log(sppSampRate) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - sppSampRate) );
         
         for(int f=0; f < fossilRanges.size(); f++){
             
@@ -768,7 +769,7 @@ double FossilRangeGraph::fbdQTildaFxn(double b, double d, double psi, double rho
     return v;
 }
 
-double FossilRangeGraph::fbdQTildaFxnLog(double b, double d, double psi, double rho, double t){
+double FossilRangeGraph::fbdQTildaFxnLogAlt(double b, double d, double psi, double rho, double t){
     
     double c1 = fbdC1Fxn(b,d,psi);
     double c2 = fbdC2Fxn(b,d,psi,rho);
@@ -786,6 +787,14 @@ double FossilRangeGraph::fbdQTildaFxnLog(double b, double d, double psi, double 
     return v;
 }
 
+// simplified version
+double FossilRangeGraph::fbdQTildaFxnLog(double b, double d, double psi, double rho, double t){
+    
+    double q = fbdQFxnLog(b, d, psi, rho, t);
+    double v = (q + (- (b + d + psi)*t) ) * 0.5;
+    
+    return v;
+}
 
 double FossilRangeGraph::fbdQFxnLog(double b, double d, double psi, double rho, double t){
     

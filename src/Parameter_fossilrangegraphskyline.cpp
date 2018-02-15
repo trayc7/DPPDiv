@@ -53,6 +53,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     fbdLikelihood = fbdLk;
     conditionOnSurvival = 1;
     numExtinctLineages = 0;
+    numExtantSamples = 0;
     originTime = 0.0;
     originInterval = 0;
     ancientBound = 1000.0;
@@ -82,6 +83,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;
+    cout << "Number of extant samples: " << numExtantSamples << endl;
     cout << "Number of fossils: " << numFossils << endl;
     cout << "Number of intervals (inc ancient bound): " << numIntervals << endl;
     cout << "\nInitial origin time: " << originTime << endl;
@@ -102,7 +104,7 @@ FossilRangeGraphSkyline& FossilRangeGraphSkyline::operator=(const FossilRangeGra
     
 }
 
-//TODO: I think you need to add other stuff here
+//TODO: I think you need to add other stuff here // or get rid of it
 void FossilRangeGraphSkyline::clone(const FossilRangeGraphSkyline &frgs){
 
     numFossils = frgs.numFossils;
@@ -290,20 +292,11 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
         for(int f = 0; f < numLineages; f++){
             FossilRangeSkyline *fr = fossilRangesSkyline[f];
             fr->setLineageStart(fr->getAttachmentTime());
-            //fr->setLineageStop(fr->getLastAppearance());
             fr->setLineageStop(fr->getEndTime());
             fr->setFixStart(1);
             fr->setFixStop(1);
         }
     }
-//    if(fixStart){
-//        for(int f = 0; f < numLineages; f++){
-//            FossilRangeSkyline *fr = fossilRangesSkyline[f];
-//            fr->setLineageStart(fr->getAttachmentTime());
-//            fr->setLineageStop(fr->getLastAppearance());
-//            fr->setFixStart(1);
-//        }
-//    }
 
     // this is only used for expmo = 1
     if(fixOrigin){
@@ -652,15 +645,30 @@ void FossilRangeGraphSkyline::recountFossilRangeAttachNumsSpeedy(int i){
 
 void FossilRangeGraphSkyline::countExtinctLineages(){
     
-    int el = 0;
+    //int el = 0;
+    
+    //for(int f = 0; f < numLineages; f++){
+    //    FossilRangeSkyline *fr = fossilRangesSkyline[f];
+    //    if(!fr->getIsExtant())
+    //        el += 1;
+    //}
+    
+    //numExtinctLineages = el;
+    
+    int m = 0;
+    int l = 0;
     
     for(int f = 0; f < numLineages; f++){
         FossilRangeSkyline *fr = fossilRangesSkyline[f];
-        if(!fr->getIsExtant())
-            el += 1;
+        if(!(fr->getLineageStop() == 0))
+            m += 1;
+        if(fr->getLastAppearance() == 0)
+            l += 1;
     }
     
-    numExtinctLineages = el;
+    numExtinctLineages = m;
+    numExtantSamples = l;
+
 }
 
 int FossilRangeGraphSkyline::assignInterval(double time){

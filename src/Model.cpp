@@ -193,11 +193,11 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     treeTimePrior = nodpr;
     calibfilen = clfn;
 	runUnderPrior = rnp;
-    rho = rh; //RW: can not currently handle rho = 0
-    if(rho <= 0.0 || rho > 1.0) {
-        cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
-        exit(1);
-    }
+    rho = rh; //TODO: can not currently handle rho = 0
+    //if(rho <= 0.0 || rho > 1.0) {
+    //    cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
+    //    exit(1);
+    //}
     fbdPar = bdp;
     numFossils = 0;
     numLineages = 0;
