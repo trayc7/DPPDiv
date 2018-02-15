@@ -50,6 +50,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     numLineages = nl;
     runUnderPrior = rnp;
     numExtinctLineages = 0;
+    numExtantLineages = 0;
     originTime = 0.0;
     ancientBound = 1000.0;
     fixOrigin = 0;
@@ -76,6 +77,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     
     cout << "Number of lineages: " << numLineages << endl;
     cout << "Number of extinct ranges: " << numExtinctLineages << endl;
+    cout << "Number of extant ranges: " << numExtantLineages << endl;
     cout << "Number of fossils: " << numFossils << endl;
     cout << "\nInitial origin time: " << originTime << endl;
     cout << "Fossil range graph initialized" << endl;
@@ -162,10 +164,11 @@ void FossilRangeGraph::createFossilRangeVector(vector<Calibration *> clb){
         double fa = p->getFirstAppearance();
         double la = p->getLastAppearance();
         double at = p->getAttachmentTime();
+        double et = p->getEndTime();
         bool e = p->getIsExtant();
         bool eo = p->getIsExtantOnly();
         
-        FossilRange *fr = new FossilRange(fa, la, at, e, eo, frid);
+        FossilRange *fr = new FossilRange(fa, la, at, et, e, eo, frid);
         fossilRanges.push_back(fr);
         
         frid ++;
@@ -211,7 +214,7 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
         for(int f = 0; f < numLineages; f++){
             FossilRange *fr = fossilRanges[f];
             fr->setLineageStart(fr->getAttachmentTime());
-            fr->setLineageStop(fr->getLastAppearance());
+            fr->setLineageStop(fr->getEndTime());
             fr->setFixStart(1);
             fr->setFixStop(1);
         }
@@ -321,6 +324,7 @@ void FossilRangeGraph::countExtinctLineages(){
     }
     
     numExtinctLineages = el;
+    numExtantLineages = numLineages - numExtinctLineages;
     
 }
 
@@ -670,12 +674,15 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
         
     }
     
-    // correctly accounting for incomplete sampling
+    // correctly accounting for incomplete sampling - Stadler et al. 2017, eq. 7
     else {
         
         nprb = numFossils*log(fossRate);
         nprb += numExtinctLineages*log(mu);
         nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
+        
+        if(sppSampRate < 1 & sppSampRate > 0)
+            nprb += ( numExtantLineages * log(sppSampRate) ) + ( (numLineages - numExtinctLineages - numExtantLineages) * log(1 - sppSampRate) );
         
         for(int f=0; f < fossilRanges.size(); f++){
             

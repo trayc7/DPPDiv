@@ -38,7 +38,7 @@
 class FossilRange {
     
 public:
-    FossilRange(double fa, double la, double at, bool e, bool eo, int frid) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0) {}
+    FossilRange(double fa, double la, double at, double et, bool e, bool eo, int frid) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), endTime(et), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0) {}
     
         bool                              getIsExtant(void) { return extant; }
         bool                              getIsExtantOnly(void) { return extantOnly; }
@@ -46,6 +46,7 @@ public:
         double                            getFirstAppearance(void) { return firstAppearance; }
         double                            getLastAppearance(void) { return lastAppearance; }
         double                            getAttachmentTime(void) { return attachmentTime; } // only used when the FRG is fixed
+        double                            getEndTime(void) { return endTime; } // only used when the FRG is fixed
         double                            getLineageStart(void) { return lineageStart; }
         double                            getLineageStop(void) { return lineageStop; }
         int                               getFossilRangeBrGamma(void) { return fossilBrGamma; }
@@ -74,7 +75,8 @@ private:
     int								indx;
     double							firstAppearance; // oi
     double							lastAppearance; // yi
-    double							attachmentTime; // note this is for fixed ranges
+    double							attachmentTime; // used for fixed ranges only
+    double                          endTime; // used for fixed ranges only
     bool                            extant;
     bool                            extantOnly;
     int                             fossilRangeID;
@@ -145,6 +147,7 @@ private:
     int                             numFossils;
     int                             numLineages;
     int                             numExtinctLineages;
+    int                             numExtantLineages;
     double                          originTime;
     double                          ancientBound;
     bool							runUnderPrior;

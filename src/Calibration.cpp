@@ -260,7 +260,7 @@ void Calibration::initializeFossilRange(string calstr){
     if(firstAppearance == 0)
         isExtantOnly = true;
     if(lastAppearance == 0)
-         isExtant = true;
+         isExtant = true; //extant sample
     
     cout << firstAppearance << " - " << lastAppearance << endl;
     
