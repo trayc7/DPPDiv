@@ -203,7 +203,6 @@ public:
     double							fbdPFxn(double b, double d, double psi, double rho, double t);
     double							fbdQFxnLog(double b, double d, double psi, double rho, double t);
     double							fbdQTildaFxnLog(double b, double d, double psi, double rho, double t);
-    double							fbdQTildaFxnLogAlt(double b, double d, double psi, double rho, double t);
     
     void                            crossValidateFBDSkylinefunctions();
     

@@ -193,11 +193,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     treeTimePrior = nodpr;
     calibfilen = clfn;
 	runUnderPrior = rnp;
-    rho = rh; //TODO: can not currently handle rho = 0
-    //if(rho <= 0.0 || rho > 1.0) {
-    //    cerr << "ERROR: Extant species sampling (-rho) must be > 0 and < 1." << endl;
-    //    exit(1);
-    //}
+    rho = rh;
     fbdPar = bdp;
     numFossils = 0;
     numLineages = 0;
@@ -1140,14 +1136,10 @@ void Model::readIntervalsFile(void){
     ss >> tmp;
     userSpecifiedIntervals = atoi(tmp.c_str());
     
-    double nextEnd = 0;
-    
     string *intList = new string[nlins];
     for(int i=0; i<nlins; i++){
         intList[i] = getLineFromFile(intfilen, i+2);
         Calibration *interval = new Calibration(intList[i], 5);
-        interval->setIntervalEnd(nextEnd);
-        nextEnd = interval->getIntervalStart();
         intervals.push_back(interval);
     }
     delete [] intList;

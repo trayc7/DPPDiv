@@ -49,6 +49,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     numFossils = nf;
     numLineages = nl;
     runUnderPrior = rnp;
+    conditionOnSurvival = 1;
     numExtinctLineages = 0;
     numExtantSamples = 0;
     originTime = 0.0;
@@ -101,6 +102,7 @@ void FossilRangeGraph::clone(const FossilRangeGraph &frg){
     numFossils = frg.numFossils;
     numLineages = frg.numLineages;
     numExtinctLineages = frg.numExtinctLineages;
+    numExtantSamples = frg.numExtantSamples;
     originTime = frg.originTime;
     
     for(int i=0; i<fossilRanges.size(); i++){
@@ -680,7 +682,11 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
         
         nprb = numFossils*log(fossRate);
         nprb += numExtinctLineages*log(mu);
-        nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
+        
+        if(sppSampRate == 0) conditionOnSurvival = 0;
+        
+        if(conditionOnSurvival)
+            nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
         
         if(sppSampRate < 1 & sppSampRate > 0)
             nprb += ( numExtantSamples * log(sppSampRate) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - sppSampRate) );
@@ -938,7 +944,6 @@ void FossilRangeGraph::crossValidateFBDfunctions(){
 }
 
 // generate likelihood surface plot
-
 void FossilRangeGraph::lnSurfaceGenerator(string outFile){
     
     // output file for likelihood surface data

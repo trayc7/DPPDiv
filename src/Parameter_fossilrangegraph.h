@@ -153,6 +153,7 @@ private:
     double                          ancientBound;
     bool							runUnderPrior;
     bool							printInitialFossilRangeVariables;
+    bool                            conditionOnSurvival;
     int                             moves;
     int                             proposal;
     

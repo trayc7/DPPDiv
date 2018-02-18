@@ -275,9 +275,16 @@ void Calibration::initializeInterval(string calstr){
     ss >> tmp;
     intervalStart = atof(tmp.c_str());
     ss >> tmp;
+    intervalEnd = atof(tmp.c_str());
+    ss >> tmp;
     intervalFossils = atof(tmp.c_str());
+    
+    if(intervalEnd > intervalStart){
+        cerr << "Problem with interval file: interval end must be younger than interval start";
+        exit(1);
+    }
 
-    cout << "Interval start: " << intervalStart << " fossils: " << intervalFossils << endl;
+    cout << "Interval start: " << intervalStart << ", interval end: " << intervalEnd << ", fossils: " << intervalFossils << endl;
     
 }
 

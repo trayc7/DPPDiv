@@ -91,7 +91,7 @@ class Calibration {
         bool            getIsExtantOnly(void) { return isExtantOnly; }
     
        // for the intervals
-       void             setIntervalEnd(double d) { intervalEnd = d; }
+       //void             setIntervalEnd(double d) { intervalEnd = d; }
        double			getIntervalStart() { return intervalStart; }
        double			getIntervalEnd() { return intervalEnd; }
        int              getIntervalFossils() { return intervalFossils; }
