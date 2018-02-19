@@ -128,8 +128,10 @@ double FossilRangeGraph::update(double &oldLnL){
     if(moves == 1){
         if(ranPtr->uniformRv() < 0.5)
             updateLineageStartTimes();
-        else
+        else{
+          updateExtinctIndicator();
           updateLineageStopTimes();
+        }
     }
     else if (moves == 2) {
         updateLineageStartTimes();
@@ -201,12 +203,14 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
         if(fr->getIsExtant()){
             fr->setLineageStop(0.0);
             fr->setFixStop(1);
+            fr->setExtinctIndicator(0);
         }
         else {
             la = fr->getLastAppearance();
             stop = ranPtr->uniformRv(0.0,la); //di
             fr->setLineageStop(stop);
             fr->setFixStop(0);
+            fr->setExtinctIndicator(1);
         }
     }
 
@@ -300,8 +304,11 @@ void FossilRangeGraph::recountFossilRangeAttachNums(){
         for(int j = 0; j < numLineages; j++){
             if(f != j){
                 FossilRange *p = fossilRanges[j];
+                double ind = 0.0;
+                if(p->getExtinctIndicator())
+                    ind = 1.0;
                 double zj = p->getLineageStart();
-                double bj = p->getLineageStop();
+                double bj = p->getLineageStop() * ind; //TODO: double check this!
                 if(zj > zf && zf > bj)
                     g++;
             }
@@ -463,10 +470,10 @@ double FossilRangeGraph::updateLineageStopTimes(){
         
         FossilRange *fr = fossilRanges[(*it)];
         
-        if(fr->getIsExtant())
+        if(fr->getIsFixStop())
             continue;
         
-        if(fr->getIsFixStop())
+        if(!fr->getExtinctIndicator())
             continue;
         
         // define old values
@@ -505,6 +512,63 @@ double FossilRangeGraph::updateLineageStopTimes(){
             recountFossilRangeAttachNums();
             currentFossilRangeGraphLnL = oldLike;
         }
+    }
+    
+    return 0.0;
+}
+
+double FossilRangeGraph::updateExtinctIndicator(){
+    
+    Speciation *s = modelPtr->getActiveSpeciation();
+    s->setAllBDFossParams();
+    double lambda = s->getBDSSSpeciationRateLambda();
+    double mu = s->getBDSSExtinctionRateMu();
+    double fossRate = s->getBDSSFossilSampRatePsi();
+    double sppSampRate = s->getBDSSSppSampRateRho();
+    
+    vector<int> rndFossilRangeIDs;
+    for(int i=0; i<fossilRanges.size(); i++)
+        rndFossilRangeIDs.push_back(i);
+    random_shuffle(rndFossilRangeIDs.begin(), rndFossilRangeIDs.end());
+    
+    for(vector<int>::iterator it=rndFossilRangeIDs.begin(); it!=rndFossilRangeIDs.end(); it++){
+        
+        FossilRange *fr = fossilRanges[(*it)];
+        
+        if(fr->getIsFixStop())
+            continue;
+        
+        // define old values
+        bool oldInd = fr->getExtinctIndicator();
+        double oldLike = currentFossilRangeGraphLnL;
+        
+        // propose new indicator value
+        bool newInd;
+        double rvInd = ranPtr->discreteUniformRv(0,1);
+        if(rvInd == 0)
+            newInd = 0;
+        else
+            newInd = 1;
+        
+        if(newInd == oldInd) continue;
+        
+        // redefine values
+        fr->setExtinctIndicator(newInd);
+        recountFossilRangeAttachNums();
+            
+        // recalculate the FRG probability
+        double newLike = getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
+            
+        // calculate the likelihood/prior ratio
+        double lnLikeRatio = newLike - oldLike;
+        double r = modelPtr->safeExponentiation(lnLikeRatio);
+            
+        if(ranPtr->uniformRv() > r){
+           fr->setExtinctIndicator(oldInd);
+           recountFossilRangeAttachNums();
+           currentFossilRangeGraphLnL = oldLike;
+        }
+
     }
     
     return 0.0;
@@ -681,24 +745,35 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     else {
         
         nprb = numFossils*log(fossRate);
-        nprb += numExtinctLineages*log(mu);
+        
+        //nprb += numExtinctLineages*log(mu);
         
         if(sppSampRate == 0) conditionOnSurvival = 0;
         
         if(conditionOnSurvival)
             nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
         
-        if(sppSampRate < 1 & sppSampRate > 0)
-            nprb += ( numExtantSamples * log(sppSampRate) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - sppSampRate) );
+        numExtinctLineages = 0;
         
         for(int f=0; f < fossilRanges.size(); f++){
             
             FossilRange *fr = fossilRanges[f];
             
+            double ind = 0.0;
+            if(fr->getExtinctIndicator())
+                ind = 1.0;
+            
             double bi = fr->getLineageStart(); // bi
-            double di = fr->getLineageStop();  // di
+            double di = fr->getLineageStop() * ind;  // di
             double oi = fr->getFirstAppearance(); // oi
             
+            // extinction
+            if(di != 0){
+                nprb += log(mu);
+                numExtinctLineages += 1;
+            }
+            
+            // speciation
             nprb += log( lambda * fr->getFossilRangeBrGamma() );
             
             double rangePr = 0;
@@ -711,6 +786,12 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             
             nprb += rangePr;
         }
+        
+        //cout << "numExtinctLineages = " << numExtinctLineages << endl;
+        
+        // extant species sampling
+        if(sppSampRate < 1 & sppSampRate > 0)
+            nprb += ( numExtantSamples * log(sppSampRate) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - sppSampRate) );
         
     }
     

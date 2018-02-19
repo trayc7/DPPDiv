@@ -683,6 +683,7 @@ void Mcmc::sampleChainFR(int gen, ofstream &frOut, double lnl) {
         if(printAttach)
             frOut << frg->getFossilRangeInfoParamNames();
         frOut << "\tnum.fossils(k)";
+        frOut << "\tnum.extinct.lineages(m)";
         frOut << "\n";
     }
     
@@ -702,6 +703,7 @@ void Mcmc::sampleChainFR(int gen, ofstream &frOut, double lnl) {
         frOut << frg->getFossilRangeInfoParamList();
     //occOut << "\t" << fg->getSumIndicatorFG();
     frOut << "\t" << frg->getNumFossils();
+    frOut << "\t" << frg->getNumExtinctLineages();
     frOut << "\n";
     
 }
@@ -745,6 +747,7 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
         if(printAttach)
             frOut << frg->getFossilRangeSkylineInfoParamNames();
         frOut << "\tnum.fossils(k)";
+        //frOut << "\tnum.extinct.lineages(k)";
         frOut << "\n";
     }
     frOut << gen << "\t" <<  lnl;

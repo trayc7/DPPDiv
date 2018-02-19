@@ -38,7 +38,7 @@
 class FossilRange {
     
 public:
-    FossilRange(double fa, double la, double at, double et, bool e, bool eo, int frid) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), endTime(et), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0) {}
+    FossilRange(double fa, double la, double at, double et, bool e, bool eo, int frid) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), endTime(et), extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0), extinctIndicator(0) {}
     
         bool                              getIsExtant(void) { return extant; }
         bool                              getIsExtantOnly(void) { return extantOnly; }
@@ -57,6 +57,9 @@ public:
         void                              setLineageStop(double d) { lineageStop = d; }
         void                              setLineageStart(double d) { lineageStart = d; }
         void                              setFossilRangeBrGamma(int i) { fossilBrGamma = i; }
+    
+        void                              setExtinctIndicator(bool b) { extinctIndicator = b; }
+        bool                              getExtinctIndicator(void) { return extinctIndicator; }
     
         // fxns required for cloning only
         int								getFossilRangeIndex(void) { return indx; }
@@ -85,6 +88,7 @@ private:
     double                          lineageStop;
     bool                            fixStart;
     bool                            fixStop;
+    bool                            extinctIndicator;
     
 };
 
@@ -113,6 +117,7 @@ public:
     
     double                          getFossilRangeGraphOriginTime(void) { return originTime; }
     int                             getNumFossils(void) { return numFossils; }
+    int                             getNumExtinctLineages(void) { return numExtinctLineages; }
     
     std::string						getFossilRangeInfoParamNames(void);
     std::string						getFossilRangeInfoParamList(void);
@@ -142,6 +147,7 @@ private:
     void                            countExtinctLineages();
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
+    double                          updateExtinctIndicator();
     void                            orderRangeAges();
     //double                          getFossilRangeGraphProb();
     
