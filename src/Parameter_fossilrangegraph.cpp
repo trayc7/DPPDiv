@@ -43,7 +43,7 @@
 
 using namespace std;
 
-FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, bool fxFRG, int compS, int expMode) : Parameter(rp, mp){
+FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, bool fxFRG, bool estExt, int compS, int expMode) : Parameter(rp, mp){
     
     name = "FRG";
     numFossils = nf;
@@ -57,6 +57,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     fixOrigin = 0;
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
+    estimateExtant = estExt;
     phyloTest = 0;
     if(expMode == 1){
         fixOrigin = 1;
@@ -678,8 +679,10 @@ string FossilRangeGraph::getFossilRangeInfoParamList(void){
 
 //FBD process augmenting the start and end of species
 double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot){
-    if(runUnderPrior)
+    if(runUnderPrior){
+        countExtinctLineages();//TODO: something more elegant with this
         return 0.0;
+    }
     
     double nprb = 0.0;
 
@@ -741,7 +744,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
         
     }
     
-    // correctly accounting for incomplete sampling - Stadler et al. 2017, eq. 7
+    // correctly accounting for incomplete sampling - Stadler et al. 2018, eq. 7
     else {
         
         nprb = numFossils*log(fossRate);
