@@ -386,7 +386,7 @@ int main (int argc, char * const argv[]) {
 	
     if(treeNodePrior == 11){
         // fossil range skyline FBD
-        Model myModel(&myRandom, calibFN, intFN, paFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, expMode, fbdRangeLikelihood);
+        Model myModel(&myRandom, calibFN, intFN, paFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, expMode, fbdRangeLikelihood);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
         return  0;
     }

@@ -66,7 +66,7 @@ class FossilRangeSkyline {
     
 public:
     FossilRangeSkyline(double fa, double la, double at, double et, bool e, bool eo, int frid, std::vector<bool> gi, std::vector<double> ls) :firstAppearance(fa), lastAppearance(la), attachmentTime(at), endTime(et),
-    extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0), gammaInteractions(gi), subBranchLengths(ls) {}
+    extant(e), extantOnly(eo), fossilRangeID(frid), fossilBrGamma(0), extinctIndicator(0), gammaInteractions(gi), subBranchLengths(ls) {}
     
     bool                              getIsExtant(void) { return extant; }
     bool                              getIsExtantOnly(void) { return extantOnly; }
@@ -85,6 +85,9 @@ public:
     void                              setLineageStop(double d) { lineageStop = d; }
     void                              setLineageStart(double d) { lineageStart = d; }
     void                              setFossilRangeBrGamma(int i) { fossilBrGamma = i; }
+    
+    void                              setExtinctIndicator(bool b) { extinctIndicator = b; }
+    bool                              getExtinctIndicator(void) { return extinctIndicator; }
     
     // skyline parameters
     int                               getFossilRangeBirthInterval(void) { return birthInterval; }
@@ -136,6 +139,7 @@ private:
     double                          lineageStop; // di
     bool                            fixStart;
     bool                            fixStop;
+    bool                            extinctIndicator;
     
     // skyline parameters
     int                             birthInterval;
@@ -159,7 +163,7 @@ class Calibration;
 class FossilRangeGraphSkyline : public Parameter {
     
 public:
-    FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, int ni, std::vector<Calibration *> ints, bool rnp, bool fxFRG, int expMode, int fbdLk);
+    FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, int ni, std::vector<Calibration *> ints, bool rnp, bool fxFRG, bool estExt, int expMode, int fbdLk);
 
     ~FossilRangeGraphSkyline(void);
     
@@ -219,6 +223,7 @@ private:
     int                             assignInterval(double d);
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
+    double                          updateExtinctIndicator();
     void                            orderRangeAges();
     // fxns required for model 2
     void                            calculateIntervalSumRanges(); // L_s & kappa prime
@@ -262,6 +267,7 @@ private:
 //  int								treeTimePrior; // this should always be 11
     
     bool                            fixFRG;
+    bool                            estimateExtant;
     bool                            fixOrigin;
     bool                            fixStart;
     bool                            fixStop;

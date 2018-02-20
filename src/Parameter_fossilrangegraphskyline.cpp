@@ -43,7 +43,7 @@
 
 using namespace std;
 
-FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni, vector<Calibration *> ints, bool rnp, bool fxFRG, int expMode, int fbdLk) : Parameter(rp, mp){
+FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni, vector<Calibration *> ints, bool rnp, bool fxFRG, bool estExt, int expMode, int fbdLk) : Parameter(rp, mp){
 
     name = "FRGS";
     numFossils = nf;
@@ -60,6 +60,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     fixOrigin = 0;
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
+    estimateExtant = estExt;
     fixStart = 0;
     fixStop = 0;
     speedy = 1;
@@ -150,8 +151,11 @@ double FossilRangeGraphSkyline::update(double &oldLnL){
     } else{
         if(ranPtr->uniformRv() < 0.5)
             updateLineageStartTimes();
-        else
+        else {
+            if(estimateExtant)
+                updateExtinctIndicator();
             updateLineageStopTimes();
+        }
     }
     
     if(orderStartStopTimes)
@@ -278,12 +282,14 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
         if(fr->getIsExtant()){
             fr->setLineageStop(0.0);
             fr->setFixStop(1);
+            fr->setExtinctIndicator(0);
         }
         else {
             la = fr->getLastAppearance();
             stop = ranPtr->uniformRv(0.0,la); //di
             fr->setLineageStop(stop);
             fr->setFixStop(0);
+            fr->setExtinctIndicator(1);
         }
     }
     
@@ -566,8 +572,11 @@ void FossilRangeGraphSkyline::recountFossilRangeAttachNums(){
         for(int j = 0; j < numLineages; j++){
             if(f != j){
                 FossilRangeSkyline *p = fossilRangesSkyline[j];
+                double ind = 0.0;
+                if(p->getExtinctIndicator())
+                    ind = 1.0;
                 double zj = p->getLineageStart();
-                double bj = p->getLineageStop();
+                double bj = p->getLineageStop() * ind;
                 if(zj > zf && zf > bj){
                     g++;
                     fr->setFossilRangeGammaInteractions(j, 1);
@@ -584,8 +593,11 @@ void FossilRangeGraphSkyline::recountFossilRangeAttachNums(){
 void FossilRangeGraphSkyline::recountFossilRangeAttachNumsSpeedy(int i){
     
     FossilRangeSkyline *fr = fossilRangesSkyline[i];
+    double ind = 0.0;
+    if(fr->getExtinctIndicator())
+        ind = 1.0;
     double zf = fr->getLineageStart();
-    double bf = fr->getLineageStop();
+    double bf = fr->getLineageStop() * ind;
     
     int gf;
     
@@ -599,8 +611,11 @@ void FossilRangeGraphSkyline::recountFossilRangeAttachNumsSpeedy(int i){
         if(i != j){
             
             FossilRangeSkyline *o = fossilRangesSkyline[j];
+            double ind = 0.0;
+            if(o->getExtinctIndicator())
+                ind = 1.0;
             double zj = o->getLineageStart();
-            double bj = o->getLineageStop();
+            double bj = o->getLineageStop() * ind;
             int gj = o->getFossilRangeBrGamma();
             
             // first deal with range f
@@ -836,10 +851,10 @@ double FossilRangeGraphSkyline::updateLineageStopTimes(){
         
         FossilRangeSkyline *fr = fossilRangesSkyline[(*it)];
         
-        if(fr->getIsExtant())
+        if(fr->getIsFixStop())
             continue;
         
-        if(fr->getIsFixStop())
+        if(!fr->getExtinctIndicator())
             continue;
         
         // define old values
@@ -879,6 +894,69 @@ double FossilRangeGraphSkyline::updateLineageStopTimes(){
             fr->setFossilRangeDeathInterval(assignInterval(oldEnd));
             currentFossilRangeGraphSkylineLnL = oldLike;
         }
+    }
+    
+    return 0.0;
+}
+
+double FossilRangeGraphSkyline::updateExtinctIndicator(){
+    
+    //TODO double check this functionality
+    
+    vector<int> rndFossilRangeIDs;
+    for(int i=0; i<fossilRangesSkyline.size(); i++)
+        rndFossilRangeIDs.push_back(i);
+    random_shuffle(rndFossilRangeIDs.begin(), rndFossilRangeIDs.end());
+    
+    for(vector<int>::iterator it=rndFossilRangeIDs.begin(); it!=rndFossilRangeIDs.end(); it++){
+        
+        FossilRangeSkyline *fr = fossilRangesSkyline[(*it)];
+        
+        if(fr->getIsFixStop())
+            continue;
+        
+        // define old values
+        bool oldInd = fr->getExtinctIndicator();
+        double oldLike = currentFossilRangeGraphSkylineLnL;
+        
+        // propose new indicator value
+        bool newInd;
+        double rvInd = ranPtr->discreteUniformRv(0,1);
+        if(rvInd == 0)
+            newInd = 0;
+        else
+            newInd = 1;
+        
+        if(newInd == oldInd) continue;
+        
+        // redefine values
+        fr->setExtinctIndicator(newInd);
+        if(speedy)
+            recountFossilRangeAttachNumsSpeedy((*it));
+        else
+            recountFossilRangeAttachNums();
+        fr->setFossilRangeDeathInterval(assignInterval(fr->getLineageStop() * rvInd)); //does this need to be here?
+        
+        // recalculate the FRG probability
+        double newLike = getFossilRangeGraphSkylineProb();
+        
+        // calculate the likelihood/prior ratio
+        double lnLikeRatio = newLike - oldLike;
+        double r = modelPtr->safeExponentiation(lnLikeRatio);
+        
+        if(ranPtr->uniformRv() > r){
+            fr->setExtinctIndicator(oldInd);
+            if(speedy)
+                recountFossilRangeAttachNumsSpeedy((*it));
+            else
+                recountFossilRangeAttachNums();
+            double ind = 0.0;
+            if(oldInd)
+                ind = 1.0;
+            fr->setFossilRangeDeathInterval(assignInterval(fr->getLineageStop() * ind));
+            currentFossilRangeGraphSkylineLnL = oldLike;
+        }
+        
     }
     
     return 0.0;
@@ -1266,10 +1344,14 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         
         FossilRangeSkyline *fr = fossilRangesSkyline[f];
         
+        double ind = 0.0;
+        if(fr->getExtinctIndicator())
+            ind = 1.0;
+        
         double bi, di, oi;
         
         bi = fr->getLineageStart(); // bi
-        di = fr->getLineageStop();  // di
+        di = fr->getLineageStop() * ind;  // di
         oi = fr->getFirstAppearance(); // oi
         
         //if(fbdLikelihood == 3)
@@ -1634,7 +1716,7 @@ void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
     exit(0);
 }
 
-//FBD process augmenting the start and end of species (this is for cross validation functions with numIntervals = 1)
+//FBD process augmenting the start and end of species (this is for cross validating functions with numIntervals = 1)
 double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, std::vector<double> d, std::vector<double> s, std::vector<double> r, double ot){
     if(runUnderPrior)
         return 0.0;
@@ -1647,24 +1729,34 @@ double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, s
     double sppSampRate = r[0];
     
     nprb = numFossils * log(fossRate);
-    nprb += numExtinctLineages * log(mu);
-    
-    if(sppSampRate < 1 & sppSampRate > 0)
-        nprb += ( numExtantSamples * log(sppSampRate) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - sppSampRate) );
+    //nprb += numExtinctLineages * log(mu);
     
     if(sppSampRate == 0) conditionOnSurvival = 0;
     
     if(conditionOnSurvival)
         nprb -= log(1 - fbdPFxn(lambda, mu, fossRate, sppSampRate, ot));
     
+    numExtinctLineages = 0;
+    
     for(int f=0; f < fossilRangesSkyline.size(); f++){
         
         FossilRangeSkyline *fr = fossilRangesSkyline[f];
         
+        double ind = 0.0;
+        if(fr->getExtinctIndicator())
+            ind = 1.0;
+        
         double bi = fr->getLineageStart(); // bi
-        double di = fr->getLineageStop();  // di
+        double di = fr->getLineageStop() * ind;  // di
         double oi = fr->getFirstAppearance(); // oi
         
+        // extinction
+        if(di != 0){
+            nprb += log(mu);
+            numExtinctLineages += 1;
+        }
+        
+        // speciation
         if(bi == originTime)
             nprb += log( lambda * 1.0 );
         else
@@ -1680,6 +1772,9 @@ double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, s
         
         nprb += rangePr;
     }
+    
+    if(sppSampRate < 1 & sppSampRate > 0)
+        nprb += ( numExtantSamples * log(sppSampRate) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - sppSampRate) );
     
     currentFossilRangeGraphSkylineLnL = nprb;
     

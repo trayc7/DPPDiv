@@ -126,17 +126,56 @@ double FossilRangeGraph::update(double &oldLnL){
     
     currentFossilRangeGraphLnL = oldLnL;
     
+    int v;
+    
     if(moves == 1){
-        if(ranPtr->uniformRv() < 0.5)
-            updateLineageStartTimes();
-        else{
-          updateExtinctIndicator();
-          updateLineageStopTimes();
+        if(estimateExtant){
+            v = (int)(ranPtr->uniformRv() * 3);
+            if(v == 1)
+                updateLineageStartTimes();
+            else if (v == 2)
+                updateLineageStopTimes();
+            else
+                updateExtinctIndicator();
+        } else {
+            if(ranPtr->uniformRv() < 0.5)
+                updateLineageStartTimes();
+            else
+                updateLineageStopTimes();
         }
-    }
-    else if (moves == 2) {
-        updateLineageStartTimes();
-        updateLineageStopTimes();
+    } else if (moves == 2) {
+        if(estimateExtant){
+            v = (int)(ranPtr->uniformRv() * 4);
+            if(v == 1){
+                updateLineageStartTimes();
+                updateLineageStopTimes();
+                updateExtinctIndicator();
+            }
+            else if (v == 2){
+                updateLineageStopTimes();
+                updateLineageStartTimes();
+                updateExtinctIndicator();
+            }
+            else if (v == 3){
+                updateExtinctIndicator();
+                updateLineageStopTimes();
+                updateLineageStartTimes();
+            } else {
+                updateExtinctIndicator();
+                updateLineageStartTimes();
+                updateLineageStopTimes();
+            }
+
+        } else {
+            if(ranPtr->uniformRv() < 0.5){
+                updateLineageStartTimes();
+                updateLineageStopTimes();
+            }
+            else {
+                updateLineageStopTimes();
+                updateLineageStartTimes();
+            }
+        }
     }
     
     if(orderStartStopTimes)
@@ -748,7 +787,6 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     else {
         
         nprb = numFossils*log(fossRate);
-        
         //nprb += numExtinctLineages*log(mu);
         
         if(sppSampRate == 0) conditionOnSurvival = 0;
