@@ -51,7 +51,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     numIntervals = ni + 1; // user defined intervals + the interval incorporating the ancient bound
     runUnderPrior = rnp;
     fbdLikelihood = fbdLk;
-    conditionOnSurvival = 0;
+    conditionOnSurvival = 1;
     numExtinctLineages = 0;
     numExtantSamples = 0;
     originTime = 0.0;
@@ -133,29 +133,40 @@ void FossilRangeGraphSkyline::clone(const FossilRangeGraphSkyline &frgs){
 }
 
 double FossilRangeGraphSkyline::update(double &oldLnL){
+    if(fixFRG)
+        return oldLnL;
     
     currentFossilRangeGraphSkylineLnL = oldLnL;
     
-    if(fbdLikelihood == 3){
+    //if(fbdLikelihood == 3){
         
-        int numMoves = 3;
-        int v = (int)(ranPtr->uniformRv() * numMoves);
+    //    int numMoves = 3;
+    //    int v = (int)(ranPtr->uniformRv() * numMoves);
         
-        if(v == 0)
-           updateLineageBi();
-        else if (v == 1)
-            updateLineageOi();
+    //    if(v == 0)
+    //       updateLineageBi();
+    //    else if (v == 1)
+    //        updateLineageOi();
+    //    else
+    //        updateLineageDi();
+        
+    //}
+    
+    int v;
+    
+    if(estimateExtant){
+        v = (int)(ranPtr->uniformRv() * 3);
+        if(v == 1)
+            updateLineageStartTimes();
+        else if (v == 2)
+            updateLineageStopTimes();
         else
-            updateLineageDi();
-        
-    } else{
+            updateExtinctIndicator();
+    } else {
         if(ranPtr->uniformRv() < 0.5)
             updateLineageStartTimes();
-        else {
-            if(estimateExtant)
-                updateExtinctIndicator();
+        else
             updateLineageStopTimes();
-        }
     }
     
     if(orderStartStopTimes)
@@ -829,14 +840,6 @@ double FossilRangeGraphSkyline::updateLineageStartTimes(){
         }
     }
     
-    // debugging gamma code
-    //double gamma = 0;
-    //for(int f = 0; f < numLineages; f++){
-    // FossilRangeSkyline *fr = fossilRangesSkyline[f];
-    // gamma += fr->getFossilRangeBrGamma();
-    //}
-    // cout << "Total  interactions = " << gamma << endl;
-    
     return 0.0;
 }
 
@@ -1293,12 +1296,9 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     
     double rho = sppSampRate[0];
     
-    if(rho < 1 & rho > 0)
-        nprb += ( numExtantSamples * log(rho) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - rho) );
+    if(rho == 0) conditionOnSurvival = 0;
     
-    //if(rho == 0) conditionOnSurvival = 0;
-    
-    if(conditionOnSurvival) //TODO: double check this
+    if(conditionOnSurvival)
         nprb -= log(1 - fbdSkylinePfxn(lambda, mu, fossRate, sppSampRate, originInterval, originTime));
     
     // fossils
@@ -1339,6 +1339,8 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         }
     }
     
+    numExtinctLineages = 0;
+    
     // for each range
     for(int f = 0; f < fossilRangesSkyline.size(); f++){
         
@@ -1363,18 +1365,15 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         int dint = fr->getFossilRangeDeathInterval();
         int oint = fr->getFossilRangeFirstAppearanceInterval();
         
-       if(bi == originTime)
-            nprb += log( 1 );
-        else
-            nprb += log( fr->getFossilRangeBrGamma() );
+        // extinction
+        if(di != 0){
+            nprb += log(mu[dint]);
+            numExtinctLineages += 1;
+        }
         
-        // speciation events
+        // speciation
         if(bi != originTime)
-          nprb += log(lambda[bint]);
-        
-        // extinction events
-        if(di != 0)
-          nprb += log(mu[dint]);
+          nprb += log( lambda[bint] * fr->getFossilRangeBrGamma() );
         
         nprb += fbdSkylineQTildaFxnLog(lambda, mu, fossRate, sppSampRate, oint, oi);
         nprb -= fbdSkylineQTildaFxnLog(lambda, mu, fossRate, sppSampRate, dint, di);
@@ -1390,6 +1389,10 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         }
         
     }
+    
+    // extant species sampling
+    if(rho < 1 & rho > 0)
+        nprb += ( numExtantSamples * log(rho) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - rho) );
     
     currentFossilRangeGraphSkylineLnL = nprb;
     
@@ -1721,15 +1724,14 @@ double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, s
     if(runUnderPrior)
         return 0.0;
     
-    double nprb = 0.0;
-    
     double lambda = b[0];
     double mu = d[0];
     double fossRate = s[0];
     double sppSampRate = r[0];
     
+    double nprb = 0.0;
+    
     nprb = numFossils * log(fossRate);
-    //nprb += numExtinctLineages * log(mu);
     
     if(sppSampRate == 0) conditionOnSurvival = 0;
     
@@ -1757,9 +1759,7 @@ double FossilRangeGraphSkyline::getFossilRangeGraphProb(std::vector<double> b, s
         }
         
         // speciation
-        if(bi == originTime)
-            nprb += log( lambda * 1.0 );
-        else
+        if(bi != originTime)
             nprb += log( lambda * fr->getFossilRangeBrGamma() );
         
         double rangePr = 0;

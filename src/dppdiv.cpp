@@ -106,7 +106,7 @@ void printHelp(bool files)
 		cout << "\t\t-mup  : modify update probabilities mid run\n";
 		cout << "\t\t-fxm  : fix some model params\n";
 		cout << "\t\t-ihp  : run under independent hyperprior on exp cals\n";
-        cout << "\t\t-po   : print origin to log file\n";
+        //cout << "\t\t-po   : print origin to log file\n";
         //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; // right now this also prints yf times (probably not neccessary)
 		cout << "\t\t** required\n\n";
 	}
@@ -162,7 +162,7 @@ int main (int argc, char * const argv[]) {
 	bool indHP			= false;
 	bool doAbsRts		= false;
 	bool fixTest		= false;
-    bool printOrigin    = false;    // print origin to log file
+    bool printOrigin    = true;    // print origin to log file
     bool printAttach    = false;    // if printAttach = true and the number of cals is large there will be a lot of output
     int expMode         = 0;        // experimental mode for testing the fbds model and extensions. 1: fix branch lengths; 2: fix branch lengths & ignore calibrations
     bool igfoss         = false;
@@ -173,11 +173,11 @@ int main (int argc, char * const argv[]) {
     double psi          = 0.01;
     bool lSurf          = false;
     int compS           = 0;        // there are two alternative equations that assume complete sampling (1: Stadler and 2: Keiding)
-    int specPr          = 1;        // Prior on birth and death rates, 1 = uniform, 2 = exponential
-    int psiPr           = 1;        // Prior on psi sampling
+    int specPr          = 2;        // Prior on birth and death rates, 1 = uniform, 2 = exponential
+    int psiPr           = 2;        // Prior on psi sampling
     double bPrRate      = 1;        // mean of exponential prior on birth
     double dPrRate      = 1;        // mean of exponential prior on death
-    double pPrRate      = 1;        // mean of exponential prior on psi
+    double pPrRate      = 10;        // mean of exponential prior on psi
     int fbdRangeLikelihood = 1;     // 1 = poisson sampling, 2 = marginalize over k within ranges, 3 = marginalize over k within intervals (presence/absence sampling)
     //bool maxSpecRate  = 10000;
 	
@@ -249,8 +249,10 @@ int main (int argc, char * const argv[]) {
                     treeNodePrior = 8;
                 else if(!strcmp(curArg, "-fofbd")) // fossil only fossilised birth death process
                     treeNodePrior = 9;
-                else if(!strcmp(curArg, "-frofbd")) // fossil range only fossilised birth death process
+                else if(!strcmp(curArg, "-frofbd")){ // fossil range only fossilised birth death process
                     treeNodePrior = 10;
+                    bdpar = 3;
+                }
                 else if(!strcmp(curArg, "-fbdrsky")){ // fossil range only fossilised birth death process skyline
                     treeNodePrior = 11;
                     bdpar = 3;
@@ -312,9 +314,6 @@ int main (int argc, char * const argv[]) {
 					printHelp(true);
 					return 0;
 				}
-                else if(!strcmp(curArg, "-po")){ // print origin
-                    printOrigin = true;
-                }
                 else if(!strcmp(curArg, "-pfat")){ // print attach times
                     printAttach = true;
                 }

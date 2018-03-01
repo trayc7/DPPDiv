@@ -89,6 +89,7 @@ private:
     double                  updatePsiRate(FossilRangeGraphSkyline *frgs, int i);
     double                  updateBirthOneRate(FossilRangeGraphSkyline *frgs);
     double                  updateDeathOneRate(FossilRangeGraphSkyline *frgs);
+    double                  updatePsiOneRate(FossilRangeGraphSkyline *frgs);
     
     int                     birthRatePrior;
     int                     deathRatePrior;

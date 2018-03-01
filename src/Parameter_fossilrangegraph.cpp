@@ -150,13 +150,11 @@ double FossilRangeGraph::update(double &oldLnL){
                 updateLineageStartTimes();
                 updateLineageStopTimes();
                 updateExtinctIndicator();
-            }
-            else if (v == 2){
+            } else if (v == 2){
                 updateLineageStopTimes();
                 updateLineageStartTimes();
                 updateExtinctIndicator();
-            }
-            else if (v == 3){
+            } else if (v == 3){
                 updateExtinctIndicator();
                 updateLineageStopTimes();
                 updateLineageStartTimes();
@@ -165,7 +163,6 @@ double FossilRangeGraph::update(double &oldLnL){
                 updateLineageStartTimes();
                 updateLineageStopTimes();
             }
-
         } else {
             if(ranPtr->uniformRv() < 0.5){
                 updateLineageStartTimes();
@@ -348,7 +345,7 @@ void FossilRangeGraph::recountFossilRangeAttachNums(){
                 if(p->getExtinctIndicator())
                     ind = 1.0;
                 double zj = p->getLineageStart();
-                double bj = p->getLineageStop() * ind; //TODO: double check this!
+                double bj = p->getLineageStop() * ind;
                 if(zj > zf && zf > bj)
                     g++;
             }
@@ -598,7 +595,7 @@ double FossilRangeGraph::updateExtinctIndicator(){
             
         // recalculate the FRG probability
         double newLike = getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
-            
+                
         // calculate the likelihood/prior ratio
         double lnLikeRatio = newLike - oldLike;
         double r = modelPtr->safeExponentiation(lnLikeRatio);
@@ -718,15 +715,13 @@ string FossilRangeGraph::getFossilRangeInfoParamList(void){
 
 //FBD process augmenting the start and end of species
 double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, double fossRate, double sppSampRate, double ot){
-    if(runUnderPrior){
-        countExtinctLineages();//TODO: something more elegant with this
+    if(runUnderPrior)
         return 0.0;
-    }
+    
+    // debugging
+    //lambda = 0.2; mu = 0.1; fossRate = 1; sppSampRate = 0.2;
     
     double nprb = 0.0;
-
-    // debugging
-    //lambda = 1.0; mu = 0.1; fossRate = 1.368238; sppSampRate = 1.0;
     
     if(getAltProb)
         nprb = getFossilRangeGraphAlternativeProb(lambda, mu, fossRate, sppSampRate, ot);
@@ -736,8 +731,8 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     
     else if(completeSampling == 1) {
         
-        nprb = numFossils*log(fossRate);
-        nprb += numExtinctLineages*log(mu);
+        nprb = numFossils * log(fossRate);
+        nprb += numExtinctLineages * log(mu);
         nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
         
         for(int f=0; f < fossilRanges.size(); f++){
@@ -786,13 +781,12 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     // correctly accounting for incomplete sampling - Stadler et al. 2018, eq. 7
     else {
         
-        nprb = numFossils*log(fossRate);
-        //nprb += numExtinctLineages*log(mu);
+        nprb = numFossils * log(fossRate);
         
         if(sppSampRate == 0) conditionOnSurvival = 0;
         
         if(conditionOnSurvival)
-            nprb -= log(lambda * (1-fbdPFxn(lambda,mu,fossRate,sppSampRate,ot)) );
+            nprb -= log(1 - fbdPFxn(lambda,mu,fossRate,sppSampRate,ot));
         
         numExtinctLineages = 0;
         
@@ -815,7 +809,8 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             }
             
             // speciation
-            nprb += log( lambda * fr->getFossilRangeBrGamma() );
+            if(bi != originTime)
+                nprb += log( lambda * fr->getFossilRangeBrGamma() );
             
             double rangePr = 0;
             
@@ -827,8 +822,6 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             
             nprb += rangePr;
         }
-        
-        //cout << "numExtinctLineages = " << numExtinctLineages << endl;
         
         // extant species sampling
         if(sppSampRate < 1 & sppSampRate > 0)

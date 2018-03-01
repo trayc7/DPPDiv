@@ -747,7 +747,7 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
         if(printAttach)
             frOut << frg->getFossilRangeSkylineInfoParamNames();
         frOut << "\tnum.fossils(k)";
-        //frOut << "\tnum.extinct.lineages(k)";
+        frOut << "\tnum.extinct.lineages(m)";
         frOut << "\n";
     }
     frOut << gen << "\t" <<  lnl;
@@ -771,6 +771,7 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
     if(printAttach)
         frOut << frg->getFossilRangeSkylineInfoParamList();
     frOut << "\t" << frg->getNumFossils();
+    frOut << "\t" << frg->getNumExtinctLineages();
     frOut << "\n";
 }
 

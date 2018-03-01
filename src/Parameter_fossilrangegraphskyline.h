@@ -181,6 +181,7 @@ public:
     double                          getFossilRangeGraphSkylineOriginTime(void) { return originTime; }
     int                             getNumFossils(void) { return numFossils; }
     int                             getNumIntervals(void) { return numIntervals; }
+    int                             getNumExtinctLineages(void) { return numExtinctLineages; }
     
     std::string						getFossilRangeSkylineInfoParamNames(void);
     std::string						getFossilRangeSkylineInfoParamList(void);
