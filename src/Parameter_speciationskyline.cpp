@@ -45,7 +45,7 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh)
     extantSampleRate = rh;
     initializeIntervalVariables();
     currentFossilRangeGraphSkylineLnL = 0.0;
-    parameterization = 3; // hard coded at the moment
+    parameterization = 3; // hard coded for the moment
     maxdivV = 30000.0;
     
     constantRateModel = 0;
@@ -170,18 +170,35 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
     
     int t, v;
     
+    bool all = true; // update all parameters for all intervals
+    
     if(!constantRateModel){
-        for(int i=0; i < numMoves; i++){
-            // choose random interval
-            t = (int)(ranPtr->uniformRv(0.0, numIntervals));
-            // choose random parameters (never go to 3 if fixPsi = T)
-            v = (int)(ranPtr->uniformRv() * numMoves);
-            if(v == 0)
-                updateDeathRate(frgs, t); // mu
-            else if(v == 1)
-                updateBirthRate(frgs, t); // lambda
-            else if(v == 2)
-                updatePsiRate(frgs, t); // psi
+        if(all){
+            vector<int> rndInts;
+            for(int i = 0; i < numIntervals; i++)
+                rndInts.push_back(i);
+            random_shuffle(rndInts.begin(), rndInts.end());
+            
+            for(vector<int>::iterator it=rndInts.begin(); it!=rndInts.end(); it++){
+             updateDeathRate(frgs, *it); // mu
+             updateBirthRate(frgs, *it); // lambda
+             updatePsiRate(frgs, *it); // psi
+                
+                //cout << "it " << *it << endl; //todo to test
+            }
+        } else{
+            for(int i=0; i < numMoves; i++){
+                // choose random interval
+                t = (int)(ranPtr->uniformRv(0.0, numIntervals));
+                // choose random parameters (never go to 3 if fixPsi = T)
+                v = (int)(ranPtr->uniformRv() * numMoves);
+                if(v == 0)
+                    updateDeathRate(frgs, t); // mu
+                else if(v == 1)
+                    updateBirthRate(frgs, t); // lambda
+                else if(v == 2)
+                    updatePsiRate(frgs, t); // psi
+            }
         }
     }
     else{
@@ -361,7 +378,8 @@ double SpeciationSkyline::updatePsiOneRate(FossilRangeGraphSkyline *frgs) {
     double newPsi;
     double tuning = log(2.0);
     double minV = 0.0001;
-    double c = getNewValScaleMv(newPsi, oldPsi, minV, maxdivV, tuning);
+    double maxV = 100000;
+    double c = getNewValScaleMv(newPsi, oldPsi, minV, maxV, tuning);
     for(int i=0; i < numIntervals; i++){
         fossilRates[i] = newPsi;
     }
@@ -413,11 +431,7 @@ double SpeciationSkyline::getExpPriorRatio(double oldVal, double newVal, double 
 
 double SpeciationSkyline::getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyline *frgs) {
     
-    //setAllIntervalConstants
-    //double ot = frgs->getFossilRangeGraphSkylineOriginTime();
     setAllBDFossParams();
-    //double fgprob = frgs->getFossilRangeGraphSkylineProb(birthRates, deathRates, fossilRates, tipRates, ot);
-    
     frgs->setAllIntervalConstants();    
     double fgprob = frgs->getFossilRangeGraphSkylineProb();
     return fgprob;

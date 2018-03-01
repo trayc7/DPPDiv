@@ -44,9 +44,9 @@ void printHelp(bool files);
 void printHelp(bool files) 
 {
 	if(files){
-		
+		//divergence time estimation
 		cout << "*****\n";
-		cout << "\nFile formats: \n\n";
+		cout << "\nDivergence time estimation file formats: \n\n";
 		cout << "Tree file (newick format)\n";
 		cout << "-----------------------------------------------\n";
 		cout << "(((T1,T2),T3),(T4,T5));\n\n";
@@ -67,9 +67,32 @@ void printHelp(bool files)
 		cout << "-U\tT1\tT3\t14.22\t20.532\n";
 		cout << "-E\tT4\tT5\t4.773\n";
 		cout << "-----------------------------------------------\n\n";
-		cout << "*****\n";
+        //diversification rate estimation
+        cout << "\nDiversification rate estimation file formats: \n\n";
+        cout << "Stratigraphic range file \n";
+        cout << "Line 1 = number of ranges and fossils\n";
+        cout << "For each range, first and last appearance times\n";
+        cout << "-----------------------------------------------\n";
+        cout << "5\t4\n";
+        cout << "0\t0\n";
+        cout << "0\t0\n";
+        cout << "0\t6.23\n";
+        cout << "9.82\t10.77\n";
+        cout << "5.2\t5.2\n";
+        cout << "-----------------------------------------------\n\n";
+        cout << "Interval file \n";
+        cout << "Line 1 = number of intervals\n";
+        cout << "From youngest to oldest, for each interval, \nstart time, end time, number of fossils\n";
+        cout << "-----------------------------------------------\n";
+        cout << "2\n";
+        cout << "5.1\t0\t10\n";
+        cout << "12.3\t5.1\t2\n";
+        cout << "-----------------------------------------------\n\n";
+        cout << "*****\n";        
 	}
 	else{
+        // divergence time estimation
+        cout << "\n\t*** Divergence time estimation ***\n";
 		cout << "\n\texample:      \n\n\t$ dppdiv -in datafile.in -out file -tre tree.phy -n 10000 -sf 10\n\n";
 		cout << "\tHere are the available options that you can change (default values are in []):\n";
 		cout << "\t\t-h    : print this menu **\n";
@@ -95,8 +118,8 @@ void printHelp(bool files)
 		cout << "\t\t-cal  : file name with internal node calibrations \n";
 		cout << "\t\t-npr  : 1=uniform, 2=yule, 3=cbd, 4=cbd fix with given vals\n";
 		cout << "\t\t-bdr  : initial diversification rate (lambda - mu)\n";
-		cout << "\t\t-bda  : initial relative death rate (mu / lambda)\n"; // what about bds?
-        cout << "\t\t-rho  : extant species sampling (fixed) \n"; // only active in experimental mode
+		cout << "\t\t-bda  : initial relative death rate (mu / lambda)\n"; // what about bds? //todo
+        //cout << "\t\t-rho  : extant species sampling (fixed) \n"; // only active in experimental mode //todo
 		cout << "\t\t-soft : turn on soft bounds on calibrated nodes\n";
 		cout << "\t\t-clok : run under strict clock (and estimate substitution rate)\n";
 		cout << "\t\t-urg  : run under uncorrelated gamma-distributed rates\n";
@@ -106,9 +129,33 @@ void printHelp(bool files)
 		cout << "\t\t-mup  : modify update probabilities mid run\n";
 		cout << "\t\t-fxm  : fix some model params\n";
 		cout << "\t\t-ihp  : run under independent hyperprior on exp cals\n";
-        //cout << "\t\t-po   : print origin to log file\n";
-        //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; // right now this also prints yf times (probably not neccessary)
-		cout << "\t\t** required\n\n";
+		cout << "\t\t** required\n";
+        // divergence time estimation
+        cout << "\n\t*** Diversification rate estimation ***\n";
+        cout << "\n\texample:      \n\n\t$ dppdiv -fbdrsky -cal range.cal -int intervals.int -out file -rho 0.5\n\n";
+        cout << "\tHere are the available options that you can change (default values are in []):\n";
+        cout << "\t\t-h         : print this menu **\n";
+        cout << "\t\t-hf        : display example file formats **\n";
+        cout << "\t\t-frofbd    : fossilised birth death range model **\n";
+        cout << "\t\t-fbdrsky   : fossilised birth death range skyline model **\n";
+        cout << "\t\t-cal       : file name with fossil stratigraphic ranges **\n";
+        cout << "\t\t-int       : file name with intervals **\n";
+        cout << "\t\t-out       : output file name prefix **\n";
+        cout << "\t\t-n         : Number of MCMC cycles [= 1000000]\n";
+        cout << "\t\t-pf        : print frequency [= 100] \n";
+        cout << "\t\t-sf        : sample frequency [= 100] \n";
+        cout << "\t\t-rnp       : return 0.0 for lnl, run under prior \n";
+        cout << "\t\t-s1        : seed 1 (use this if you only pass in one seed) \n";
+        cout << "\t\t-s2        : seed 2 \n";
+        cout << "\t\t-rho       : extant species sampling [= 1]\n";
+        cout << "\t\t-ext       : estimate extant species\n";
+        cout << "\t\t-divPrior  : prior on birth and death, 1=uniform, 2=exponential [= 2]\n";
+        cout << "\t\t-psiPrior  : prior on fossil recovery rate psi, 1=uniform, 2=exponential [= 2]\n";
+        cout << "\t\t-bexpR     : mean of exponential prior on birth [= 1]\n";
+        cout << "\t\t-dexpR     : mean of exponential prior on death [= 1]\n";
+        cout << "\t\t-pexpR     : mean of exponential prior on psi [= 10]\n";
+        cout << "\t\t** required\n\n";
+        //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; // right now this also prints yf times
 	}
 }
 
@@ -341,7 +388,7 @@ int main (int argc, char * const argv[]) {
                 else if(!strcmp(curArg, "-comps")){ // complete sampling
                     compS = atof(argv[i+1]);
                 }
-                else if(!strcmp(curArg, "-specPrior")) // prior on birth and death
+                else if(!strcmp(curArg, "-divPrior")) // prior on birth and death
                     specPr = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-psiPrior")) // prior on psi
                     psiPr = atof(argv[i+1]);
