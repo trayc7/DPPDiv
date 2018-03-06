@@ -74,6 +74,8 @@ private:
     int                     parameterization; // 1 = d, r, s, rho; 2 = d, r, psi, rho; 3 = lambda, mu, psi, rho;
     
     int                     numIntervals;
+    int                     numMoves; // number of moves per cycle 
+    int                     numParameters; // number of parameters per interval
     void                    initializeIntervalVariables();
     void                    printInitialIntervalVariables();
     

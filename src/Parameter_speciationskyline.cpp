@@ -50,8 +50,14 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh)
     
     constantRateModel = 0;
     fixPsi = 0;
-    
     //fixPsi = fxPsi;
+    if(fixPsi)
+        numParameters = 2;
+    else
+        numParameters = 3;
+    
+    numMoves = numIntervals * numParameters;
+    
     setAllBDFossParams();
     
     // priors on birth death paras
@@ -161,44 +167,20 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
     currentFossilRangeGraphSkylineLnL = oldLnL;
     FossilRangeGraphSkyline *frgs = modelPtr->getActiveFossilRangeGraphSkyline();
     
-    int numMoves;
-    
-    if(fixPsi)
-        numMoves =  numIntervals * 2;
-    else
-        numMoves =  numIntervals * 3;
-    
     int t, v;
     
-    bool all = true; // update all parameters for all intervals
-    
     if(!constantRateModel){
-        if(all){
-            vector<int> rndInts;
-            for(int i = 0; i < numIntervals; i++)
-                rndInts.push_back(i);
-            random_shuffle(rndInts.begin(), rndInts.end());
-            
-            for(vector<int>::iterator it=rndInts.begin(); it!=rndInts.end(); it++){
-             updateDeathRate(frgs, *it); // mu
-             updateBirthRate(frgs, *it); // lambda
-             updatePsiRate(frgs, *it); // psi
-                
-                //cout << "it " << *it << endl; //todo to test
-            }
-        } else{
-            for(int i=0; i < numMoves; i++){
-                // choose random interval
-                t = (int)(ranPtr->uniformRv(0.0, numIntervals));
-                // choose random parameters (never go to 3 if fixPsi = T)
-                v = (int)(ranPtr->uniformRv() * numMoves);
-                if(v == 0)
-                    updateDeathRate(frgs, t); // mu
-                else if(v == 1)
-                    updateBirthRate(frgs, t); // lambda
-                else if(v == 2)
-                    updatePsiRate(frgs, t); // psi
-            }
+        for(int i=0; i < numMoves; i++){
+            // choose random interval
+            t = (int)(ranPtr->uniformRv(0.0, numIntervals));
+            // choose random parameters (never go to 3 if fixPsi = T)
+            v = (int)(ranPtr->uniformRv() * numParameters);
+            if(v == 0)
+                updateDeathRate(frgs, t); // mu
+            else if(v == 1)
+                updateBirthRate(frgs, t); // lambda
+            else if(v == 2)
+                updatePsiRate(frgs, t); // psi
         }
     }
     else{
@@ -210,7 +192,7 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
             else if(v == 1)
               updateDeathOneRate(frgs); // mu
             else if(v == 2)
-              updatePsiOneRate(frgs);
+              updatePsiOneRate(frgs); // psi
         }
     }
     return currentFossilRangeGraphSkylineLnL;

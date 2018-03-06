@@ -241,7 +241,7 @@ private:
     int                             numLineages;
     int                             numExtinctLineages;
     int                             numExtantSamples;
-    int                             numIntervals;
+    int                             numIntervals;    
     int                             originInterval;
     double                          originTime;
     double                          ancientBound;
