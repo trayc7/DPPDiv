@@ -54,7 +54,7 @@
 
 using namespace std;
 
-Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf, bool modUpP, bool po, bool pfat) {
+Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf, bool modUpP, bool po, bool pfat, bool revbOut) {
 
 	ranPtr          = rp;
 	modelPtr        = mp;
@@ -67,6 +67,7 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
 	modUpdateProbs  = modUpP;
     printOrigin     = po;
     printAttach     = pfat;
+    revBayesOut     = revbOut;
     treeTimePr      = mp->getTreeTimePriorNum();
     if(treeTimePr < 9)
         runChain();
@@ -717,31 +718,95 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
     
     int numIntervals = frg->getNumIntervals();
     
+    // the interval numbering scheme held in dppdiv memory
+    // youngest = 0, oldest (not user specified) = numIntervals - 1
+    // the revbayes numbering scheme
+    // oldest (not user specified) = 1, youngest = numIntervals - 1
+    
+    bool printHiddenInt = 1; //TODO remember to change this back to 0 before release
+    
     if(gen == 1){
         
         frOut << "Gen\tlnL";
         
-        //for(int i=0; i < numIntervals; i++){
-        //    frOut << "\tbirth[" << i << "]\tdeath[" << i << "]\tpsi[" << i << "]";
-        //}
+        if(revBayesOut){
+            // print intervals oldest to youngest & match revbayes interval numbering
+            if(printHiddenInt){
+                // oldest = 0
+                int intID = 0;
+                for(int i = numIntervals - 1; i >= 0; i--){
+                    frOut << "\tlambda[" << intID << "]";
+                    intID += 1;
+                }
+                intID = 0;
+                for(int i = numIntervals - 1; i >= 0; i--){
+                    frOut << "\tmu[" << intID << "]";
+                    intID += 1;
+                }
+                intID = 0;
+                for(int i = numIntervals - 1; i >= 0; i--){
+                    frOut << "\tpsi[" << intID << "]";
+                    intID += 1;
+                }
+            } else{
+                // hide the interval older than the user specified maximum interval
+                // oldest = 1
+                int intID = 1;
+                for(int i = numIntervals - 2; i >= 0; i--){
+                    frOut << "\tlambda[" << intID << "]";
+                    intID += 1;
+                }
+                intID = 1;
+                for(int i = numIntervals - 2; i >= 0; i--){
+                    frOut << "\tmu[" << intID << "]";
+                    intID += 1;
+                }
+                intID = 1;
+                for(int i = numIntervals - 2; i >= 0; i--){
+                    frOut << "\tpsi[" << intID << "]";
+                    intID += 1;
+                }
+            }
+            frOut << "\tFBD.rho[" << numIntervals-1 << "]";
+        } else {
+            if(printHiddenInt){
+                // youngest = 1, oldest = numIntervals
+                int intID = 1;
+                for(int i=0; i < numIntervals; i++){
+                    frOut << "\tlambda[" << intID << "]";
+                    intID += 1;
+                }
+                intID = 1;
+                for(int i=0; i < numIntervals; i++){
+                    frOut << "\tmu[" << intID << "]";
+                    intID += 1;
+                }
+                intID = 1;
+                for(int i=0; i < numIntervals; i++){
+                    frOut << "\tpsi[" << intID << "]";
+                    intID += 1;
+                }
+            } else {
+                // youngest = 1, oldest = numIntervals-1
+                int intID = 1;
+                for(int i=0; i < numIntervals-1; i++){
+                    frOut << "\tlambda[" << intID << "]";
+                    intID += 1;
+                }
+                intID = 1;
+                for(int i=0; i < numIntervals-1; i++){
+                    frOut << "\tmu[" << intID << "]";
+                    intID += 1;
+                }
+                intID = 1;
+                for(int i=0; i < numIntervals-1; i++){
+                    frOut << "\tpsi[" << intID << "]";
+                    intID += 1;
+                }
+            }
+            frOut << "\tFBD.rho[1]\t";
+        }
         
-        int intID = 0;
-        for(int i = numIntervals - 1; i >= 0; i--){
-            frOut << "\tlambda[" << intID << "]";
-            intID += 1;
-        }
-        intID = 0;
-        for(int i = numIntervals - 1; i >= 0; i--){
-            frOut << "\tmu[" << intID << "]";
-            intID += 1;
-        }
-        intID = 0;
-        for(int i = numIntervals - 1; i >= 0; i--){
-            frOut << "\tpsi[" << intID << "]";
-            intID += 1;
-        }
-        
-        frOut << "\tFBD.rho[0]\t";
         if(printOrigin)
           frOut << "\tFBD.OriginTime";
         if(printAttach)
@@ -752,18 +817,56 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
     }
     frOut << gen << "\t" <<  lnl;
     
-    //for(int i=0; i < numIntervals; i++){
-    //frOut << "\t" << sp->getSpeciationRates()[i] << "\t" << sp->getExtinctionRates()[i] << "\t" << sp->getFossilSampRates()[i];
-    //}
-    
-    for(int i = numIntervals - 1; i >= 0; i--){
-        frOut << "\t" << sp->getSpeciationRates()[i];
-    }
-    for(int i = numIntervals - 1; i >= 0; i--){
-        frOut << "\t" << sp->getExtinctionRates()[i];
-    }
-    for(int i = numIntervals - 1; i >= 0; i--){
-        frOut << "\t" << sp->getFossilSampRates()[i];
+    if(revBayesOut){
+        // print intervals oldest to youngest & match revbayes interval numbering
+        if(printHiddenInt){
+            // oldest = 0
+            for(int i = numIntervals - 1; i >= 0; i--){
+                frOut << "\t" << sp->getSpeciationRates()[i];
+            }
+            for(int i = numIntervals - 1; i >= 0; i--){
+                frOut << "\t" << sp->getExtinctionRates()[i];
+            }
+            for(int i = numIntervals - 1; i >= 0; i--){
+                frOut << "\t" << sp->getFossilSampRates()[i];
+            }
+        } else {
+            // hide the interval older than the user specified maximum interval
+            // oldest = 1
+            for(int i = numIntervals - 2; i >= 0; i--){
+                frOut << "\t" << sp->getSpeciationRates()[i];
+            }
+            for(int i = numIntervals - 2; i >= 0; i--){
+                frOut << "\t" << sp->getExtinctionRates()[i];
+            }
+            for(int i = numIntervals - 2; i >= 0; i--){
+                frOut << "\t" << sp->getFossilSampRates()[i];
+            }
+        }
+    } else {
+        if(printHiddenInt){
+            // youngest = 1, oldest = numIntervals
+            for(int i=0; i < numIntervals; i++){
+                frOut << "\t" << sp->getSpeciationRates()[i];
+            }
+            for(int i=0; i < numIntervals; i++){
+                frOut << "\t" << sp->getExtinctionRates()[i];
+            }
+            for(int i=0; i < numIntervals; i++){
+                frOut << "\t" << sp->getFossilSampRates()[i];
+            }
+        } else {
+            // youngest = 1, oldest = numIntervals
+            for(int i=0; i < numIntervals-1; i++){
+                frOut << "\t" << sp->getSpeciationRates()[i];
+            }
+            for(int i=0; i < numIntervals-1; i++){
+                frOut << "\t" << sp->getExtinctionRates()[i];
+            }
+            for(int i=0; i < numIntervals-1; i++){
+                frOut << "\t" << sp->getFossilSampRates()[i];
+            }
+        }
     }
     frOut << "\t" << sp->getSppSampRateRho()[0];
     if(printOrigin)

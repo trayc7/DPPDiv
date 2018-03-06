@@ -154,6 +154,7 @@ void printHelp(bool files)
         cout << "\t\t-bexpR     : mean of exponential prior on birth [= 1]\n";
         cout << "\t\t-dexpR     : mean of exponential prior on death [= 1]\n";
         cout << "\t\t-pexpR     : mean of exponential prior on psi [= 10]\n";
+        cout << "\t\t-rbout     : output intervals from oldest to youngest to match RevBayes MCMC output [= 0]\n";
         cout << "\t\t** required\n\n";
         //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; // right now this also prints yf times
 	}
@@ -226,6 +227,7 @@ int main (int argc, char * const argv[]) {
     double dPrRate      = 1;        // mean of exponential prior on death
     double pPrRate      = 10;        // mean of exponential prior on psi
     int fbdRangeLikelihood = 1;     // 1 = poisson sampling, 2 = marginalize over k within ranges, 3 = marginalize over k within intervals (presence/absence sampling)
+    bool revbOut           = 0;     // order interval output oldest to youngest, to match revbayes output //TODO remember to changes this back to 0 before release
     //bool maxSpecRate  = 10000;
 	
 	if(argc > 1){
@@ -398,6 +400,8 @@ int main (int argc, char * const argv[]) {
                     dPrRate = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-pexpR")) // mean of exp prior on sampling rate
                     pPrRate = atof(argv[i+1]);
+                else if(!strcmp(curArg, "-rbout"))
+                    revbOut = 1;
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -433,13 +437,13 @@ int main (int argc, char * const argv[]) {
     if(treeNodePrior == 11){
         // fossil range skyline FBD
         Model myModel(&myRandom, calibFN, intFN, paFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, expMode, fbdRangeLikelihood);
-        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
+        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach, revbOut);
         return  0;
     }
     else if(treeNodePrior == 9 || treeNodePrior == 10){
         // fossil occurrence or fossil range FBD
         Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, lSurf, fixPsi, psi, compS, specPr, psiPr, bPrRate, dPrRate, pPrRate, expMode);
-        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
+        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach, revbOut);
         return 0;
     }
     else {
@@ -465,7 +469,7 @@ int main (int argc, char * const argv[]) {
             myModel.writeUnifTreetoFile();
             return 0;
         }
-        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach);
+        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach, revbOut);
     }
 	
     return 0;

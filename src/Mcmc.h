@@ -40,7 +40,7 @@ class Mcmc {
 
 	public:
 						Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, 
-                             std::string ofp, bool wdf, bool modUpP, bool po, bool pfat);
+                             std::string ofp, bool wdf, bool modUpP, bool po, bool pfat, bool revbOut);
 							
 	private:
 		void			runChain(void);
@@ -67,6 +67,7 @@ class Mcmc {
 		bool			modUpdateProbs;
         bool            printOrigin;
         bool            printAttach;
+        bool            revBayesOut;
         int             treeTimePr;
 };
 
