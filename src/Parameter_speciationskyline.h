@@ -38,7 +38,7 @@ class FossilRangeGraphSkyline;
 class SpeciationSkyline : public Parameter {
     
 public:
-                            SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh);
+                            SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate);
                             ~SpeciationSkyline(void);
     SpeciationSkyline       &operator=(const SpeciationSkyline &c);
     void                    clone(const SpeciationSkyline &c);

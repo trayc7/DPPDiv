@@ -286,7 +286,8 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     
 }
 
-Model::Model(MbRandom *rp, std::string clfn, std::string intfn, std::string pafn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool estExt, int expMode, int fbdLk){
+Model::Model(MbRandom *rp, std::string clfn, std::string intfn, std::string pafn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool estExt, int expMode, int fbdLk,
+             int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate){
     
     ranPtr = rp;
     ranPtr->getSeed(startS1, startS2);
@@ -315,7 +316,7 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, std::string pafn
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
     FossilRangeGraphSkyline *frg = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, userSpecifiedIntervals, intervals, runUnderPrior, fixFRG, estExt, expMode, fbdLk);
-    SpeciationSkyline *sp = new SpeciationSkyline(ranPtr, this, userSpecifiedIntervals, rho);
+    SpeciationSkyline *sp = new SpeciationSkyline(ranPtr, this, userSpecifiedIntervals, rho, specPr, psiPr, bPrRate, dPrRate, pPrRate);
     
     for (int i=0; i<2; i++){
         parms[i].push_back( sp );

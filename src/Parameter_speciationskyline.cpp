@@ -38,7 +38,7 @@
 
 using namespace std;
 
-SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh) : Parameter(rp, mp) {
+SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate) : Parameter(rp, mp) {
     
     name = "SSLP";
     numIntervals = ni + 1;
@@ -60,17 +60,19 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh)
     
     setAllBDFossParams();
     
+    //TODO check this & then delete
+//    specPr = 2;
+//    psiPr = 2;
+//    bPrRate = 1;
+//    dPrRate = 1;
+//    pPrRate = 10;
+    
     // priors on birth death paras
-    int specPr = 2; // 1 = unifrom prior, 2 = exponential prior
-    int psiPr = 2;
-    double bPrRate = 1;
-    double dPrRate = 1;
-    double pPrRate = 10;
-    deathRatePrior = specPr;
+    deathRatePrior = specPr; // 1 = unifrom prior, 2 = exponential prior
     birthRatePrior = specPr;
     fossRatePrior = psiPr;
     birthRateExpRate = bPrRate;
-    deathRateExpRate = dPrRate; ;
+    deathRateExpRate = dPrRate;
     fossRateExpRate = pPrRate;
     
     printInitialIntervalVariables();
