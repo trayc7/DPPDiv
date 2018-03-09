@@ -376,6 +376,24 @@ void FossilRangeGraph::countExtinctLineages(){
     
 }
 
+// debugging
+void FossilRangeGraph::recountExtinctLineages(){
+    
+    int m = 0;
+    
+    for(int f = 0; f < numLineages; f++){
+        FossilRange *fr = fossilRanges[f];
+        double ind = 0.0;
+        if(fr->getExtinctIndicator())
+            ind = 1.0;
+        if(!(fr->getLineageStop()*ind == 0))
+            m += 1;
+    }
+    
+    numExtinctLineages = m;
+    
+}
+
 // debugging code
 void FossilRangeGraph::printFossilRangeVariables(){
     
@@ -581,7 +599,7 @@ double FossilRangeGraph::updateExtinctIndicator(){
         
         // propose new indicator value
         bool newInd;
-        double rvInd = ranPtr->discreteUniformRv(0,1);
+        int rvInd = ranPtr->discreteUniformRv(0,1);
         if(rvInd == 0)
             newInd = 0;
         else
@@ -607,6 +625,9 @@ double FossilRangeGraph::updateExtinctIndicator(){
         }
 
     }
+    
+    if(runUnderPrior)
+        recountExtinctLineages();
     
     return 0.0;
 }

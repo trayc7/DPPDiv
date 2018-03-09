@@ -1285,6 +1285,11 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     std::vector<double> mu = s->getExtinctionRates();
     std::vector<double> fossRate = s->getFossilSampRates();
     
+    //cout << "extinct " << numExtinctLineages << endl;
+    
+    if(counter == 82)
+        cout << "debugging " << endl;
+    
     double  nprb = 0.0;
     
     // debugging code
@@ -1393,6 +1398,25 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     // extant species sampling
     if(rho < 1 & rho > 0)
         nprb += ( numExtantSamples * log(rho) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - rho) );
+    
+    //cout << "lk = " << nprb << endl;
+    
+    if(isnan(nprb)){
+        cout << "rho " << sppSampRate[0] << endl;
+        cout << "lambda 1 " << lambda[0] << endl;
+        cout << "lambda 2 " << lambda[1] << endl;
+        cout << "lambda 3 " << lambda[2] << endl;
+        cout << "mu 1 " << mu[0] << endl;
+        cout << "mu 2 " << mu[1] << endl;
+        cout << "mu 3 " << mu[2] << endl;
+        cout << "psi 1 " << fossRate[0] << endl;
+        cout << "psi 2 " << fossRate[1] << endl;
+        cout << "psi 3 " << fossRate[2] << endl;
+        cout << "counter " << counter << endl;
+        exit(1);
+    }
+    
+    counter = counter + 1;
     
     currentFossilRangeGraphSkylineLnL = nprb;
     
@@ -1535,27 +1559,27 @@ double FossilRangeGraphSkyline::fbdSkylineQTildaFxn(std::vector<double> b, std::
 // okay for large values of t
 double FossilRangeGraphSkyline::fbdSkylineQTildaFxnLog(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t){
     
-    //double Ai = intervalAs[i];
-    //double Bi = intervalBs[i];
+    double Ai = intervalAs[i];
+    double Bi = intervalBs[i];
     
     Interval *interval = intervals[i];
     double ti = interval->getIntervalEnd();
     
     t -= ti;
     
-    //double f1aLog = log(4) + (-t * (b[i] + d[i] + psi[i])) + (-t * Ai);
-    //double f1b = 4 * exp(-t * Ai) + (1 - Bi * Bi) * (1 - exp(-t*Ai)) * (1 - exp(-t*Ai));
-    //double f2a = (1 + Bi) * exp(-t * Ai) + (1 - Bi);
-    //double f2b = (1 - Bi) * exp(-t * Ai) + (1 + Bi);
+    double f1aLog = log(4) + (-t * (b[i] + d[i] + psi[i])) + (-t * Ai);
+    double f1b = 4 * exp(-t * Ai) + (1 - Bi * Bi) * (1 - exp(-t*Ai)) * (1 - exp(-t*Ai));
+    double f2a = (1 + Bi) * exp(-t * Ai) + (1 - Bi);
+    double f2b = (1 - Bi) * exp(-t * Ai) + (1 + Bi);
     
-    //double qt = 0.5 * (log( (1/f1b) * (f2a/f2b) ) + f1aLog);
+    double qt = 0.5 * (log( (1/f1b) * (f2a/f2b) ) + f1aLog);
 
-    //return qt;
+    return qt;
     
-    double q = fbdSkylineQfxnLog(b, d, psi, rho, i, t);
-    double v = (q + (- (b[i] + d[i] + psi[i])*t) ) * 0.5;
-    
-    return v;
+    // simplified - I have diffi
+    //double q = fbdSkylineQfxnLog(b, d, psi, rho, i, t);
+    //double v = (q + (- (b[i] + d[i] + psi[i])*t) ) * 0.5;
+    //return v;
 }
 
 // this isn't used

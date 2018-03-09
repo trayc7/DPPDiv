@@ -145,6 +145,7 @@ private:
     void							recountFossilRangeAttachNums(); // cf recountFossilAttachNums() or recountOccurrenceAttachNums()
     void                            redefineOriginTime();
     void                            countExtinctLineages();
+    void                            recountExtinctLineages();
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
     double                          updateExtinctIndicator();
