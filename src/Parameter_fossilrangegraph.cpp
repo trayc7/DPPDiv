@@ -43,7 +43,7 @@
 
 using namespace std;
 
-FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, bool fxFRG, bool estExt, int compS, int expMode) : Parameter(rp, mp){
+FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, bool rnp, bool fxFRG, bool estExt, bool fixInd, int compS, int expMode) : Parameter(rp, mp){
     
     name = "FRG";
     numFossils = nf;
@@ -58,6 +58,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
     estimateExtant = estExt;
+    fixIndicator = fixInd;
     phyloTest = 0;
     if(expMode == 1){
         fixOrigin = 1;
@@ -260,6 +261,16 @@ void FossilRangeGraph::initializeFossilRangeVariables(){
             fr->setFixStart(1);
             fr->setFixStop(1);
         }
+    }
+    
+    if(fixIndicator){
+       for(int f = 0; f < numLineages; f++){
+         FossilRange *fr = fossilRanges[f];
+         if(fr->getAttachmentTime() == 0)
+             fr->setExtinctIndicator(0);
+         else
+             fr->setExtinctIndicator(1);
+       }
     }
     
     // this is only used for expmo = 1

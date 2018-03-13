@@ -185,7 +185,7 @@ Model::Model(MbRandom *rp, Alignment *ap, string ts, double pm, double ra, doubl
 
 }
 
-Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool estExt, bool lnSurf, bool fxPsi, double psi, int compS,
+Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool estExt, bool fixInd, bool lnSurf, bool fxPsi, double psi, int compS,
              int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, int expMode){
     
     ranPtr = rp;
@@ -244,7 +244,7 @@ Model::Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int
     
     if(treeTimePrior == 10){
         
-        FossilRangeGraph *frg = new FossilRangeGraph(ranPtr, this, numFossils, numLineages, calibrs, runUnderPrior, fixFRG, estExt, compS, expMode);
+        FossilRangeGraph *frg = new FossilRangeGraph(ranPtr, this, numFossils, numLineages, calibrs, runUnderPrior, fixFRG, estExt, fixInd, compS, expMode);
         Speciation *sp = new Speciation(ranPtr, this, -1.0, -1.0, -1.0, 100.0, rho, fbdPar, fxPsi, psi, specPr, psiPr, bPrRate, dPrRate, pPrRate);
         
         for (int i=0; i<2; i++){

@@ -99,7 +99,7 @@ class Calibration;
 class FossilRangeGraph : public Parameter {
     
 public:
-    FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, bool rnp, bool fxFRG, bool estExt, int compS, int expMode);
+    FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, bool rnp, bool fxFRG, bool estExt, bool fixInd, int compS, int expMode);
     
     ~FossilRangeGraph(void);
     
@@ -176,6 +176,7 @@ private:
     
     bool                            fixFRG;
     bool                            estimateExtant;
+    bool                            fixIndicator;
     bool                            fixOrigin;
     int                             fixStart;
     int                             fixStop;

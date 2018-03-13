@@ -72,7 +72,7 @@ class Model {
 											  bool sfb, bool ehpc, bool dphpc, int dphpng, bool gamhp, int rmod,
 											  bool fxmod, bool ihp, std::string tipdfn, bool fxtr, int expmo, bool igfoss, double rh, int bdp, bool fxPsi, double psi,
                                               int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate);
-                                        Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool estExt, bool lSf, bool fxPsi, double psi,
+                                        Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool estExt, bool fixInd, bool lSf, bool fxPsi, double psi,
                                               int compS, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, int expMode); // model overload constructor for fofbd
                                         Model(MbRandom *rp, std::string clfn, std::string intfn, std::string pafn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool estExt, int expMode,
                                               int fbdLk, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate); // model overload constructor for fofbd skyline

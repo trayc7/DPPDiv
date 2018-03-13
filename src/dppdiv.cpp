@@ -217,6 +217,7 @@ int main (int argc, char * const argv[]) {
     int bdpar           = 2;        // FBD parameterization flag
     bool fixFRG         = false;
     bool estExt         = false;
+    bool fixInd         = false;
     bool fixPsi         = false;
     double psi          = 0.01;
     bool lSurf          = false;
@@ -381,6 +382,9 @@ int main (int argc, char * const argv[]) {
                 else if(!strcmp(curArg, "-ext")){ // estimate the # of extant ranges
                     estExt = true;
                 }
+                else if(!strcmp(curArg, "-ind")){ // fix extinct indicator
+                    fixInd = true;
+                }
                 else if(!strcmp(curArg, "-lsurf")) // print out likelihood surface info
                     lSurf = true;
                 else if(!strcmp(curArg, "-fixpsi")) // fix psi
@@ -442,7 +446,7 @@ int main (int argc, char * const argv[]) {
     }
     else if(treeNodePrior == 9 || treeNodePrior == 10){
         // fossil occurrence or fossil range FBD
-        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, lSurf, fixPsi, psi, compS, specPr, psiPr, bPrRate, dPrRate, pPrRate, expMode);
+        Model myModel(&myRandom, calibFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, fixInd, lSurf, fixPsi, psi, compS, specPr, psiPr, bPrRate, dPrRate, pPrRate, expMode);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach, revbOut);
         return 0;
     }
