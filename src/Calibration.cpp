@@ -278,6 +278,8 @@ void Calibration::initializeInterval(string calstr){
     intervalEnd = atof(tmp.c_str());
     ss >> tmp;
     intervalFossils = atof(tmp.c_str());
+    ss >> tmp;
+    intervalProxy = atof(tmp.c_str());
     
     if(intervalEnd > intervalStart){
         cerr << "Problem with interval file: interval end must be younger than interval start";

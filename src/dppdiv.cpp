@@ -130,7 +130,7 @@ void printHelp(bool files)
 		cout << "\t\t-fxm  : fix some model params\n";
 		cout << "\t\t-ihp  : run under independent hyperprior on exp cals\n";
 		cout << "\t\t** required\n";
-        // divergence time estimation
+        // diversification rate estimation
         cout << "\n\t*** Diversification rate estimation ***\n";
         cout << "\n\texample:      \n\n\t$ dppdiv -fbdrsky -cal range.cal -int intervals.int -out file -rho 0.5\n\n";
         cout << "\tHere are the available options that you can change (default values are in []):\n";
@@ -228,7 +228,8 @@ int main (int argc, char * const argv[]) {
     double dPrRate      = 1;        // mean of exponential prior on death
     double pPrRate      = 10;        // mean of exponential prior on psi
     int fbdRangeLikelihood = 1;     // 1 = poisson sampling, 2 = marginalize over k within ranges, 3 = marginalize over k within intervals (presence/absence sampling)
-    bool revbOut           = 1;     // order interval output oldest to youngest, to match revbayes output //TODO remember to changes this back to 0 before release
+    bool revbOut        = true;     // order interval output oldest to youngest, to match revbayes output //TODO remember to changes this back to 0 before release
+    bool proxy          = false;
     //bool maxSpecRate  = 10000;
 	
 	if(argc > 1){
@@ -406,6 +407,8 @@ int main (int argc, char * const argv[]) {
                     pPrRate = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-rbout"))
                     revbOut = 1;
+                else if(!strcmp(curArg, "-proxy")) // use proxy info to inform psi, info contained in .int file
+                    proxy = true;
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -440,7 +443,7 @@ int main (int argc, char * const argv[]) {
 	
     if(treeNodePrior == 11){
         // fossil range skyline FBD
-        Model myModel(&myRandom, calibFN, intFN, paFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, expMode, fbdRangeLikelihood, specPr, psiPr, bPrRate, dPrRate, pPrRate);
+        Model myModel(&myRandom, calibFN, intFN, paFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, expMode, fbdRangeLikelihood, specPr, psiPr, bPrRate, dPrRate, pPrRate, proxy);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach, revbOut);
         return  0;
     }

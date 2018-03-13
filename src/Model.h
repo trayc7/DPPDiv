@@ -75,7 +75,7 @@ class Model {
                                         Model(MbRandom *rp, std::string clfn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool estExt, bool fixInd, bool lSf, bool fxPsi, double psi,
                                               int compS, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, int expMode); // model overload constructor for fofbd
                                         Model(MbRandom *rp, std::string clfn, std::string intfn, std::string pafn, int nodpr, double rh, bool rnp, int bdp, bool fixFRG, bool estExt, int expMode,
-                                              int fbdLk, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate); // model overload constructor for fofbd skyline
+                                              int fbdLk, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, bool proxy); // model overload constructor for fofbd skyline
 										~Model(void);
 		double							lnLikelihood(void);
 		double							getPriorMeanV(void) { return priorMeanN; }

@@ -38,7 +38,7 @@ class FossilRangeGraphSkyline;
 class SpeciationSkyline : public Parameter {
     
 public:
-                            SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate);
+                            SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, bool proxy);
                             ~SpeciationSkyline(void);
     SpeciationSkyline       &operator=(const SpeciationSkyline &c);
     void                    clone(const SpeciationSkyline &c);
@@ -89,6 +89,7 @@ private:
     double                  updateBirthRate(FossilRangeGraphSkyline *frgs, int i);
     double                  updateDeathRate(FossilRangeGraphSkyline *frgs, int i);
     double                  updatePsiRate(FossilRangeGraphSkyline *frgs, int i);
+    double                  updateProxyRate(FossilRangeGraphSkyline *frgs);
     double                  updateBirthOneRate(FossilRangeGraphSkyline *frgs);
     double                  updateDeathOneRate(FossilRangeGraphSkyline *frgs);
     double                  updatePsiOneRate(FossilRangeGraphSkyline *frgs);
@@ -102,6 +103,7 @@ private:
     
     bool                    fixPsi;
     bool                    constantRateModel;
+    bool                    useSamplingProxy;
 
 };
 

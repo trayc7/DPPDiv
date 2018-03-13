@@ -40,7 +40,7 @@ class Calibration {
 		std::string		txn1, txn2;
 		double			youngtime, oldtime;
         double			firstAppearance, lastAppearance, attachmentTime, endTime;
-        double			intervalStart, intervalEnd;
+        double			intervalStart, intervalEnd, intervalProxy;
         int             intervalFossils;
 		int				nodeIDX;
 		bool			isRootCal;
@@ -94,6 +94,7 @@ class Calibration {
        //void             setIntervalEnd(double d) { intervalEnd = d; }
        double			getIntervalStart() { return intervalStart; }
        double			getIntervalEnd() { return intervalEnd; }
+       double           getIntervalProxy() { return intervalProxy; }
        int              getIntervalFossils() { return intervalFossils; }
     
       // for presence absence data
