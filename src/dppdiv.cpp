@@ -147,8 +147,8 @@ void printHelp(bool files)
         cout << "\t\t-rnp       : return 0.0 for lnl, run under prior \n";
         cout << "\t\t-s1        : seed 1 (use this if you only pass in one seed) \n";
         cout << "\t\t-s2        : seed 2 \n";
-        cout << "\t\t-rho       : extant species sampling [= 1]\n";
-        cout << "\t\t-ext       : estimate extant species\n";
+        cout << "\t\t-rho       : extant species sampling, 1 or 0 only [= 1]\n";
+        //cout << "\t\t-ext       : estimate extant species\n";
         cout << "\t\t-divPrior  : prior on birth and death, 1=uniform, 2=exponential [= 2]\n";
         cout << "\t\t-psiPrior  : prior on fossil recovery rate psi, 1=uniform, 2=exponential [= 2]\n";
         cout << "\t\t-bexpR     : rate parameter of the exponential prior on birth [= 1]\n";

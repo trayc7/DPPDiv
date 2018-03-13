@@ -57,7 +57,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     fixOrigin = 0;
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
-    estimateExtant = estExt;
+    estimateExtant = estExt; // note this is experimental
     fixIndicator = fixInd;
     phyloTest = 0;
     if(expMode == 1){
@@ -583,6 +583,7 @@ double FossilRangeGraph::updateLineageStopTimes(){
     return 0.0;
 }
 
+//this is experimental, potential issue with the Hastings ratio
 double FossilRangeGraph::updateExtinctIndicator(){
     
     Speciation *s = modelPtr->getActiveSpeciation();
@@ -826,12 +827,13 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
             
             FossilRange *fr = fossilRanges[f];
             
-            double ind = 0.0;
-            if(fr->getExtinctIndicator())
-                ind = 1.0;
+            //double ind = 0.0;
+            //if(fr->getExtinctIndicator())
+            //    ind = 1.0;
+            //double di = fr->getLineageStop() * ind;  // di
             
             double bi = fr->getLineageStart(); // bi
-            double di = fr->getLineageStop() * ind;  // di
+            double di = fr->getLineageStop();  // di
             double oi = fr->getFirstAppearance(); // oi
             
             // extinction

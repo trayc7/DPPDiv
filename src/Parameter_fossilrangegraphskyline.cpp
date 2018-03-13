@@ -60,7 +60,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     fixOrigin = 0;
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
-    estimateExtant = estExt;
+    estimateExtant = estExt; // note this is experimental
     fixStart = 0;
     fixStop = 0;
     speedy = 1;
