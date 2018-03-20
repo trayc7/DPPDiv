@@ -38,8 +38,8 @@
 class Interval {
     
 public:
-    Interval(double start, double end, int fossils, int intid, double durations, int kP) : intervalStart(start), intervalEnd(end), intervalFossils(fossils), intervalID(intid),
-    intervalSumRangeLengths(durations), intervalKappaPrime(kP) {}
+    Interval(double start, double end, int fossils, int intid, double durations, int kP, double proxy) : intervalStart(start), intervalEnd(end), intervalFossils(fossils), intervalID(intid),
+    intervalSumRangeLengths(durations), intervalKappaPrime(kP), intervalProxy(proxy) {}
 
     double          getIntervalStart(void){ return intervalStart; }
     double          getIntervalEnd(void){ return intervalEnd; }
@@ -60,6 +60,7 @@ private:
     int             intervalID;
     double          intervalSumRangeLengths;
     int             intervalKappaPrime;
+    double          intervalProxy;
 };
 
 class FossilRangeSkyline {

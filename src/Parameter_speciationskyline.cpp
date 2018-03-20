@@ -43,6 +43,7 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh,
     name = "SSLP";
     numIntervals = ni + 1;
     extantSampleRate = rh;
+    useSamplingProxy = proxy;
     initializeIntervalVariables();
     currentFossilRangeGraphSkylineLnL = 0.0;
     parameterization = 3; // hard coded for the moment
@@ -116,7 +117,7 @@ void SpeciationSkyline::initializeIntervalVariables(){
     for(int i = 0; i < numIntervals; i++){
         birthRates.push_back(0.9);
         deathRates.push_back(0.3);
-        fossilRates.push_back(2.0); //**skyline note - add user defined flag psi
+        fossilRates.push_back(2.0); //**skyline note - add user defined flag psi //?
         tipRates.push_back(0.0);
     }
     tipRates[0] = extantSampleRate;
@@ -209,6 +210,7 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
                 updatePsiRate(frgs, t); // psi
         }
     }
+    
     return currentFossilRangeGraphSkylineLnL;
 }
 
@@ -473,7 +475,7 @@ double SpeciationSkyline::getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyli
     return fgprob;
 }
 
-// is there any point in doing this right now?
+// check the overall time this function takes
 void SpeciationSkyline::setAllBDFossParams(){
     
     if(parameterization == 3){

@@ -74,7 +74,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     proposal = 2; // proposal type 1=window, 2=scale, 3=slide
     getAltProb = 0;
     completeSampling = compS; // likelihood function - if this is 0 it should produce the same results as 1 given complete sampling
-    bool crossValidate = 0;
+    bool crossValidate = false;
     if(crossValidate)
         crossValidateFBDfunctions();
     

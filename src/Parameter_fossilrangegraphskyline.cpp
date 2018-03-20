@@ -78,7 +78,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     currentFossilRangeGraphSkylineLnL = 0.0;
     counter = 0; // debugging
     
-    bool crossValidate = 0;
+    bool crossValidate = false;
     if(crossValidate)
         crossValidateFBDSkylinefunctions();
     
@@ -195,6 +195,7 @@ void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
     double start = 0;
     double end = 0;
     int fossils = 0;
+    double proxy = 0;
     
     int intid = 1;
     for(int i = 0; i < ints.size(); i++){
@@ -202,14 +203,15 @@ void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
         start = h->getIntervalStart();
         end = h->getIntervalEnd();
         fossils = h->getIntervalFossils();
+        proxy = h->getIntervalProxy();
         
-        Interval *interval = new Interval(start, end, fossils, intid, 0, 0);
+        Interval *interval = new Interval(start, end, fossils, intid, 0, 0, proxy);//TODO check using a tiny tree that this works when use sampling proxy = false
         intervals.push_back(interval);
         
         intid ++;
     }
     
-    Interval *interval = new Interval(ancientBound, start, 0, intid, 0, 0);
+    Interval *interval = new Interval(ancientBound, start, 0, intid, 0, 0, 0);
     intervals.push_back(interval);
     
 }   
@@ -351,7 +353,7 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
     if(fbdLikelihood == 3)
         initializeIntervalSubBranchLengths();
     
-    bool printIntVariables = 1;
+    bool printIntVariables = true;
     
     if(printIntVariables)
         printIntervalVariables();
@@ -1285,15 +1287,10 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     std::vector<double> mu = s->getExtinctionRates();
     std::vector<double> fossRate = s->getFossilSampRates();
     
-    //cout << "extinct " << numExtinctLineages << endl;
-    
-    if(counter == 82)
-        cout << "debugging " << endl;
-    
     double  nprb = 0.0;
     
     // debugging code
-    bool frgProb = 0;
+    bool frgProb = false;
     if(frgProb){
         nprb = getFossilRangeGraphProb(lambda, mu, fossRate, sppSampRate, originTime);
         return nprb;
@@ -1399,8 +1396,6 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
     if(rho < 1 & rho > 0)
         nprb += ( numExtantSamples * log(rho) ) + ( (numLineages - numExtinctLineages - numExtantSamples) * log(1 - rho) );
     
-    //cout << "lk = " << nprb << endl;
-    
     if(isnan(nprb)){
         cout << "rho " << sppSampRate[0] << endl;
         cout << "lambda 1 " << lambda[0] << endl;
@@ -1416,7 +1411,7 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         exit(1);
     }
     
-    counter = counter + 1;
+    //counter = counter + 1;
     
     currentFossilRangeGraphSkylineLnL = nprb;
     
@@ -1576,7 +1571,7 @@ double FossilRangeGraphSkyline::fbdSkylineQTildaFxnLog(std::vector<double> b, st
 
     return qt;
     
-    // simplified - I have diffi
+    // simplified - this is tricky to calculate on the log scale
     //double q = fbdSkylineQfxnLog(b, d, psi, rho, i, t);
     //double v = (q + (- (b[i] + d[i] + psi[i])*t) ) * 0.5;
     //return v;
