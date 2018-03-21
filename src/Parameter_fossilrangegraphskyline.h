@@ -130,8 +130,8 @@ private:
     int								indx;
     double							firstAppearance; // oi
     double							lastAppearance; // yi
-    double							attachmentTime; // note this is for fixed ranges
-    double							endTime; // note this is for fixed ranges
+    double							attachmentTime; // \note this is for fixed ranges
+    double							endTime; // \note this is for fixed ranges
     bool                            extant;
     bool                            extantOnly;
     int                             fossilRangeID;

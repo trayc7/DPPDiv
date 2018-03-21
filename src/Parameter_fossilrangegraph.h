@@ -84,7 +84,7 @@ private:
     bool                            extantOnly;
     int                             fossilRangeID;
     int								fossilBrGamma;
-    double                          lineageStart; // note this is the speciation time = zf or phi
+    double                          lineageStart; // \note this is the speciation time = zf or phi
     double                          lineageStop;
     bool                            fixStart;
     bool                            fixStop;

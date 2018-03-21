@@ -255,7 +255,7 @@ double Speciation::updateFossilGraphBDParams(double &oldLnL){
 		else
 			updatePsiRate(fg); // psi
 	}
-	else if(parameterization == 3){  //****//
+	else if(parameterization == 3){  //
 		if(v == 0)
 			updateDeathRate(fg); // mu
 		else if(v == 1)

@@ -60,7 +60,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     fixOrigin = 0;
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
-    estimateExtant = estExt; // note this is experimental
+    estimateExtant = estExt; // \note this is experimental
     fixStart = 0;
     fixStop = 0;
     speedy = 1;
@@ -415,7 +415,7 @@ void FossilRangeGraphSkyline::calculateIntervalSumRanges(){
     }
 }
 
-// initialise L_S and changeable o_i
+// initialise L_S and changeable o_i, option disable for the moment
 void FossilRangeGraphSkyline::initializeIntervalSubBranchLengths(){
     
     for(int f = 0; f < numLineages; f++){
@@ -438,14 +438,6 @@ void FossilRangeGraphSkyline::initializeIntervalSubBranchLengths(){
             
             double start = interval->getIntervalStart();
             double end = interval->getIntervalEnd();
-            
-            //TODO: delete this
-            //if(i == oiInt){
-            //    if(biInt == oiInt)
-            //        fr->setChangeableOi(bi);
-            //    else
-            //        fr->setChangeableOi(start);
-            //}
             
             int kappaS = fr->getFossilRangeKappaS(i);
             
@@ -596,7 +588,7 @@ void FossilRangeGraphSkyline::recountFossilRangeAttachNums(){
                 }
             }
         }
-        // note gamma associated with the origin is handled by the likelihood function
+        // \note gamma associated with the origin is handled by the likelihood function
 
         fr->setFossilRangeBrGamma(g);
     }
@@ -904,9 +896,8 @@ double FossilRangeGraphSkyline::updateLineageStopTimes(){
     return 0.0;
 }
 
+//option disabled for the moment, check the hastings ratio
 double FossilRangeGraphSkyline::updateExtinctIndicator(){
-    
-    //TODO double check this functionality
     
     vector<int> rndFossilRangeIDs;
     for(int i=0; i<fossilRangesSkyline.size(); i++)
@@ -1031,6 +1022,7 @@ double FossilRangeGraphSkyline::updateLineageBi(){
     return 0.0;
 }
 
+// option disabled for the moment
 double FossilRangeGraphSkyline::updateLineageOi(){
     
     vector<int> rndFossilRangeIDs;
@@ -1076,15 +1068,7 @@ double FossilRangeGraphSkyline::updateLineageOi(){
         // redefine values
         fr->setFirstAppearance(newFa);
         
-        //TODO: delete
-        //redefineOriginTime();
-        //if(speedy)
-        //    recountFossilRangeAttachNumsSpeedy((*it));
-        //else
-        //    recountFossilRangeAttachNums();
-        //fr->setFossilRangeBirthInterval(assignInterval(newStart));
-        
-        //TODO: I don't think this needs to be here
+        // I don't think this needs to be here
         //recalculateIntervalSubBranchLengths((*it));
         
         // recalculate the FRG probability
@@ -1095,19 +1079,8 @@ double FossilRangeGraphSkyline::updateLineageOi(){
         double r = modelPtr->safeExponentiation(lnLikeRatio + c);
         
         if(ranPtr->uniformRv() > r){
-            
             fr->setFirstAppearance(oldFa);
-            //recalculateIntervalSubBranchLengths((*it));
             currentFossilRangeGraphSkylineLnL = oldLike;
-            
-            //TODO: delete
-            //fr->setLineageStart(oldStart);
-            //redefineOriginTime();
-            //if(speedy)
-            //    recountFossilRangeAttachNumsSpeedy((*it));
-            //else
-            //    recountFossilRangeAttachNums();
-            //fr->setFossilRangeBirthInterval(assignInterval(oldStart));
         }
     }
     
@@ -1348,14 +1321,15 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         
         FossilRangeSkyline *fr = fossilRangesSkyline[f];
         
-        double ind = 0.0;
-        if(fr->getExtinctIndicator())
-            ind = 1.0;
+        //double ind = 0.0;
+        //if(fr->getExtinctIndicator())
+        //    ind = 1.0;
         
         double bi, di, oi;
         
         bi = fr->getLineageStart(); // bi
-        di = fr->getLineageStop() * ind;  // di
+        //di = fr->getLineageStop() * ind;  // di
+        di = fr->getLineageStop();  // di
         oi = fr->getFirstAppearance(); // oi
         
         //if(fbdLikelihood == 3)
@@ -1421,8 +1395,7 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
 // Ai is analagous to c1
 double FossilRangeGraphSkyline::fbdSkylineAfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, int i){
     
-    //TODO: skyline note: double check this should be abs
-    //double v = fabs( sqrt( ( (b-d-psi) * (b-d-psi) ) + 4*b*psi) );
+    // abs taken from c1
     double Ai = fabs( sqrt( ( (b[i] - d[i] - psi[i]) * (b[i] - d[i] - psi[i]) ) + 4 * b[i] * psi[i]) );
     return Ai;
 }
@@ -1430,7 +1403,6 @@ double FossilRangeGraphSkyline::fbdSkylineAfxn(std::vector<double> b, std::vecto
 // Bi is analagous to c2
 double FossilRangeGraphSkyline::fbdSkylineBfxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i){
     
-    //TODO: delete/clarify some of this
     // t =  interval minimum
     //if(i == 0)
       //  return 1;
@@ -1571,7 +1543,7 @@ double FossilRangeGraphSkyline::fbdSkylineQTildaFxnLog(std::vector<double> b, st
 
     return qt;
     
-    // simplified - this is tricky to calculate on the log scale
+    // simplified \note this is tricky on a log scale
     //double q = fbdSkylineQfxnLog(b, d, psi, rho, i, t);
     //double v = (q + (- (b[i] + d[i] + psi[i])*t) ) * 0.5;
     //return v;
@@ -1590,7 +1562,7 @@ double FossilRangeGraphSkyline::fbdSkylineQTildaFxnLogSimplified(std::vector<dou
 
 double FossilRangeGraphSkyline::exampleRevBayesPfxn(std::vector<double> l, std::vector<double> m, std::vector<double> psi, std::vector<double> rho, int i, double t){
     
-    if (t == 0 || i == -1) // note revbayes: doesn't have i == -1
+    if (t == 0 || i == -1) // \note revbayes: doesn't have i == -1
         return 1.0;
     
     // get the parameters
@@ -1636,6 +1608,7 @@ void FossilRangeGraphSkyline::setAllIntervalConstants(){
     }
 }
 
+// debugging stuff
 void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
     
     std::vector<double> lambda, mu, psi, rho;
@@ -1687,53 +1660,6 @@ void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
     for(int i = 0; i < numIntervals; i++){
         cout << "p " << intervalPs[i] << endl;
     }
-    
-    //TODO: what's all this? interval constants
-//    std::vector<double> intervalConstantsA, intervalConstantsB, intervalPsx, intervalRBPs;
-//    for(int i = 0; i < numIntervals; i++){
-//        Interval *interval = intervals[i];
-//        double ti = interval->getIntervalEnd();
-//        intervalConstantsA.push_back( fbdSkylineAfxn(lambda, mu, psi, i) );
-//        intervalConstantsB.push_back( fbdSkylineBfxn(lambda, mu, psi, rho, i) );
-//        intervalPsx.push_back( fbdSkylinePfxn(lambda, mu, psi, rho, i, ti));
-//        intervalRBPs.push_back( exampleRevBayesPfxn(lambda, mu, psi, rho, i, ti));
-//    }
-    
-//    cout << "Cross validating FBD functions..." << endl;
-//    cout << "Constant A" << endl;
-//    for(int i = 0; i < numIntervals; i++){
-//        cout << "A for interval " << i << " = " << intervalConstantsA[i] << endl;
-//    }
-//    cout << "Constant B" << endl;
-//    for(int i = 0; i < numIntervals; i++){
-//        cout << "B for interval " << i << " = " << setprecision(15) << intervalConstantsB[i] << endl;
-//    }
-//    cout << "P(t) function" << endl;
-//    for(int i = 0; i < numIntervals; i++){
-//        cout << "P(t) for interval " << i << " = " << intervalPs[i] << endl;
-//    }
-//    
-//    cout << "rb P(t) function" << endl;
-//    for(int i = 0; i < numIntervals; i++){
-//        cout << "rbP(t) for interval " << i << " = " << intervalRBPs[i] << endl;
-//    }
-
-    // other functions
-//    double q = fbdSkylineQfxnLog(lambda, mu, psi, rho, 0, 2.1);
-//    double qt = fbdSkylineQTildaFxnLog(lambda, mu, psi, rho, 0, 2.1);
-//    
-//    //cout << "Origin time = " << originTime << ", interval " << originInterval << endl;
-//    cout << "Log q(t) for the origin = " << q << endl;
-//    cout << "Log qt(t) for the origin = " << qt << endl;
-//    
-//    //double lk = getFossilRangeGraphSkylineProb(lambda, mu, psi, rho, originTime);
-//    double lk = getFossilRangeGraphSkylineProb();
-//    cout << "FRG skyline likelihood " << setprecision(7) << lk << endl;
-//    
-//    cout << "0.5 " << assignInterval(0.5) << endl;
-//    cout << "1.3 " << assignInterval(1.3) << endl;
-//    cout << "2.9 " << assignInterval(2.9) << endl;
-//    cout << "4.6 " << assignInterval(4.6) << endl;
     
     exit(0);
 }

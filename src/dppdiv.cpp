@@ -118,8 +118,8 @@ void printHelp(bool files)
 		cout << "\t\t-cal  : file name with internal node calibrations \n";
 		cout << "\t\t-npr  : 1=uniform, 2=yule, 3=cbd, 4=cbd fix with given vals\n";
 		cout << "\t\t-bdr  : initial diversification rate (lambda - mu)\n";
-		cout << "\t\t-bda  : initial relative death rate (mu / lambda)\n"; // what about bds? //todo
-        //cout << "\t\t-rho  : extant species sampling (fixed) \n"; // only active in experimental mode //todo
+		cout << "\t\t-bda  : initial relative death rate (mu / lambda)\n"; // what about bds?
+        //cout << "\t\t-rho  : extant species sampling (fixed) \n"; // only active in experimental mode or frg
 		cout << "\t\t-soft : turn on soft bounds on calibrated nodes\n";
 		cout << "\t\t-clok : run under strict clock (and estimate substitution rate)\n";
 		cout << "\t\t-urg  : run under uncorrelated gamma-distributed rates\n";
@@ -149,15 +149,15 @@ void printHelp(bool files)
         cout << "\t\t-s2        : seed 2 \n";
         //cout << "\t\t-rho       : extant species sampling, 1 or 0 only [= 1]\n";
         //cout << "\t\t-ext       : estimate extant species\n";
-        //cout << "\t\t-ind       : add extinct indicators\n";
+        //cout << "\t\t-ind       : use extinct indicators\n";
         cout << "\t\t-divPrior  : prior on birth and death, 1=uniform, 2=exponential [= 2]\n";
         cout << "\t\t-psiPrior  : prior on fossil recovery rate psi, 1=uniform, 2=exponential [= 2]\n";
         cout << "\t\t-bexpR     : rate parameter of the exponential prior on birth [= 1]\n";
         cout << "\t\t-dexpR     : rate parameter of the exponential prior on death [= 1]\n";
         cout << "\t\t-pexpR     : mean of exponential prior on psi (mean = 1/rate) [= 10]\n";
         cout << "\t\t-rbout     : output intervals from oldest to youngest to match RevBayes MCMC output [= 0]\n";
+        //cout << "\t\t-pfat : print fossil attachment and fossil times (zf, yf) to log file \n"; // right now this also prints yf times
         cout << "\t\t** required\n\n";
-        //cout << "\t\t-pfat : print fossil attachment times (zf) to log file \n"; // right now this also prints yf times
 	}
 }
 

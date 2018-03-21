@@ -304,7 +304,7 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, std::string pafn
     fbdPar = bdp;
     numFossils = 0;
     numLineages = 0;
-    userSpecifiedIntervals = 0; //**skyline note user specified intervals
+    userSpecifiedIntervals = 0;
     myCurLnL = 0.0;
     
     if(fbdLk == 1 || fbdLk == 2)

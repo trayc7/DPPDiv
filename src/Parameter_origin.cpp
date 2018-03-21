@@ -393,7 +393,7 @@ double OriginTime::getFOFBDProbOriginTime(FossilGraph *fg, Speciation *s){
     double rho = s->getBDSSSppSampRateRho();
     double fossRate = s->getBDSSFossilSampRatePsi(); // psi
     
-    double phat = fg->fbdPFxn(lambda, mu, fossRate, rho, originTime); // note this is not the same as getFBDProbOriginTime
+    double phat = fg->fbdPFxn(lambda, mu, fossRate, rho, originTime); // \note this is not the same as getFBDProbOriginTime
     
     double otPrb = log(lambda) + log(1-phat);
     return otPrb;
@@ -409,7 +409,7 @@ double OriginTime::getFossilGraphLnLikelihood(FossilGraph *fg, Speciation *s){
     double rho = s->getBDSSSppSampRateRho();
     double fossRate = s->getBDSSFossilSampRatePsi(); // psi
     
-    double lnprob = fg->getFossilGraphProb(lambda, mu, fossRate, rho, originTime); // note this is not the same as getFBDProbOriginTime
+    double lnprob = fg->getFossilGraphProb(lambda, mu, fossRate, rho, originTime); // \note this is not the same as getFBDProbOriginTime
     
     return lnprob;
 }

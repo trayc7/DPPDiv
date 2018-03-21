@@ -57,7 +57,7 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     fixOrigin = 0;
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
-    estimateExtant = estExt; // note this is experimental
+    estimateExtant = estExt; // \note this is experimental
     fixIndicator = fixInd;
     phyloTest = 0;
     if(expMode == 1){
@@ -733,7 +733,7 @@ string FossilRangeGraph::getFossilRangeInfoParamList(void){
     
     for(int i=0; i<fossilRanges.size(); i++){
         frg = fossilRanges[i];
-        ss << "\t" << frg->getFirstAppearance(); // first appearance -- note this is fixed in this implementation
+        ss << "\t" << frg->getFirstAppearance(); // first appearance \note this is fixed in this implementation
         ss << "\t" << frg->getLineageStart(); // lineage start
         ss << "\t" << frg->getLastAppearance(); // last appearance
         ss << "\t" << frg->getLineageStop(); // lineage stop
@@ -787,7 +787,7 @@ double FossilRangeGraph::getFossilRangeGraphProb(double lambda, double mu, doubl
     // Keiding 1975 + Poisson fossil samping
     else if(completeSampling == 2) {
         
-        int birthEvents = -1; //B. Note the origin is not a birth event
+        int birthEvents = -1; //B. \note the origin is not a birth event
         int deathEvents = 0; //D
         double totalLineageDuration = 0; //S
         

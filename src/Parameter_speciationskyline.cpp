@@ -61,13 +61,6 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh,
     
     setAllBDFossParams();
     
-    //TODO check this & then delete
-//    specPr = 2;
-//    psiPr = 2;
-//    bPrRate = 1;
-//    dPrRate = 1;
-//    pPrRate = 10;
-    
     // priors on birth death paras
     deathRatePrior = specPr; // 1 = unifrom prior, 2 = exponential prior
     birthRatePrior = specPr;
@@ -117,7 +110,7 @@ void SpeciationSkyline::initializeIntervalVariables(){
     for(int i = 0; i < numIntervals; i++){
         birthRates.push_back(0.9);
         deathRates.push_back(0.3);
-        fossilRates.push_back(2.0); //**skyline note - add user defined flag psi //?
+        fossilRates.push_back(2.0);
         tipRates.push_back(0.0);
     }
     tipRates[0] = extantSampleRate;
