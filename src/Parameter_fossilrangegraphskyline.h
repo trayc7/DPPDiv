@@ -38,8 +38,8 @@
 class Interval {
     
 public:
-    Interval(double start, double end, int fossils, int intid, double durations, int kP, double proxy) : intervalStart(start), intervalEnd(end), intervalFossils(fossils), intervalID(intid),
-    intervalSumRangeLengths(durations), intervalKappaPrime(kP), intervalProxy(proxy) {}
+    Interval(double start, double end, int fossils, int intid, double durations, int kP) : intervalStart(start), intervalEnd(end), intervalFossils(fossils), intervalID(intid),
+    intervalSumRangeLengths(durations), intervalKappaPrime(kP) {}
 
     double          getIntervalStart(void){ return intervalStart; }
     double          getIntervalEnd(void){ return intervalEnd; }
@@ -53,6 +53,9 @@ public:
     void            setIntervalSumRangeLengths(double d) { intervalSumRangeLengths = d; }
     void            setIntervalKappaPrime(int i) { intervalKappaPrime = i; }
     
+    // proxy info
+    //double          getIntervalProxy() { return intervalProxy; }
+    
 private:
     double          intervalStart;
     double          intervalEnd;
@@ -60,7 +63,7 @@ private:
     int             intervalID;
     double          intervalSumRangeLengths;
     int             intervalKappaPrime;
-    double          intervalProxy;
+    //double          intervalProxy;
 };
 
 class FossilRangeSkyline {
@@ -211,6 +214,9 @@ public:
     double							fbdQTildaFxnLog(double b, double d, double psi, double rho, double t);
     
     void                            crossValidateFBDSkylinefunctions();
+    
+    //proxy
+    //double                          getIntervalProxy(int i) {return intervals[i]->getIntervalProxy(); }
     
 private:
     

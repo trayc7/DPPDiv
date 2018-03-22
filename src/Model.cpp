@@ -316,7 +316,7 @@ Model::Model(MbRandom *rp, std::string clfn, std::string intfn, std::string pafn
     cout << "\nStarting with seeds: { " << startS1 << " , " << startS2 << " } \n\n";
     
     FossilRangeGraphSkyline *frg = new FossilRangeGraphSkyline(ranPtr, this, numFossils, numLineages, calibrs, userSpecifiedIntervals, intervals, runUnderPrior, fixFRG, estExt, expMode, fbdLk);
-    SpeciationSkyline *sp = new SpeciationSkyline(ranPtr, this, userSpecifiedIntervals, rho, specPr, psiPr, bPrRate, dPrRate, pPrRate, proxy);
+    SpeciationSkyline *sp = new SpeciationSkyline(ranPtr, this, userSpecifiedIntervals, rho, specPr, psiPr, bPrRate, dPrRate, pPrRate, proxy, intervals);
     
     for (int i=0; i<2; i++){
         parms[i].push_back( sp );

@@ -195,7 +195,6 @@ void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
     double start = 0;
     double end = 0;
     int fossils = 0;
-    double proxy = 0;
     
     int intid = 1;
     for(int i = 0; i < ints.size(); i++){
@@ -203,15 +202,15 @@ void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
         start = h->getIntervalStart();
         end = h->getIntervalEnd();
         fossils = h->getIntervalFossils();
-        proxy = h->getIntervalProxy();
+        //proxy = h->getIntervalProxy(); // this info is handled by speciation
         
-        Interval *interval = new Interval(start, end, fossils, intid, 0, 0, proxy);//TODO check using a tiny tree that this works when use sampling proxy = false
+        Interval *interval = new Interval(start, end, fossils, intid, 0, 0);
         intervals.push_back(interval);
         
         intid ++;
     }
     
-    Interval *interval = new Interval(ancientBound, start, 0, intid, 0, 0, 0);
+    Interval *interval = new Interval(ancientBound, start, 0, intid, 0, 0);
     intervals.push_back(interval);
     
 }   
@@ -1375,17 +1374,20 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         cout << "lambda 1 " << lambda[0] << endl;
         cout << "lambda 2 " << lambda[1] << endl;
         cout << "lambda 3 " << lambda[2] << endl;
+        cout << "lambda 3 " << lambda[3] << endl;
         cout << "mu 1 " << mu[0] << endl;
         cout << "mu 2 " << mu[1] << endl;
         cout << "mu 3 " << mu[2] << endl;
+        cout << "mu 3 " << mu[3] << endl;
         cout << "psi 1 " << fossRate[0] << endl;
         cout << "psi 2 " << fossRate[1] << endl;
         cout << "psi 3 " << fossRate[2] << endl;
+        cout << "psi 3 " << fossRate[3] << endl;
         cout << "counter " << counter << endl;
         exit(1);
     }
     
-    //counter = counter + 1;
+    counter ++;
     
     currentFossilRangeGraphSkylineLnL = nprb;
     

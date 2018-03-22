@@ -38,7 +38,7 @@ class FossilRangeGraphSkyline;
 class SpeciationSkyline : public Parameter {
     
 public:
-                            SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, bool proxy);
+    SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, bool proxy, std::vector<Calibration *> ints);
                             ~SpeciationSkyline(void);
     SpeciationSkyline       &operator=(const SpeciationSkyline &c);
     void                    clone(const SpeciationSkyline &c);
@@ -66,6 +66,7 @@ private:
     std::vector<double>		birthRates;
     std::vector<double>		deathRates;
     std::vector<double>		fossilRates;
+    std::vector<double>     proxyScale;
     std::vector<double>		netDiversifications;
     std::vector<double>		relativeDeaths; // turnover
     std::vector<double>		probObservations;
@@ -76,7 +77,7 @@ private:
     int                     numIntervals;
     int                     numMoves; // number of moves per cycle 
     int                     numParameters; // number of parameters per interval
-    void                    initializeIntervalVariables();
+    void                    initializeIntervalVariables(std::vector<Calibration *> ints);
     void                    printInitialIntervalVariables();
     
     // moves
@@ -104,6 +105,7 @@ private:
     bool                    fixPsi;
     bool                    constantRateModel;
     bool                    useSamplingProxy;
+    int                     proxyInt;
 
 };
 

@@ -27,6 +27,7 @@
  *
  */
 
+#include "Calibration.h"
 #include "Parameter.h"
 #include "Parameter_speciationskyline.h"
 #include "Parameter_fossilrangegraphskyline.h"
@@ -38,13 +39,14 @@
 
 using namespace std;
 
-SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, bool proxy) : Parameter(rp, mp) {
+SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, bool proxy, vector<Calibration *> ints) : Parameter(rp, mp) {
     
     name = "SSLP";
     numIntervals = ni + 1;
     extantSampleRate = rh;
     useSamplingProxy = proxy;
-    initializeIntervalVariables();
+    proxyInt = 0;
+    initializeIntervalVariables(ints);
     currentFossilRangeGraphSkylineLnL = 0.0;
     parameterization = 3; // hard coded for the moment
     maxdivV = 30000.0;
@@ -105,7 +107,7 @@ void SpeciationSkyline::clone(const SpeciationSkyline &c) {
     name = "SSLP";
 }
 
-void SpeciationSkyline::initializeIntervalVariables(){
+void SpeciationSkyline::initializeIntervalVariables(vector<Calibration *> ints){
     
     for(int i = 0; i < numIntervals; i++){
         birthRates.push_back(0.9);
@@ -120,6 +122,32 @@ void SpeciationSkyline::initializeIntervalVariables(){
         probObservations.push_back(fossilRates[i] / (deathRates[i] + fossilRates[i]));
     }
     
+    if(useSamplingProxy){ //TODO test this
+        
+        double proxy = 0.0;
+        double proxyMax = 0.0;
+        vector<double> proxyData;
+        
+        for(int i=0; i < ints.size(); i++){
+            Calibration *h = ints[i];
+            proxy = h->getIntervalProxy();
+            proxyData.push_back(proxy);
+            cout << "proxy " << proxy << endl;
+            if(proxy > proxyMax){
+                proxyInt = i;
+                proxyMax = proxy;
+            }
+        }
+
+        // oldest interval
+        // proxyData.push_back(1.0); // this won't actually be used
+        
+        // define scale values and redefine psi
+        for(int i=0; i < proxyData.size(); i++){
+            proxyScale.push_back(proxyData[i]/proxyMax);
+            fossilRates[i] = fossilRates[proxyInt] * proxyScale[i];
+        }
+    }
 }
 
 void SpeciationSkyline::print(std::ostream & o) const {
@@ -148,10 +176,12 @@ void SpeciationSkyline::printInitialIntervalVariables(){
     
     cout << "Speciaton parameters are initialized with: " << endl;
     int j = 1;
-    for(int i = 0; i < numIntervals; i++){
+    for(int i = 0; i < numIntervals; i++){ //TODO how does interval order here relate to the input & mcmc output
         cout << "Interval " << j << ": ";
         cout << "lambda = " << birthRates[i];
         cout << ", mu = " << deathRates[i];
+        if(useSamplingProxy)
+            cout << ", psi scale = " << proxyScale[i];
         cout << ", psi = " << fossilRates[i];
         cout << ", rho = " << tipRates[i] << endl;
         j++;
@@ -171,12 +201,17 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
             t = (int)(ranPtr->uniformRv(0.0, numIntervals));
             // choose random parameters
             v = (int)(ranPtr->uniformRv() * numParameters);
+            //cout << "t " << t << endl;
             if(v == 0)
                 updateDeathRate(frgs, t); // mu
             else if(v == 1)
                 updateBirthRate(frgs, t); // lambda
-            else if(v == 2)
-                updateProxyRate(frgs); // psi
+            else if(v == 2){
+                if(t == numIntervals - 1)
+                    updatePsiRate(frgs, t);
+                else
+                    updateProxyRate(frgs); // psi
+            }
         }
     } else if(constantRateModel){
         for(int i=0; i < numMoves; i++){
@@ -297,12 +332,11 @@ double SpeciationSkyline::updatePsiRate(FossilRangeGraphSkyline *frgs, int i) {
 
 double SpeciationSkyline::updateProxyRate(FossilRangeGraphSkyline *frgs){
     
-    //placeholder function for the moment
+    //TODO test this -> design a test, and run it under the prior
     
     double oldfgprob = currentFossilRangeGraphSkylineLnL;
     vector<double> oldFossilRates = fossilRates;
     
-    int proxyInt = 0; // where are you going to store this info?
     double lpr = 0.0;
     double oldPsi = fossilRates[proxyInt];
     double newPsi;
@@ -310,10 +344,11 @@ double SpeciationSkyline::updateProxyRate(FossilRangeGraphSkyline *frgs){
     double minV = 0.0001;
     double maxV = 100000;
     double c = getNewValScaleMv(newPsi, oldPsi, minV, maxV, tuning);
+    fossilRates[proxyInt] = newPsi;
     
-    // replace this loop with a rescale function; maybe handled by FBD skyline class
-    for(int i=0; i < numIntervals; i++){
-        fossilRates[i] = newPsi;
+    // scale psi values using proxy data
+    for(int i=0; i < proxyScale.size(); i++){
+        fossilRates[i] = fossilRates[proxyInt] * proxyScale[i];
     }
     
     lpr = c;
