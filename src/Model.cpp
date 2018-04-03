@@ -1097,11 +1097,7 @@ void Model::readPresenceAbsenceFile(void){
     pp >> tmp;
     int intNum = atoi(tmp.c_str());
     
-    // do some cross checking here with the pa file
-    //if(numLineages != lnNum){
-    //    cout << "ERROR: There's a problem with the calibration files \n";
-    //    exit(1);
-    //}
+    // \todo add some error checking
     
     string *calList = new string[nlins];
     string *paList = new string[nlins];

@@ -328,7 +328,7 @@ void Calibration::initializePresenceAbsenceRange(string calstr, string pastr, in
     // for the extra empty time bin
     kappa.push_back(0);
     
-    //cout << "Presence absence: " << endl;
+    cout << firstAppearance << " - " << lastAppearance << endl;
 }
 
 /*

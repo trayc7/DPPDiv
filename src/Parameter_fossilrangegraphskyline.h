@@ -201,6 +201,7 @@ public:
     double                          fbdSkylineQTildaFxn(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
     double                          fbdSkylineQTildaFxnLog(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t);
     double                          fbdSkylineQTildaFxnLogSimplified(std::vector<double> b, std::vector<double> d, std::vector<double> psi, std::vector<double> rho, int i, double t, double q);
+    double                          fbdSkylineHiFxnLog(std::vector<double> b, std::vector<double> d, std::vector<double> psi, double bi, double di, int alpha);
 
     double                          exampleRevBayesPfxn(std::vector<double> l, std::vector<double> m, std::vector<double> psi, std::vector<double> rho, int i, double t);
     
@@ -236,8 +237,8 @@ private:
     // fxns required for model 2
     void                            calculateIntervalSumRanges(); // L_s & kappa prime
     // fxns required for model 3
-    void                            initializeIntervalSubBranchLengths(); // L_S & changeable o_i
-    void                            recalculateIntervalSubBranchLengths(int i); // L_S & changeable o_i
+    void                            initializeIntervalSubBranchLengths(); // L_S
+    void                            recalculateIntervalSubBranchLengths(int i); // L_S
     
     void                            calculateChangeableOi(int i);
     double                          updateLineageBi();

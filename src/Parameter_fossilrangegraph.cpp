@@ -49,11 +49,11 @@ FossilRangeGraph::FossilRangeGraph(MbRandom *rp, Model *mp, int nf, int nl, vect
     numFossils = nf;
     numLineages = nl;
     runUnderPrior = rnp;
-    conditionOnSurvival = 1;
+    conditionOnSurvival = false;
     numExtinctLineages = 0;
     numExtantSamples = 0;
     originTime = 0.0;
-    ancientBound = 1000.0;
+    ancientBound = 10000000.0;
     fixOrigin = 0;
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
