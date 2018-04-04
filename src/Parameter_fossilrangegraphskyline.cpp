@@ -1155,6 +1155,8 @@ double FossilRangeGraphSkyline::doAScaleMove(double &nv, double cv, double tv, d
     
     double c = tv * (rv - 0.5);
     double newcv = cv * exp(c);
+    
+    /* the following is a scale move with reflection & requires a proposal ratio for a reflected scale move
     bool validV = false;
     do{
         if(newcv < lb)
@@ -1164,6 +1166,10 @@ double FossilRangeGraphSkyline::doAScaleMove(double &nv, double cv, double tv, d
         else
             validV = true;
     } while(!validV);
+    */
+    
+    if( newcv < lb || newcv > hb ) return - std::numeric_limits<double>::infinity();
+    
     nv = newcv;
     return c;
 }
