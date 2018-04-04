@@ -66,7 +66,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     speedy = 1;
     if(expMode == 1){
         fixOrigin = 1;
-        originTime = 1.233376;
+        originTime = 2.316531;
         ancientBound = originTime;
         orderStartStopTimes = 1;
     }
