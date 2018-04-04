@@ -57,7 +57,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     numExtantSamples = 0;
     originTime = 0.0;
     originInterval = 0;
-    ancientBound = 10000000.0; //1000
+    ancientBound = 10000.0; //1000
     fixOrigin = 0;
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
