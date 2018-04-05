@@ -45,6 +45,7 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
+#include <limits>
 
 using namespace std;
 
@@ -114,8 +115,6 @@ Tree::Tree(MbRandom *rp, Model *mp, Alignment *ap, string ts, bool ubl, bool all
 	if(rth < 5.0)
 		nodeProposal = 1;
 	
-	
-
 	if(numCalibNds > 0 && treeTimePrior < 6){
 		isCalibTree = true;
 		if(datedTips.size() > 0){
@@ -891,7 +890,9 @@ double Tree::updateFossilBDSSAttachmentTimePhi() {
 				c = 0.0;
 			}
 
-
+            //if(c == - std::numeric_limits<double>::infinity())
+              //  continue;
+            
 			f->setFossilSppTime(newPhi/treeScale);
 						
 			double newSumLogGammas = getSumLogAllAttachNums();
@@ -1145,6 +1146,9 @@ double Tree::updateAllNodes(double &oldLnL) {
 					newNodeDepth = smallestTime + rv*(largestTime-smallestTime);
 					c = 0.0;
 				}
+                
+                //if(c == - std::numeric_limits<double>::infinity())
+                  //  continue;
 				
 				double lnPrRatio = lnPriorRatio(newNodeDepth/treeScale, currDepth/treeScale);
 				p->setNodeDepth(newNodeDepth/treeScale);
@@ -1218,6 +1222,9 @@ double Tree::updateAllTGSNodes(double &oldLnL) {
 					newNodeDepth = smallestTime + rv*(largestTime-smallestTime);
 					c = 0.0;
 				}
+                
+                //if(c == - std::numeric_limits<double>::infinity())
+                  //  continue;
 				
 				double lnPrRatio = lnPriorRatioTGS(newNodeDepth, currDepth, p);
 				p->setNodeDepth(newNodeDepth/treeScale);
@@ -1251,6 +1258,7 @@ double Tree::doAScaleMove(double &nv, double cv, double tv, double lb, double hb
 	
 	double c = tv * (rv - 0.5);
 	double newcv = cv * exp(c);
+    
 	bool validV = false;
 	do{
 		if(newcv < lb)
@@ -1260,6 +1268,12 @@ double Tree::doAScaleMove(double &nv, double cv, double tv, double lb, double hb
 		else
 			validV = true;
 	} while(!validV);
+    
+    /*
+    if( newcv < lb || newcv > hb )
+        return - std::numeric_limits<double>::infinity();
+     */
+    
 	nv = newcv;
 	return c;
 }
