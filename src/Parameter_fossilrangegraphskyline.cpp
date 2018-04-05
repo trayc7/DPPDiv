@@ -40,7 +40,7 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
-#include <limits>
+//#include <limits>
 
 using namespace std;
 
@@ -209,7 +209,7 @@ void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
     Interval *interval = new Interval(ancientBound, start, 0, intid, 0, 0);
     intervals.push_back(interval);
     
-}   
+}
 
 void FossilRangeGraphSkyline::printIntervalVariables(){
     
@@ -782,6 +782,9 @@ double FossilRangeGraphSkyline::updateLineageStartTimes(){
         double tv = 2.0; // tuningVal
         c = doAScaleMove(newStart, oldStart, tv, fa, ancientBound, rv);
         
+        if(c == - std::numeric_limits<double>::infinity())
+            continue;
+        
         // redefine values
         fr->setLineageStart(newStart);
         redefineOriginTime();
@@ -842,6 +845,9 @@ double FossilRangeGraphSkyline::updateLineageStopTimes(){
         double rv = ranPtr->uniformRv();
         double tv = log(2.0); // tuningVal
         c = doAScaleMove(newEnd, oldEnd, tv, 0.0, la, rv);
+        
+        if(c == - std::numeric_limits<double>::infinity())
+            continue;
         
         // redefine values
         fr->setLineageStop(newEnd);
@@ -972,6 +978,9 @@ double FossilRangeGraphSkyline::updateLineageBi(){
         double rv = ranPtr->uniformRv();
         double tv = 2.0; // tuningVal
         c = doAScaleMove(newStart, oldStart, tv, min, ancientBound, rv);
+        
+        if(c == - std::numeric_limits<double>::infinity())
+            continue;
         
         // redefine values
         fr->setLineageStart(newStart);
@@ -1111,6 +1120,9 @@ double FossilRangeGraphSkyline::updateLineageDi(){
         double tv = log(2.0); // tuningVal
         c = doAScaleMove(newEnd, oldEnd, tv, 0.0, max, rv);
         
+        if(c == - std::numeric_limits<double>::infinity())
+            continue;
+        
         // redefine values
         fr->setLineageStop(newEnd);
         
@@ -1166,10 +1178,10 @@ double FossilRangeGraphSkyline::doAScaleMove(double &nv, double cv, double tv, d
             newcv = hb * hb / newcv;
         else
             validV = true;
-    } while(!validV);
-    */
+    } while(!validV); */
     
-    if( newcv < lb || newcv > hb ) return - std::numeric_limits<double>::infinity();
+    if( newcv < lb || newcv > hb )
+        return - std::numeric_limits<double>::infinity();
     
     nv = newcv;
     return c;
@@ -1465,6 +1477,7 @@ double FossilRangeGraphSkyline::getFossilRangeGraphSkylineProb(){
         cout << "psi 1 " << fossRate[0] << endl;
         cout << "psi 2 " << fossRate[1] << endl;
         cout << "psi 3 " << fossRate[2] << endl;
+        cout << "psi 3 " << fossRate[3] << endl;
         cout << "psi 3 " << fossRate[3] << endl;
         cout << "counter " << counter << endl;
         exit(1);
