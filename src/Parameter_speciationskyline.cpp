@@ -39,28 +39,28 @@
 
 using namespace std;
 
-SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, bool proxy, vector<Calibration *> ints) : Parameter(rp, mp) {
+SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh, int specPr, int psiPr, double bPrRate, double dPrRate, double pPrRate, bool proxy, vector<Calibration *> ints, bool fxPsi) : Parameter(rp, mp) {
     
     name = "SSLP";
     numIntervals = ni + 1;
     extantSampleRate = rh;
     useSamplingProxy = proxy;
     proxyInt = 0;
-    initializeIntervalVariables(ints);
     currentFossilRangeGraphSkylineLnL = 0.0;
     parameterization = 3; // hard coded for the moment
     maxdivV = 30000.0;
     
+    fixPsi = fxPsi;
     constantRateModel = 0;
-    fixPsi = 0;
-    //fixPsi = fxPsi;
-    if(fixPsi)
+    fixAllPsi = false;
+    if(fixAllPsi)
         numParameters = 2;
     else
         numParameters = 3;
     
     numMoves = numIntervals * numParameters;
     
+    initializeIntervalVariables(ints);
     setAllBDFossParams();
     
     // priors on birth death paras
@@ -148,6 +148,8 @@ void SpeciationSkyline::initializeIntervalVariables(vector<Calibration *> ints){
             fossilRates[i] = fossilRates[proxyInt] * proxyScale[i];
         }
     }
+    if(fixPsi) fossilRates[0] = 0;//0.0001;
+    if(fixPsi) fossilRates[numIntervals-1] = 0;//0.0001;
 }
 
 void SpeciationSkyline::print(std::ostream & o) const {
@@ -228,7 +230,7 @@ double SpeciationSkyline::updateFossilRangeGraphSkylineBDParams(double &oldLnL){
         for(int i=0; i < numMoves; i++){
             // choose random interval
             t = (int)(ranPtr->uniformRv(0.0, numIntervals));
-            // choose random parameters (never go to 3 if fixPsi = T)
+            // choose random parameters (never go to 3 if fixAllPsi = T)
             v = (int)(ranPtr->uniformRv() * numParameters);
             if(v == 0)
                 updateDeathRate(frgs, t); // mu
@@ -301,6 +303,9 @@ double SpeciationSkyline::updateDeathRate(FossilRangeGraphSkyline *frgs, int i) 
 }
 
 double SpeciationSkyline::updatePsiRate(FossilRangeGraphSkyline *frgs, int i) {
+    
+    if( (fixPsi && i == 0) | (fixPsi && i == numIntervals - 1) )
+        return 0.0;
     
     double oldfgprob = currentFossilRangeGraphSkylineLnL;
     double lpr = 0.0;
