@@ -229,7 +229,7 @@ int main (int argc, char * const argv[]) {
     double dPrRate      = 1;        // mean of exponential prior on death
     double pPrRate      = 10;        // mean of exponential prior on psi
     int fbdRangeLikelihood = 1;     // 1 = poisson sampling, 2 = marginalize over k within ranges, 3 = marginalize over k within intervals (presence/absence sampling)
-    bool revbOut        = true;     // order interval output oldest to youngest, to match revbayes output //TODO remember to changes this back to 0 before release
+    bool revbOut        = true;     // order interval output oldest to youngest, to match revbayes
     bool proxy          = false;
     //bool maxSpecRate  = 10000;
 	

@@ -338,7 +338,7 @@ double SpeciationSkyline::updatePsiRate(FossilRangeGraphSkyline *frgs, int i) {
 
 double SpeciationSkyline::updateProxyRate(FossilRangeGraphSkyline *frgs){
     
-    //TODO test this -> design a test, and run it under the prior
+    // this is experimental
     
     double oldfgprob = currentFossilRangeGraphSkylineLnL;
     vector<double> oldFossilRates = fossilRates;

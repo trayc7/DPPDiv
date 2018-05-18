@@ -714,16 +714,15 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
     FossilRangeGraphSkyline *frg = modelPtr->getActiveFossilRangeGraphSkyline();
     SpeciationSkyline *sp = modelPtr->getActiveSpeciationSkyline();
     
-    //sp->setAllBDFossParams();
-    
     int numIntervals = frg->getNumIntervals();
     
     // the interval numbering scheme held in dppdiv memory
     // youngest = 0, oldest (not user specified) = numIntervals - 1
+    
     // the revbayes numbering scheme
     // oldest (not user specified) = 1, youngest = numIntervals - 1
     
-    bool printHiddenInt = 1; //TODO remember to change this back to 0 before release
+    bool printHiddenInt = 1;
     
     if(gen == 1){
         
