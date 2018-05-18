@@ -122,7 +122,8 @@ void SpeciationSkyline::initializeIntervalVariables(vector<Calibration *> ints){
         probObservations.push_back(fossilRates[i] / (deathRates[i] + fossilRates[i]));
     }
     
-    if(useSamplingProxy){ //TODO test this
+    // this is experimental
+    if(useSamplingProxy){
         
         double proxy = 0.0;
         double proxyMax = 0.0;
@@ -148,8 +149,8 @@ void SpeciationSkyline::initializeIntervalVariables(vector<Calibration *> ints){
             fossilRates[i] = fossilRates[proxyInt] * proxyScale[i];
         }
     }
-    if(fixPsi) fossilRates[0] = 0;//0.0001;
-    if(fixPsi) fossilRates[numIntervals-1] = 0;//0.0001;
+    if(fixPsi) fossilRates[0] = 0;
+    if(fixPsi) fossilRates[numIntervals-1] = 0;
 }
 
 void SpeciationSkyline::print(std::ostream & o) const {
@@ -501,11 +502,7 @@ double SpeciationSkyline::getExpPriorRatio(double oldVal, double newVal, double 
 }
 
 double SpeciationSkyline::getLnFossilRangeGraphSkylineProb(FossilRangeGraphSkyline *frgs) {
-    
-    //birthRates[3] = 0.7009522943744572; birthRates[2] = 0.03811830634181092; birthRates[1] = 1.374360485676168; birthRates[0] = 0.2036822285301439;
-    //deathRates[3] = 0.6466139057734606; deathRates[2] = 0.04527556880226521; deathRates[1] = 0.3892735575326242; deathRates[0] = 0.5684869718565541;
-    //fossilRates[3] = 0.01014724739473365; fossilRates[2] = 0.07283644568094029; fossilRates[1] = 0.1617238009806096; fossilRates[0] = 0.2735363387901706;
-    
+
     setAllBDFossParams();
     frgs->setAllIntervalConstants();    
     double fgprob = frgs->getFossilRangeGraphSkylineProb();
