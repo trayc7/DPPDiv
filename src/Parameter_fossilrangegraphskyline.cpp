@@ -72,7 +72,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
         ancientBound = originTime;
         orderStartStopTimes = 1;
     }
-    printInitialFossilRangeSkylineVariables = 1;
+    printInitialFossilRangeSkylineVariables = 0; // verbose output
     createIntervalsVector(ints);
     createFossilRangeSkylineVector(clb);
     initializeFossilRangeSkylineVariables();
@@ -89,9 +89,9 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     cout << "Number of extant samples: " << numExtantSamples << endl;
     cout << "Number of fossils: " << numFossils << endl;
     cout << "Number of intervals (inc ancient bound): " << numIntervals << endl;
-    cout << "\nInitial origin time: " << originTime << endl;
-    cout << "Fossil range graph skyline initialized" << endl;
-    cout << "Using likelihood function " << fbdLikelihood << endl;
+    cout << "Initial origin time: " << originTime << endl;
+    cout << "Likelihood function " << fbdLikelihood << " selected" << endl;
+    cout << "Fossil range graph skyline initialized\n" << endl;
     
 }
 
@@ -196,6 +196,7 @@ void FossilRangeGraphSkyline::createIntervalsVector(vector<Calibration *> ints){
     Calibration *in1 = ints[0];
     Calibration *inLast = ints[(int)ints.size() - 1];
     
+    // note the FBD functions use index = 0 for the youngest interval
     if( (in1->getIntervalEnd()) > (inLast->getIntervalEnd())){
         std::reverse(ints.begin(),ints.end());
     }
@@ -356,13 +357,10 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
     if(fbdLikelihood == 3)
         initializeIntervalSubBranchLengths();
     
-    bool printIntVariables = true;
-    
-    if(printIntVariables)
-        printIntervalVariables();
-    
-    if(printInitialFossilRangeSkylineVariables)
+    if(printInitialFossilRangeSkylineVariables){
         printFossilRangeSkylineVariables();
+        printIntervalVariables();
+    }
     
 }
 
@@ -714,7 +712,6 @@ void FossilRangeGraphSkyline::printFossilRangeSkylineVariables(){
                     cout << fr->getFossilRangeSubBranchLength(i) << ", ";
             }
             cout << endl;
-            //cout << "Chageable Oi: " << fr->getChangeableOi() << endl << endl;
         }
     }
     
@@ -1024,7 +1021,7 @@ double FossilRangeGraphSkyline::updateLineageBi(){
     return 0.0;
 }
 
-// option disabled for the moment
+// option disabled
 double FossilRangeGraphSkyline::updateLineageOi(){
     
     vector<int> rndFossilRangeIDs;
@@ -1070,7 +1067,6 @@ double FossilRangeGraphSkyline::updateLineageOi(){
         // redefine values
         fr->setFirstAppearance(newFa);
         
-        // I don't think this needs to be here
         //recalculateIntervalSubBranchLengths((*it));
         
         // recalculate the FRG probability
@@ -1660,9 +1656,6 @@ double FossilRangeGraphSkyline::fbdSkylineHiFxnLog(std::vector<double> b, std::v
     
     double tmp = (log(hO - hY) + log(psi) - (psi * (yiS - ti)));
     
-    //cout << "ai " << setprecision(5) << tmp << endl;
-    
-    //return log(hO - hY) * (psi * exp(-psi * (yiS - ti)));
     return tmp;
 }
 
@@ -1726,10 +1719,6 @@ void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
         rho.push_back(0.0);
      }
     
-    lambda[3] = 0.7009522943744572; lambda[2] = 0.03811830634181092; lambda[1] = 1.374360485676168; lambda[0] = 0.2036822285301439;
-    mu[3] = 0.6466139057734606; mu[2] = 0.04527556880226521; mu[1] = 0.3892735575326242; mu[0] = 0.5684869718565541;
-    psi[3] = 0.01014724739473365; psi[2] = 0.07283644568094029; psi[1] = 0.1617238009806096; psi[0] = 0.2735363387901706;
-    
     rho[0] = 1.0;
     
     int i = numIntervals - 1;
@@ -1760,15 +1749,6 @@ void FossilRangeGraphSkyline::crossValidateFBDSkylinefunctions(){
     for(int i = 0; i < numIntervals; i++){
         cout << "q~ " << exp(intervalQts[i]) << endl;
     }
-    
-    //\to do tidy this up
-    //double lk = getFossilRangeGraphSkylineProb(); // checking this here is a ball ache
-    
-    //cout << "lk 1 " << m1 << endl;
-    
-    //double ti = 10;
-    //int i = 10;
-    //fbdSkylineABPfxnInterval(lambda, mu, psi, rho, i, ti);
     
     exit(0);
 }

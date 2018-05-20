@@ -82,11 +82,11 @@ void printHelp(bool files)
         cout << "-----------------------------------------------\n\n";
         cout << "Interval file \n";
         cout << "Line 1 = number of intervals\n";
-        cout << "From youngest to oldest, for each interval, \nstart time, end time, number of fossils\n";
+        cout << "From youngest to oldest OR oldest to youngest, \nfor each interval, start time, end time, number\nof fossils\n";
         cout << "-----------------------------------------------\n";
         cout << "2\n";
-        cout << "5.1\t0\t10\n";
         cout << "12.3\t5.1\t2\n";
+        cout << "5.1\t0\t10\n";
         cout << "-----------------------------------------------\n\n";
         cout << "*****\n";        
 	}
@@ -132,7 +132,7 @@ void printHelp(bool files)
 		cout << "\t\t** required\n";
         // diversification rate estimation
         cout << "\n\t*** Diversification rate estimation ***\n";
-        cout << "\n\texample:      \n\n\t$ dppdiv -fbdrsky -cal range.cal -int intervals.int -out file -rho 0.5\n\n";
+        cout << "\n\texample:      \n\n\t$ dppdiv -fbdrsky -cal range.cal -int intervals.int -out file\n\n";
         cout << "\tHere are the available options that you can change (default values are in []):\n";
         cout << "\t\t-h         : print this menu **\n";
         cout << "\t\t-hf        : display example file formats **\n";
@@ -141,13 +141,14 @@ void printHelp(bool files)
         cout << "\t\t-cal       : file name with fossil stratigraphic ranges **\n";
         cout << "\t\t-int       : file name with intervals **\n";
         cout << "\t\t-out       : output file name prefix **\n";
+        cout << "\t\t-fbdrlk    : model used to calculate the likelihood 1, 2 or 3 [= 1]\n";
         cout << "\t\t-n         : Number of MCMC cycles [= 1000000]\n";
         cout << "\t\t-pf        : print frequency [= 100] \n";
         cout << "\t\t-sf        : sample frequency [= 100] \n";
         cout << "\t\t-rnp       : return 0.0 for lnl, run under prior \n";
         cout << "\t\t-s1        : seed 1 (use this if you only pass in one seed) \n";
         cout << "\t\t-s2        : seed 2 \n";
-        //cout << "\t\t-rho       : extant species sampling, 1 or 0 only [= 1]\n";
+        cout << "\t\t-rho       : extant species sampling, 1 or 0 only [= 1]\n";
         //cout << "\t\t-ext       : estimate extant species\n";
         //cout << "\t\t-ind       : use extinct indicators\n";
         cout << "\t\t-divPrior  : prior on birth and death, 1=uniform, 2=exponential [= 2]\n";
@@ -155,7 +156,7 @@ void printHelp(bool files)
         cout << "\t\t-bexpR     : rate parameter of the exponential prior on birth [= 1]\n";
         cout << "\t\t-dexpR     : rate parameter of the exponential prior on death [= 1]\n";
         cout << "\t\t-pexpR     : mean of exponential prior on psi (mean = 1/rate) [= 10]\n";
-        cout << "\t\t-rbout     : output intervals from oldest to youngest to match RevBayes MCMC output [= 0]\n";
+        cout << "\t\t-rbout     : output intervals from oldest to youngest to match RevBayes MCMC output [= 1]\n";
         //cout << "\t\t-pfat : print fossil attachment and fossil times (zf, yf) to log file \n"; // right now this also prints yf times
         cout << "\t\t** required\n\n";
 	}

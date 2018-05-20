@@ -73,7 +73,7 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh,
     
     printInitialIntervalVariables();
     
-    cout << "BD initialized\n";
+    cout << "BD initialized\n" << endl;
 }
 
 SpeciationSkyline::~SpeciationSkyline(void) {

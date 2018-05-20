@@ -722,7 +722,7 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
     // the revbayes numbering scheme
     // oldest (not user specified) = 1, youngest = numIntervals - 1
     
-    bool printHiddenInt = 1;
+    bool printHiddenInt = 1; //interval 0, > user specified max
     
     if(gen == 1){
         
