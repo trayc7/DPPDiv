@@ -67,7 +67,7 @@ class Mcmc {
 		bool			modUpdateProbs;
         bool            printOrigin;
         bool            printAttach;
-        bool            revBayesOut;
+        bool            revOut;
         int             treeTimePr;
 };
 

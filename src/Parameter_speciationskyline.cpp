@@ -179,7 +179,7 @@ void SpeciationSkyline::printInitialIntervalVariables(){
     
     cout << "Speciaton parameters are initialized with: " << endl;
     int j = 1;
-    for(int i = 0; i < numIntervals; i++){ //TODO how does interval order here relate to the input & mcmc output
+    for(int i = 0; i < numIntervals; i++){
         cout << "Interval " << j << ": ";
         cout << "lambda = " << birthRates[i];
         cout << ", mu = " << deathRates[i];

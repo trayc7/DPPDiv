@@ -152,6 +152,7 @@ void printHelp(bool files)
         cout << "\t\t-fbdrsky   : fossilised birth death range skyline model **\n";
         cout << "\t\t-cal       : file name with fossil stratigraphic ranges **\n";
         cout << "\t\t-int       : file name with intervals **\n";
+        cout << "\t\t-pa        : file name with presence absence info **\n";
         cout << "\t\t-out       : output file name prefix **\n";
         cout << "\t\t-fbdrlk    : model used to calculate the likelihood 1, 2 or 3 [= 1]\n";
         cout << "\t\t-n         : Number of MCMC cycles [= 1000000]\n";
@@ -168,7 +169,7 @@ void printHelp(bool files)
         cout << "\t\t-bexpR     : rate parameter of the exponential prior on birth [= 1]\n";
         cout << "\t\t-dexpR     : rate parameter of the exponential prior on death [= 1]\n";
         cout << "\t\t-pexpR     : mean of exponential prior on psi (mean = 1/rate) [= 10]\n";
-        cout << "\t\t-rbout     : output intervals from oldest to youngest to match RevBayes MCMC output [= 1]\n";
+        cout << "\t\t-rout      : output intervals from oldest to youngest [= 0]\n";
         //cout << "\t\t-pfat : print fossil attachment and fossil times (zf, yf) to log file \n"; // right now this also prints yf times
         cout << "\t\t** required\n\n";
 	}
@@ -242,7 +243,7 @@ int main (int argc, char * const argv[]) {
     double dPrRate      = 1;        // mean of exponential prior on death
     double pPrRate      = 10;        // mean of exponential prior on psi
     int fbdRangeLikelihood = 1;     // 1 = poisson sampling, 2 = marginalize over k within ranges, 3 = marginalize over k within intervals (presence/absence sampling)
-    bool revbOut        = true;     // order interval output oldest to youngest, to match revbayes
+    bool revbOut        = false;     // order interval output oldest to youngest, revbayes outputs youngest to oldest 
     bool proxy          = false;
     //bool maxSpecRate  = 10000;
 	
@@ -419,7 +420,7 @@ int main (int argc, char * const argv[]) {
                     dPrRate = atof(argv[i+1]);
                 else if(!strcmp(curArg, "-pexpR")) // mean of exp prior on sampling rate
                     pPrRate = atof(argv[i+1]);
-                else if(!strcmp(curArg, "-rbout"))
+                else if(!strcmp(curArg, "-rout"))
                     revbOut = 1;
                 else if(!strcmp(curArg, "-proxy")) // use proxy info to inform psi, info contained in .int file
                     proxy = true;

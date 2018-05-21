@@ -67,7 +67,7 @@ Mcmc::Mcmc(MbRandom *rp, Model *mp, int nc, int pf, int sf, string ofp, bool wdf
 	modUpdateProbs  = modUpP;
     printOrigin     = po;
     printAttach     = pfat;
-    revBayesOut     = revbOut;
+    revOut          = revbOut;
     treeTimePr      = mp->getTreeTimePriorNum();
     if(treeTimePr < 9)
         runChain();
@@ -718,17 +718,19 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
     
     // the interval numbering scheme held in dppdiv memory
     // youngest = 0, oldest (not user specified) = numIntervals - 1
+    // by default the program outputs
+    // youngest = 1, oldest = numIntervals (user specified + 1) // matches revbayes
     
-    // the revbayes numbering scheme
+    // former revbayes numbering scheme
     // oldest (not user specified) = 1, youngest = numIntervals - 1
     
-    bool printHiddenInt = 1; //interval 0, > user specified max
+    bool printHiddenInt = 1; // > user specified max
     
     if(gen == 1){
         
         frOut << "Gen\tlnL";
         
-        if(revBayesOut){
+        if(revOut){
             // print intervals oldest to youngest & match revbayes interval numbering
             if(printHiddenInt){
                 // oldest = 0
@@ -816,7 +818,7 @@ void Mcmc::sampleChainFRSkyline(int gen, ofstream &frOut, double lnl) {
     }
     frOut << gen << "\t" <<  lnl;
     
-    if(revBayesOut){
+    if(revOut){
         // print intervals oldest to youngest & match revbayes interval numbering
         if(printHiddenInt){
             // oldest = 0
