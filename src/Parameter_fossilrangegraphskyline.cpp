@@ -45,7 +45,7 @@
 
 using namespace std;
 
-FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni, vector<Calibration *> ints, bool rnp, bool fxFRG, bool estExt, int expMode, int fbdLk) : Parameter(rp, mp){
+FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, vector<Calibration *> clb, int ni, vector<Calibration *> ints, bool rnp, bool fxFRG, bool estExt, int expMode, int fbdLk, bool ages) : Parameter(rp, mp){
 
     name = "FRGS";
     numFossils = nf;
@@ -66,6 +66,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     fixStart = 0;
     fixStop = 0;
     speedy = 1;
+    sampleFossilAges = ages; //sample fossil ages
     if(expMode == 1){
         fixOrigin = 1;
         originTime = 2.316531;
@@ -164,6 +165,10 @@ double FossilRangeGraphSkyline::update(double &oldLnL){
             else
                 updateLineageStopTimes();
         }
+        //if(sampleFossilAges){
+        //    updateFAs();
+            //updateLAs();
+        //}
     }
     
     if(orderStartStopTimes)
@@ -1078,6 +1083,71 @@ double FossilRangeGraphSkyline::updateLineageOi(){
         
         if(ranPtr->uniformRv() > r){
             fr->setFirstAppearance(oldFa);
+            currentFossilRangeGraphSkylineLnL = oldLike;
+        }
+    }
+    
+    return 0.0;
+}
+
+// option disabled
+double FossilRangeGraphSkyline::updateLineageYi(){
+    
+    vector<int> rndFossilRangeIDs;
+    for(int i = 0; i < fossilRangesSkyline.size(); i++)
+        rndFossilRangeIDs.push_back(i);
+    random_shuffle(rndFossilRangeIDs.begin(), rndFossilRangeIDs.end());
+    
+    for(vector<int>::iterator it = rndFossilRangeIDs.begin(); it != rndFossilRangeIDs.end(); it++){
+        
+        FossilRangeSkyline *fr = fossilRangesSkyline[(*it)];
+        
+        if(fr->getIsExtant())
+            continue;
+        
+        if(fr->getIsFixStop())
+            continue;
+        
+        int i = fr->getFossilRangeLastAppearanceInterval();
+        double bi = fr->getLineageStart(); // bi
+        double di = fr->getLineageStop(); // di
+        
+        Interval *interval = intervals[i];
+        double x = interval->getIntervalStart();
+        double y = interval->getIntervalEnd();
+        
+        // same as o_i
+        double min, max;
+        if(di > y) min = di;
+        else min = y;
+        if(bi < x) max = bi;
+        else max = x;
+        
+        double oldLa = fr->getLastAppearance(); //yi
+        double oldLike = currentFossilRangeGraphSkylineLnL;
+        
+        // propose new values
+        double newLa = 0.0;
+        double c = 0.0;
+        
+        double rv = ranPtr->uniformRv();
+        double tv = 2.0; // tuningVal
+        c = doAScaleMove(newLa, oldLa, tv, min, max, rv);
+        
+        // redefine values
+        fr->setLastAppearance(newLa);
+        
+        //recalculateIntervalSubBranchLengths((*it));
+        
+        // recalculate the FRG probability
+        double newLike = getFossilRangeGraphSkylineProb();
+        
+        // calculate the likelihood/prior ratio
+        double lnLikeRatio = newLike - oldLike;
+        double r = modelPtr->safeExponentiation(lnLikeRatio + c);
+        
+        if(ranPtr->uniformRv() > r){
+            fr->setLastAppearance(oldLa);
             currentFossilRangeGraphSkylineLnL = oldLike;
         }
     }

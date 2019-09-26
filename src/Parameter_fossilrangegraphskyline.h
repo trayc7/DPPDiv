@@ -167,7 +167,7 @@ class Calibration;
 class FossilRangeGraphSkyline : public Parameter {
     
 public:
-    FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, int ni, std::vector<Calibration *> ints, bool rnp, bool fxFRG, bool estExt, int expMode, int fbdLk);
+    FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf, int nl, std::vector<Calibration *> clb, int ni, std::vector<Calibration *> ints, bool rnp, bool fxFRG, bool estExt, int expMode, int fbdLk, bool ages);
 
     ~FossilRangeGraphSkyline(void);
     
@@ -244,6 +244,7 @@ private:
     double                          updateLineageBi();
     double                          updateLineageDi();
     double                          updateLineageOi();
+    double                          updateLineageYi();
     
     int                             numFossils;
     int                             numLineages;
@@ -282,6 +283,7 @@ private:
     bool                            fixStop;
     int                             counter; // debugging
     bool                            orderStartStopTimes;
+    bool                            sampleFossilAges;
     
     bool                            speedy;
     

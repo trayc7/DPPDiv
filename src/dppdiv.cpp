@@ -245,6 +245,7 @@ int main (int argc, char * const argv[]) {
     int fbdRangeLikelihood = 1;     // 1 = poisson sampling, 2 = marginalize over k within ranges, 3 = marginalize over k within intervals (presence/absence sampling)
     bool revbOut        = false;     // order interval output oldest to youngest, revbayes outputs youngest to oldest 
     bool proxy          = false;
+    bool ages           = false;    // sample fossil ages
     //bool maxSpecRate  = 10000;
 	
 	if(argc > 1){
@@ -323,6 +324,8 @@ int main (int argc, char * const argv[]) {
                     treeNodePrior = 11;
                     bdpar = 3;
                 }
+                else if(!strcmp(curArg, "-ages"))
+                    ages = true;
                 else if(!strcmp(curArg, "-fbdrlk")){ // likelihood model for the fossilised birth death process skyline
                     fbdRangeLikelihood = atof(argv[i+1]); // 1, 2 or 3
                 }
@@ -458,7 +461,7 @@ int main (int argc, char * const argv[]) {
 	
     if(treeNodePrior == 11){
         // fossil range skyline FBD
-        Model myModel(&myRandom, calibFN, intFN, paFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, expMode, fbdRangeLikelihood, specPr, psiPr, bPrRate, dPrRate, pPrRate, proxy, fixPsi);
+        Model myModel(&myRandom, calibFN, intFN, paFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, expMode, fbdRangeLikelihood, specPr, psiPr, bPrRate, dPrRate, pPrRate, proxy, fixPsi, ages);
         Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach, revbOut);
         return  0;
     }
