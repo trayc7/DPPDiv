@@ -51,7 +51,7 @@ SpeciationSkyline::SpeciationSkyline(MbRandom *rp, Model *mp, int ni, double rh,
     maxdivV = 30000.0;
     
     fixPsi = fxPsi;
-    constantRateModel = 0;
+    constantRateModel = 1;
     fixAllPsi = false;
     if(fixAllPsi)
         numParameters = 2;

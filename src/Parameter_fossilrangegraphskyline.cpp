@@ -166,7 +166,7 @@ double FossilRangeGraphSkyline::update(double &oldLnL){
                 updateLineageStopTimes();
         }
         if(sampleFossilAges){
-            //updateLineageOi(); //FAs
+            updateLineageOi(); //FAs
             updateLineageYi(); //LAs
         }
     }
