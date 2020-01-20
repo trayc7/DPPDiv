@@ -313,6 +313,11 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
             fr->setFixStop(0);
             fr->setExtinctIndicator(1);
         }
+        
+        if(fr->getFirstAppearance() == fr->getLastAppearance())
+            fr->setSameAge(1);
+        else
+            fr->setSameAge(0);
     }
     
     // redefines the variables defined in the above loop
@@ -1046,7 +1051,11 @@ double FossilRangeGraphSkyline::updateLineageOi(){
         
         int i = fr->getFossilRangeFirstAppearanceInterval();
         double bi = fr->getLineageStart(); // bi
-        double di = fr->getLineageStop(); // di
+        double di;
+        if(fr->getSameAge())
+            di = fr->getLineageStop(); // di
+        else
+            di = fr->getLastAppearance(); // yi
         
         Interval *interval = intervals[i];
         double x = interval->getIntervalStart();
@@ -1071,6 +1080,7 @@ double FossilRangeGraphSkyline::updateLineageOi(){
         
         // redefine values
         fr->setFirstAppearance(newFa);
+        if(fr->getSameAge()) fr->setLastAppearance(newFa);
         
         //recalculateIntervalSubBranchLengths((*it));
         
@@ -1083,8 +1093,10 @@ double FossilRangeGraphSkyline::updateLineageOi(){
         
         if(ranPtr->uniformRv() > r){
             fr->setFirstAppearance(oldFa);
+            if(fr->getSameAge()) fr->setLastAppearance(oldFa);
             currentFossilRangeGraphSkylineLnL = oldLike;
         }
+        
     }
     
     return 0.0;
@@ -1108,8 +1120,13 @@ double FossilRangeGraphSkyline::updateLineageYi(){
         if(fr->getIsFixStop())
             continue;
         
+        // if fa = la, la should never be sampled here
+        if(fr->getSameAge())
+            continue;
+        
         int i = fr->getFossilRangeLastAppearanceInterval();
-        double bi = fr->getLineageStart(); // bi
+        //double bi = fr->getLineageStart(); // only if fa = la
+        double bi = fr->getFirstAppearance(); // oi
         double di = fr->getLineageStop(); // di
         
         Interval *interval = intervals[i];

@@ -93,6 +93,10 @@ public:
     void                              setExtinctIndicator(bool b) { extinctIndicator = b; }
     bool                              getExtinctIndicator(void) { return extinctIndicator; }
     
+    
+    void                              setSameAge(bool b) { sameAge = b; }
+    bool                              getSameAge(void) { return sameAge; }
+    
     // skyline parameters
     int                               getFossilRangeBirthInterval(void) { return birthInterval; }
     int                               getFossilRangeDeathInterval(void) { return deathInterval; }
@@ -144,6 +148,7 @@ private:
     bool                            fixStart;
     bool                            fixStop;
     bool                            extinctIndicator;
+    bool                            sameAge; // fa = la
     
     // skyline parameters
     int                             birthInterval;
