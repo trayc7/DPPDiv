@@ -62,7 +62,7 @@ FossilRangeGraphSkyline::FossilRangeGraphSkyline(MbRandom *rp, Model *mp, int nf
     fixOrigin = 0;
     orderStartStopTimes = 0;
     fixFRG = fxFRG; //1: fix start and end range times to FAs and LAs
-    estimateExtant = estExt; // \note this is experimental
+    estimateExtant = estExt; // note this is experimental
     fixStart = 0;
     fixStop = 0;
     speedy = 1;
@@ -163,7 +163,7 @@ double FossilRangeGraphSkyline::update(double &oldLnL){
             if(ranPtr->uniformRv() < 0.5)
                 updateLineageStartTimes();
             else
-                updateLineageStopTimes();
+               updateLineageStopTimes();
         }
         if(sampleFossilAges){
             updateLineageOi(); //FAs
@@ -292,8 +292,7 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
             start = ranPtr->uniformRv(0.0,ancientBound);
             fr->setLineageStart(start);
             fr->setFixStart(0);
-        }
-        else{
+        } else{
             fa = fr->getFirstAppearance(); // yf
             start = ranPtr->uniformRv(fa,ancientBound); // zf
             fr->setLineageStart(start);
@@ -305,8 +304,7 @@ void FossilRangeGraphSkyline::initializeFossilRangeSkylineVariables(){
             fr->setLineageStop(0.0);
             fr->setFixStop(1);
             fr->setExtinctIndicator(0);
-        }
-        else {
+        } else{
             la = fr->getLastAppearance();
             stop = ranPtr->uniformRv(0.0,la); //di
             fr->setLineageStop(stop);
@@ -847,7 +845,7 @@ double FossilRangeGraphSkyline::updateLineageStopTimes(){
         
         if(!fr->getExtinctIndicator())
             continue;
-        
+                
         // define old values
         double la = fr->getLastAppearance(); // af
         double oldEnd = fr->getLineageStop(); // bf
@@ -1031,7 +1029,6 @@ double FossilRangeGraphSkyline::updateLineageBi(){
     return 0.0;
 }
 
-// option disabled
 double FossilRangeGraphSkyline::updateLineageOi(){
     
     vector<int> rndFossilRangeIDs;
@@ -1043,11 +1040,14 @@ double FossilRangeGraphSkyline::updateLineageOi(){
         
         FossilRangeSkyline *fr = fossilRangesSkyline[(*it)];
         
-        if(fr->getIsFixStart())
-            continue;
+        //if(fr->getIsFixStart())
+            //continue;
         
-        if(fixOrigin && fr->getLineageStart() == originTime)
+        if(fr->getFirstAppearance() == 0.0)
             continue;
+                
+        //if(fixOrigin && fr->getLineageStart() == originTime)
+          //  continue;
         
         int i = fr->getFossilRangeFirstAppearanceInterval();
         double bi = fr->getLineageStart(); // bi
@@ -1102,7 +1102,6 @@ double FossilRangeGraphSkyline::updateLineageOi(){
     return 0.0;
 }
 
-// option disabled
 double FossilRangeGraphSkyline::updateLineageYi(){
     
     vector<int> rndFossilRangeIDs;
@@ -1120,7 +1119,7 @@ double FossilRangeGraphSkyline::updateLineageYi(){
         if(fr->getIsFixStop())
             continue;
         
-        // if fa = la, la should never be sampled here
+        // if fa = la, la should not be sampled here
         if(fr->getSameAge())
             continue;
         
