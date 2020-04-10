@@ -57,7 +57,11 @@ public:
     double                  getExtinctionRate(int i) { return deathRates[i]; }
     double                  getFossilSampRate(int i) { return fossilRates[i]; }
     
-    void                    setAllBDFossParams(void);    
+    void                    setAllBDFossParams(void);
+    
+    void                    setSpeciationRate(double d, int i) { birthRates[i] = d; }
+    void                    setExtinctionRate(double d, int i) { deathRates[i] = d; }
+    void                    setFossilSampRate(double d, int i) { fossilRates[i] = d; }
     
 private:
 

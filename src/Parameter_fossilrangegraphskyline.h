@@ -224,6 +224,13 @@ public:
     //proxy
     //double                          getIntervalProxy(int i) {return intervals[i]->getIntervalProxy(); }
     
+    std::vector<FossilRangeSkyline *>        fossilRangesSkyline;
+    int                                      assignInterval(double d);
+    double                                   originTime;
+    void                                     setOriginTime(double d) { originTime = d; }
+    int                                      originInterval;
+    void                                     setOriginInterval(int i) { originInterval = i; }
+    
 private:
     
     void                            createIntervalsVector(std::vector<Calibration *> ints);
@@ -234,7 +241,7 @@ private:
     void							recountFossilRangeAttachNumsSpeedy(int i);
     void                            redefineOriginTime();
     void                            countExtinctLineages();
-    int                             assignInterval(double d);
+    //int                             assignInterval(double d);
     double                          updateLineageStartTimes();
     double                          updateLineageStopTimes();
     double                          updateExtinctIndicator();
@@ -256,8 +263,8 @@ private:
     int                             numExtinctLineages;
     int                             numExtantSamples;
     int                             numIntervals;    
-    int                             originInterval;
-    double                          originTime;
+//    int                             originInterval;
+//    double                          originTime;
     double                          ancientBound;
     bool							runUnderPrior;
     bool                            printInitialFossilRangeSkylineVariables;
@@ -265,7 +272,7 @@ private:
     int                             fbdLikelihood;
     
     std::vector<Interval *>         intervals;
-    std::vector<FossilRangeSkyline *>		fossilRangesSkyline;
+    //std::vector<FossilRangeSkyline *>		fossilRangesSkyline;
     std::vector<double>             intervalAs;
     std::vector<double>             intervalBs;
     std::vector<double>             intervalPs;

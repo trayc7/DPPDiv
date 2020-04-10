@@ -110,12 +110,13 @@ void SpeciationSkyline::clone(const SpeciationSkyline &c) {
 void SpeciationSkyline::initializeIntervalVariables(vector<Calibration *> ints){
     
     for(int i = 0; i < numIntervals; i++){
-        birthRates.push_back(0.9);
-        deathRates.push_back(0.3);
-        fossilRates.push_back(2.0);
+        birthRates.push_back(1.0);
+        deathRates.push_back(0.5);
+        fossilRates.push_back(0.7);
         tipRates.push_back(0.0);
     }
     tipRates[0] = extantSampleRate;
+    
     for(int i=0; i < numIntervals; i++){
         netDiversifications.push_back(birthRates[i] - deathRates[i]);
         relativeDeaths.push_back(deathRates[i] / birthRates[i]);

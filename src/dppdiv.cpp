@@ -35,6 +35,7 @@
 #include "MbRandom.h"
 #include "Mcmc.h"
 #include "Model.h"
+#include "Trace.h"
 #include "util.h"
 
 using namespace std;
@@ -246,6 +247,8 @@ int main (int argc, char * const argv[]) {
     bool revbOut        = false;     // order interval output oldest to youngest, revbayes outputs youngest to oldest 
     bool proxy          = false;
     bool ages           = false;    // sample fossil ages
+    bool readTrace      = false;     //read MCMC output
+    string traceFN        = "";
     //bool maxSpecRate  = 10000;
 	
 	if(argc > 1){
@@ -427,6 +430,10 @@ int main (int argc, char * const argv[]) {
                     revbOut = 1;
                 else if(!strcmp(curArg, "-proxy")) // use proxy info to inform psi, info contained in .int file
                     proxy = true;
+                else if(!strcmp(curArg, "-readTrace")) // readTrace file
+                    readTrace = true;
+                else if(!strcmp(curArg, "-trace"))
+                    traceFN = argv[i+1];
 				else {
 					cout << "\n############################ !!! ###########################\n";
 					cout << "\n\n\tPerhaps you mis-typed something, here are the \n\tavailable options:\n";
@@ -437,7 +444,6 @@ int main (int argc, char * const argv[]) {
 			}
 		}
 	}
-	
 	else {
 		cout << "\n############################ !!! ###########################\n";
 		cout << "\n\n\tPlease specify data and tree files, here are the \n\tavailable options:\n";
@@ -445,7 +451,7 @@ int main (int argc, char * const argv[]) {
 		cout << "\n############################ !!! ###########################\n";
 		return 0;
 	}
-	
+    
     if(treeNodePrior < 9) {
         if(dataFileName.empty() || treeFileName.empty()){
             cout << "\n############################ !!! ###########################\n";
@@ -456,13 +462,22 @@ int main (int argc, char * const argv[]) {
         }
     }
     
+    if(readTrace && traceFN.empty()){
+        cout << "\n\n\tPlease specify the trace file\n\n";
+        return 0;
+    }
+    
     MbRandom myRandom;
     myRandom.setSeed(s1, s2);
 	
     if(treeNodePrior == 11){
         // fossil range skyline FBD
         Model myModel(&myRandom, calibFN, intFN, paFN, treeNodePrior, rho, runPrior, bdpar, fixFRG, estExt, expMode, fbdRangeLikelihood, specPr, psiPr, bPrRate, dPrRate, pPrRate, proxy, fixPsi, ages);
-        Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach, revbOut);
+        if(readTrace){
+            Trace myTrace(&myRandom, &myModel, traceFN);
+        } else {
+            Mcmc mcmc(&myRandom, &myModel, numCycles, printFreq, sampleFreq, outName, writeDataFile, modUpdatePs, printOrigin, printAttach, revbOut);
+        }
         return  0;
     }
     else if(treeNodePrior == 9 || treeNodePrior == 10){
